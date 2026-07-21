@@ -1,7 +1,7 @@
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/utils/theme';
-import ButlerHeader from '../../src/components/butler/ButlerHeader';
+import HomeHeader from '../../src/components/home/HomeHeader';
 import MoodCheckIn from '../../src/components/butler/MoodCheckIn';
 import FinancialSummary from '../../src/components/butler/FinancialSummary';
 import FeatureGrid from '../../src/components/butler/FeatureGrid';
@@ -12,7 +12,7 @@ export default function ButlerScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.card }]} edges={['top']}>
-      <ButlerHeader />
+      <HomeHeader />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}

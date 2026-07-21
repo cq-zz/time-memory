@@ -1,53 +1,193 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, ScrollView, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/utils/theme';
-import { getDurableById } from '../../src/data/durables';
-import FormHeader from '../../src/components/durable-form/FormHeader';
-import PhotoUpload from '../../src/components/durable-form/PhotoUpload';
-import FormInput from '../../src/components/durable-form/FormInput';
-import CategoryPicker from '../../src/components/durable-form/CategoryPicker';
-import AcquisitionPicker from '../../src/components/durable-form/AcquisitionPicker';
+import { useSettingsStore } from '../../src/store/settings';
+import { getDurable, saveDurable } from '../../src/services/durable';
+import { DURABLE_STATUS_OPTIONS } from '../../src/utils/constant';
+import { showToast } from '../../src/components/common/Toast';
+import FormHeader from '../../src/components/common/FormHeader';
+import ImageUploadField from '../../src/components/common/ImageUploadField';
+import DatePickerField from '../../src/components/common/DatePickerField';
+import FormInput from '../../src/components/common/FormInput';
+import CategoryPicker from '../../src/components/common/CategoryPicker';
+import AcquisitionPicker from '../../src/components/common/AcquisitionPicker';
 import LinkedAssetPicker from '../../src/components/durable-form/LinkedAssetPicker';
 
 export default function DurableFormScreen() {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams();
-
+  const router = useRouter();
+  const currency = useSettingsStore((s) => s.settings.currency);
   const isEdit = Boolean(id);
-  const existing = isEdit ? getDurableById(id) : null;
 
-  const [name, setName] = useState(existing ? existing.name : '');
-  const [category, setCategory] = useState(-1);
-  const [acquisition, setAcquisition] = useState(0);
-  const [purchaseDate, setPurchaseDate] = useState(
-    existing && existing.detail ? existing.detail.purchaseDate : ''
-  );
-  const [price, setPrice] = useState(existing ? existing.price.replace(/[$,]/g, '') : '');
-  const [expiry, setExpiry] = useState('');
+  const [image, setImage] = useState('');
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('other');
+  const [acquisition, setAcquisition] = useState('purchase');
+  const [purchaseDate, setPurchaseDate] = useState('');
+  const [price, setPrice] = useState('');
+  const [expectedLifespan, setExpectedLifespan] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [linkedAssetId, setLinkedAssetId] = useState('');
+  const [status, setStatus] = useState('in_use');
   const [notes, setNotes] = useState('');
+  const [loaded, setLoaded] = useState(!isEdit);
+
+  useEffect(() => {
+    if (!isEdit) return;
+    getDurable(id).then((row) => {
+      if (row) {
+        setImage(row.image || '');
+        setName(row.name || '');
+        setCategory(row.category || 'other');
+        setAcquisition(row.acquisition_method || 'purchase');
+        setPurchaseDate(row.purchase_date || '');
+        setPrice(row.purchase_price != null && row.purchase_price !== '' ? String(row.purchase_price) : '');
+        setExpectedLifespan(row.expected_lifespan || '');
+        setExpiryDate(row.expiry_date || '');
+        setLinkedAssetId(row.linked_asset_id || '');
+        setStatus(row.status || 'in_use');
+        setNotes(row.notes || '');
+      }
+      setLoaded(true);
+    });
+  }, [isEdit, id]);
+
+  const handleSave = async () => {
+    const trimmedName = name.trim();
+    if (!trimmedName) {
+      showToast(t('durable.nameRequired', { defaultValue: 'Please enter a name' }));
+      return;
+    }
+    if (!purchaseDate) {
+      showToast(t('durable.purchaseDateRequired'));
+      return;
+    }
+    const priceNum = Number(price);
+    if (price.trim() === '' || Number.isNaN(priceNum) || priceNum < 0) {
+      showToast(t('durable.purchasePriceRequired'));
+      return;
+    }
+    const values = {
+      image,
+      name: trimmedName,
+      category,
+      acquisition_method: acquisition,
+      purchase_date: purchaseDate,
+      purchase_price: priceNum,
+      expected_lifespan: expectedLifespan,
+      expiry_date: expiryDate,
+      linked_asset_id: linkedAssetId,
+      status,
+      notes,
+      currency,
+    };
+    await saveDurable(values, isEdit ? id : undefined);
+    showToast(t('common.saved'));
+    router.back();
+  };
+
+  if (!loaded) return null;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
-      <FormHeader title={isEdit ? 'Edit Item' : 'New Memory'} />
+      <FormHeader title={isEdit ? t('nav.editDurable') : t('nav.addDurable')} />
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <PhotoUpload />
-        <FormInput label="ITEM NAME" placeholder="e.g. Vintage Leather Sofa" value={name} onChangeText={setName} />
-        <CategoryPicker selected={category} onSelect={setCategory} />
-        <AcquisitionPicker selected={acquisition} onSelect={setAcquisition} />
-        <FormInput label="PURCHASE DATE" placeholder="mm/dd/yyyy" value={purchaseDate} onChangeText={setPurchaseDate} />
-        <FormInput label="PRICE & CURRENCY" placeholder="CNY 0.00" value={price} onChangeText={setPrice} />
-        <LinkedAssetPicker />
-        <FormInput label="EXPIRY / WARRANTY DATE" placeholder="mm/dd/yyyy" value={expiry} onChangeText={setExpiry} />
+        <ImageUploadField
+          value={image}
+          onChange={setImage}
+          placeholder={t('durable.uploadImage')}
+          height={200}
+        />
         <FormInput
-          label="PRIVATE NOTES"
-          placeholder="Mention specific care instructions or memories associated with this item…"
+          label={`${t('durable.itemName')} *`}
+          placeholder={t('durable.itemNamePlaceholder')}
+          value={name}
+          onChangeText={setName}
+        />
+        <CategoryPicker
+          selected={category}
+          onSelect={setCategory}
+          type="item"
+          label={`${t('durable.category')} *`}
+        />
+        <AcquisitionPicker selected={acquisition} onSelect={setAcquisition} ns="durable" />
+        <DatePickerField
+          label={`${t('durable.purchaseDate')} *`}
+          mode="date"
+          value={purchaseDate}
+          onChange={setPurchaseDate}
+        />
+        <FormInput
+          label={t('durable.purchasePriceLabel')}
+          placeholder={`${currency} 0.00`}
+          value={price}
+          onChangeText={setPrice}
+          keyboardType="decimal-pad"
+        />
+        <DatePickerField
+          label={t('durable.expectedLifespan')}
+          mode="date"
+          value={expectedLifespan}
+          onChange={setExpectedLifespan}
+        />
+        <DatePickerField
+          label={t('durable.expiryDate')}
+          mode="date"
+          value={expiryDate}
+          onChange={setExpiryDate}
+        />
+
+        {/* Status */}
+        <View style={styles.field}>
+          <Text style={[styles.fieldLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+            {t('durable.status')}
+          </Text>
+          <View style={styles.statusRow}>
+            {DURABLE_STATUS_OPTIONS.map((opt) => {
+              const isActive = status === opt.key;
+              return (
+                <TouchableOpacity
+                  key={opt.key}
+                  activeOpacity={0.7}
+                  onPress={() => setStatus(opt.key)}
+                  style={[
+                    styles.statusBtn,
+                    {
+                      borderRadius: Radius.pill,
+                      backgroundColor: isActive ? Colors.inkDeep : Colors.card,
+                      borderColor: isActive ? Colors.inkDeep : Colors.grayDot,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.statusBtnText,
+                      { color: isActive ? Colors.white : Colors.textSecondary, fontFamily: Fonts.bold },
+                    ]}
+                  >
+                    {opt.key === 'in_use' ? t('durable.inUse') : t('durable.disposed')}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        <LinkedAssetPicker value={linkedAssetId} onChange={setLinkedAssetId} />
+
+        <FormInput
+          label={t('durable.notesLabel', { defaultValue: 'Notes' })}
+          placeholder={t('durable.notesPlaceholder')}
           value={notes}
           onChangeText={setNotes}
           multiline
@@ -59,8 +199,11 @@ export default function DurableFormScreen() {
         <TouchableOpacity
           style={[styles.saveBtn, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }]}
           activeOpacity={0.8}
+          onPress={handleSave}
         >
-          <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>SAVE MEMORY</Text>
+          <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
+            {t('durable.confirmSave')}
+          </Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
@@ -79,6 +222,30 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 24,
     gap: 24,
+  },
+  field: {
+    gap: 12,
+  },
+  fieldLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.6,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  statusBtn: {
+    flex: 1,
+    height: 48,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  statusBtnText: {
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.6,
   },
   footer: {
     paddingHorizontal: 16,

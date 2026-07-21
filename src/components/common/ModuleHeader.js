@@ -3,7 +3,8 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../utils/theme';
 
-export default function DurablesHeader() {
+/** Standard list-screen header: back button, title, trailing menu button. */
+export default function ModuleHeader({ title }) {
   const { Colors, Fonts } = useTheme();
   const router = useRouter();
 
@@ -17,9 +18,7 @@ export default function DurablesHeader() {
         >
           <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-          Durables
-        </Text>
+        <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>{title}</Text>
       </View>
 
       <TouchableOpacity style={styles.menuBtn} activeOpacity={0.7}>

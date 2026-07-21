@@ -1,9 +1,18 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
+import { formatMoney } from '../../store/settings';
 
-export default function LinkedAsset({ linkedAsset }) {
+export default function LinkedAsset({ asset, currency }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { t } = useTranslation();
+
+  if (!asset) return null;
+
+  const value = asset.current_price != null && asset.current_price !== ''
+    ? asset.current_price
+    : asset.purchase_price;
 
   return (
     <View style={styles.container}>
@@ -11,13 +20,12 @@ export default function LinkedAsset({ linkedAsset }) {
       <View style={styles.heading}>
         <Ionicons name="link-outline" size={18} color={Colors.textPrimary} />
         <Text style={[styles.headingText, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-          Linked Asset
+          {t('durable.linkedAsset')}
         </Text>
       </View>
 
       {/* Card */}
-      <TouchableOpacity
-        activeOpacity={0.8}
+      <View
         style={[
           styles.card,
           { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
@@ -25,20 +33,18 @@ export default function LinkedAsset({ linkedAsset }) {
         ]}
       >
         <View style={[styles.thumb, { backgroundColor: Colors.iconBg, borderRadius: Radius.xl }]}>
-          <Ionicons name={linkedAsset.icon} size={26} color={Colors.textSecondary} />
+          <Ionicons name="wallet-outline" size={26} color={Colors.textSecondary} />
         </View>
 
         <View style={styles.textCol}>
-          <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.regular }]}>
-            {linkedAsset.title}
+          <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.regular }]} numberOfLines={1}>
+            {asset.name}
           </Text>
           <Text style={[styles.subtitle, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-            {linkedAsset.subtitle}
+            {value != null && value !== '' ? formatMoney(value, currency) : '--'}
           </Text>
         </View>
-
-        <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
-      </TouchableOpacity>
+      </View>
     </View>
   );
 }

@@ -1,87 +1,134 @@
-import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTheme } from '../../utils/theme';
+import { MOODS } from '../../utils/constant';
+import { useMoodStore } from '../../store/mood';
+import { showToast } from '../common/Toast';
 
-const MOODS = ['🤩', '😊', '😐', '😕', '😤'];
-
+/**
+ * Daily mood check-in. Moods come from utils/constant.js (each carries a
+ * 1-5 score). Horizontal scroll when the list overflows; tapping saves the
+ * mood for today and tapping again re-selects (updates) it.
+ */
 export default function MoodCheckIn() {
-  const { Colors, Fonts } = useTheme();
-  const [selected, setSelected] = useState(1);
+  const { Colors, Fonts, Radius } = useTheme();
+  const todayMood = useMoodStore((s) => s.todayMood);
+  const saveMood = useMoodStore((s) => s.saveMood);
+
+  const handleSelect = async (mood) => {
+    try {
+      await saveMood(mood.key);
+      showToast(`${mood.emoji} ${mood.label} · Score ${mood.score}/5`);
+    } catch (e) {
+      console.warn('[mood] save failed:', e);
+    }
+  };
 
   return (
     <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.grayDot }]}>
-      <Text style={[styles.heading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-        HOW ARE YOU FEELING TODAY?
-      </Text>
+      <View style={styles.headRow}>
+        <Text style={[styles.heading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+          HOW ARE YOU FEELING TODAY?
+        </Text>
+        {todayMood ? (
+          <Text style={[styles.hint, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
+            Tap to change
+          </Text>
+        ) : null}
+      </View>
 
-      <View style={styles.emojiRow}>
-        {MOODS.map((mood, i) => {
-          const isActive = i === selected;
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.row}
+      >
+        {MOODS.map((mood) => {
+          const isActive = mood.key === todayMood;
           return (
             <TouchableOpacity
-              key={mood}
-              style={styles.emojiBtn}
+              key={mood.key}
+              style={[
+                styles.chip,
+                { borderRadius: Radius.sm },
+                isActive
+                  ? { backgroundColor: Colors.purpleTint, borderColor: Colors.purple, borderWidth: 1 }
+                  : { borderWidth: 1, borderColor: 'transparent' },
+              ]}
               activeOpacity={0.7}
-              onPress={() => setSelected(i)}
+              onPress={() => handleSelect(mood)}
             >
-              <Text style={[styles.emoji, isActive && styles.emojiActive]}>{mood}</Text>
-              {isActive ? (
-                <View style={[styles.activeDot, { backgroundColor: Colors.orange }]} />
-              ) : (
-                <View style={[styles.dot, { backgroundColor: Colors.lightGray }]} />
-              )}
+              <Text style={[styles.emoji, isActive && styles.emojiActive]}>{mood.emoji}</Text>
+              <Text
+                style={[
+                  styles.label,
+                  { color: Colors.textSecondary, fontFamily: Fonts.regular },
+                  isActive && { color: Colors.purple, fontFamily: Fonts.semiBold },
+                ]}
+                numberOfLines={1}
+              >
+                {mood.label}
+              </Text>
+              <Text style={[styles.score, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>
+                {mood.score}
+              </Text>
             </TouchableOpacity>
           );
         })}
-      </View>
+      </ScrollView>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    padding: 20,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
     borderWidth: 1,
     borderRadius: 32,
-    gap: 16,
+    gap: 14,
+  },
+  headRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   heading: {
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
   },
-  emojiRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 8,
+  hint: {
+    fontSize: 11,
+    lineHeight: 14,
   },
-  emojiBtn: {
-    alignItems: 'center',
+  row: {
     gap: 8,
+    paddingRight: 4,
+  },
+  chip: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    minWidth: 64,
   },
   emoji: {
     fontSize: 24,
-    lineHeight: 32,
+    lineHeight: 30,
     textAlign: 'center',
   },
   emojiActive: {
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 28,
+    lineHeight: 34,
   },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 9999,
+  label: {
+    fontSize: 10,
+    lineHeight: 14,
+    textAlign: 'center',
   },
-  activeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 9999,
-    shadowColor: '#F28B50',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.5,
-    shadowRadius: 8,
-    elevation: 4,
+  score: {
+    fontSize: 9,
+    lineHeight: 12,
+    opacity: 0.7,
   },
 });

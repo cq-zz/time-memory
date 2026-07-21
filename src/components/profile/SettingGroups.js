@@ -1,7 +1,7 @@
-import { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../utils/theme';
+import { useSettingsStore, languageMeta } from '../../store/settings';
 
 const GROUPS = [
   {
@@ -15,7 +15,7 @@ const GROUPS = [
     heading: 'SYSTEM',
     rows: [
       { icon: 'moon-outline', label: 'Dark Mode', isToggle: true },
-      { icon: 'language-outline', label: 'Language', value: 'English' },
+      { icon: 'language-outline', label: 'Language', settingKey: 'language' },
       { icon: 'key-outline', label: 'Security Log' },
     ],
   },
@@ -71,7 +71,9 @@ function SettingRow({ icon, label, value, isToggle, toggleValue, onToggle }) {
 
 export default function SettingGroups() {
   const { Colors, Radius, Fonts } = useTheme();
-  const [darkMode, setDarkMode] = useState(false);
+  const darkMode = useSettingsStore((s) => s.settings.darkMode);
+  const language = useSettingsStore((s) => s.settings.language);
+  const updateSetting = useSettingsStore((s) => s.updateSetting);
 
   return (
     <View style={styles.container}>
@@ -88,8 +90,9 @@ export default function SettingGroups() {
               <SettingRow
                 key={row.label}
                 {...row}
+                value={row.settingKey === 'language' ? languageMeta(language).label : row.value}
                 toggleValue={darkMode}
-                onToggle={() => setDarkMode((v) => !v)}
+                onToggle={() => updateSetting('darkMode', !darkMode)}
               />
             ))}
           </View>

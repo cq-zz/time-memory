@@ -1,31 +1,18 @@
-import { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 
-const FILTERS = ['All Items', 'In-Use', 'Archived', 'Date Range'];
-
-export default function SearchFilters() {
+/**
+ * Reusable search box + filter-chip row for list screens.
+ * `filters` is [{ key, labelKey }] — labelKey is translated via i18n.
+ */
+export default function SearchFilterBar({ search, onSearchChange, filter, onFilterChange, filters, placeholder }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
-  const [active, setActive] = useState(0);
+  const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
-      {/* Date range row */}
-      <View style={styles.dateRow}>
-        <View style={styles.dateLeft}>
-          <Ionicons name="calendar-outline" size={16} color={Colors.textSecondary} />
-          <Text style={[styles.dateText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-            Oct 2023 - Oct 2024
-          </Text>
-        </View>
-        <TouchableOpacity activeOpacity={0.7}>
-          <Text style={[styles.changeText, { color: Colors.purple, fontFamily: Fonts.semiBold }]}>
-            Change
-          </Text>
-        </TouchableOpacity>
-      </View>
-
       {/* Search input */}
       <View
         style={[
@@ -41,21 +28,27 @@ export default function SearchFilters() {
         <Ionicons name="search" size={20} color={Colors.textSecondary} />
         <TextInput
           style={[styles.searchInput, { color: Colors.textPrimary, fontFamily: Fonts.regular }]}
-          placeholder="Search your durables..."
+          placeholder={placeholder}
           placeholderTextColor={Colors.textSecondary}
+          value={search}
+          onChangeText={onSearchChange}
         />
+        {search.length > 0 && (
+          <TouchableOpacity activeOpacity={0.7} onPress={() => onSearchChange('')}>
+            <Ionicons name="close-circle" size={18} color={Colors.textSecondary} />
+          </TouchableOpacity>
+        )}
       </View>
 
       {/* Filter chips */}
       <View style={styles.chipsRow}>
-        {FILTERS.map((label, i) => {
-          const isActive = i === active;
-          const isDate = label === 'Date Range';
+        {filters.map(({ key, labelKey }) => {
+          const isActive = filter === key;
           return (
             <TouchableOpacity
-              key={label}
+              key={key}
               activeOpacity={0.7}
-              onPress={() => setActive(i)}
+              onPress={() => onFilterChange(key)}
               style={[
                 styles.chip,
                 {
@@ -65,14 +58,6 @@ export default function SearchFilters() {
                 },
               ]}
             >
-              {isDate && (
-                <Ionicons
-                  name="calendar-outline"
-                  size={12}
-                  color={isActive ? Colors.white : Colors.textSecondary}
-                  style={styles.chipIcon}
-                />
-              )}
               <Text
                 style={[
                   styles.chipText,
@@ -82,7 +67,7 @@ export default function SearchFilters() {
                   },
                 ]}
               >
-                {label}
+                {t(labelKey)}
               </Text>
             </TouchableOpacity>
           );
@@ -95,25 +80,6 @@ export default function SearchFilters() {
 const styles = StyleSheet.create({
   container: {
     gap: 12,
-  },
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 4,
-  },
-  dateLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  dateText: {
-    fontSize: 13,
-    lineHeight: 18,
-  },
-  changeText: {
-    fontSize: 13,
-    lineHeight: 18,
   },
   searchBox: {
     flexDirection: 'row',
@@ -140,9 +106,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderWidth: 1,
-  },
-  chipIcon: {
-    marginRight: 4,
   },
   chipText: {
     fontSize: 12,

@@ -1,13 +1,28 @@
+import { useState } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../utils/theme';
 
-export default function DurableHero({ detail }) {
+export default function DurableHero({ image, fallbackIcon, title, statusText, statusColor, totalCostText }) {
   const { Colors, Fonts } = useTheme();
+  const [imageError, setImageError] = useState(false);
+  const showImage = Boolean(image) && !imageError;
 
   return (
     <View style={styles.container}>
-      <Image source={require('../../../assets/durable-hero.png')} style={styles.image} resizeMode="cover" />
+      {showImage ? (
+        <Image
+          source={{ uri: image }}
+          style={styles.image}
+          resizeMode="cover"
+          onError={() => setImageError(true)}
+        />
+      ) : (
+        <View style={[styles.image, styles.imageFallback, { backgroundColor: Colors.avatarBg }]}>
+          <Ionicons name={fallbackIcon || 'cube-outline'} size={72} color={Colors.textTertiary} />
+        </View>
+      )}
 
       {/* Scrim for text readability */}
       <LinearGradient
@@ -19,23 +34,21 @@ export default function DurableHero({ detail }) {
       {/* Floating header over image */}
       <View style={styles.overlay}>
         {/* Status pill */}
-        <View style={[styles.statusPill, { backgroundColor: Colors.green }]}>
+        <View style={[styles.statusPill, { backgroundColor: statusColor }]}>
           <View style={[styles.statusDot, { backgroundColor: Colors.white }]} />
           <Text style={[styles.statusText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {detail.status}
+            {statusText}
           </Text>
         </View>
 
-        <Text style={[styles.title, { color: Colors.white, fontFamily: Fonts.bold }]}>
-          {detail.title}
-        </Text>
+        <Text style={[styles.title, { color: Colors.white, fontFamily: Fonts.bold }]}>{title}</Text>
 
         <View style={styles.costRow}>
           <Text style={[styles.costLabel, { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.bold }]}>
             TOTAL COST
           </Text>
           <Text style={[styles.costValue, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {detail.totalCost}
+            {totalCostText}
           </Text>
         </View>
       </View>
@@ -52,6 +65,10 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
+  },
+  imageFallback: {
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scrim: {
     ...StyleSheet.absoluteFillObject,

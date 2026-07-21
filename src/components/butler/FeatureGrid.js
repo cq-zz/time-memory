@@ -1,87 +1,156 @@
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../utils/theme';
+import { useSettingsStore, formatMoney } from '../../store/settings';
+import { useMoodStore } from '../../store/mood';
+import { moodMeta } from '../../utils/constant';
+import { showToast } from '../common/Toast';
+import BudgetModal from './BudgetModal';
+import MoodCalendarModal from './MoodCalendarModal';
 
+/**
+ * Function modules grid — compact cards: icon + name on the first row,
+ * module stats on the second. Includes Annual Budget (moved out of
+ * MANAGEMENT) and Mood Records (opens the check-in calendar).
+ */
 const FEATURES = [
-  { title: 'Durables', subtitle: '42 Items tracked', icon: 'cube-outline', color: '#6B5CE7', bg: 'rgba(107, 92, 231, 0.1)', href: '/durable' },
-  { title: 'Assets', subtitle: '8 Portfolios', icon: 'wallet-outline', color: '#4AA868', bg: 'rgba(74, 168, 104, 0.1)' },
-  { title: 'Bills', subtitle: '3 Unpaid', icon: 'receipt-outline', color: '#F28B50', bg: 'rgba(242, 139, 80, 0.1)' },
-  { title: 'Schedules', subtitle: 'Next: 14:00', icon: 'calendar-outline', color: '#1A1A1A', bg: 'rgba(198, 191, 255, 0.3)' },
-  { title: 'Important', subtitle: 'Anniversary', icon: 'heart-outline', color: '#E86B6B', bg: 'rgba(232, 107, 107, 0.1)' },
-  { title: 'Diary', subtitle: '58 Entries', icon: 'book-outline', color: '#1A1A1A', bg: 'rgba(26, 26, 26, 0.05)' },
+  { id: 'durables', title: 'Durables', icon: 'cube-outline', color: '#6B5CE7', href: '/durable' },
+  { id: 'assets', title: 'Assets', icon: 'wallet-outline', color: '#4AA868', href: '/asset' },
+  { id: 'bills', title: 'Bills', icon: 'receipt-outline', color: '#F28B50', href: '/bill' },
+  { id: 'schedules', title: 'Schedules', icon: 'calendar-outline', color: '#4A90D9', href: '/schedule' },
+  { id: 'important', title: 'Important', icon: 'heart-outline', color: '#E86B6B', href: '/important-date' },
+  { id: 'diary', title: 'Diary', icon: 'book-outline', color: '#8B7AE8', href: '/diary' },
+  { id: 'budget', title: 'Annual Budget', icon: 'flag-outline', color: '#F28B50', href: '/budget' },
+  { id: 'mood', title: 'Mood Records', icon: 'happy-outline', color: '#4AA868', href: '/mood' },
 ];
 
-function FeatureCard({ title, subtitle, icon, color, bg, href }) {
-  const { Colors, Fonts } = useTheme();
-  const router = useRouter();
+function FeatureCard({ title, icon, color, stat, onPress }) {
+  const { Colors, Fonts, Radius } = useTheme();
 
   return (
     <TouchableOpacity
-      style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.grayDot }]}
+      style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.grayDot, borderRadius: Radius.md }]}
       activeOpacity={0.7}
-      onPress={href ? () => router.push(href) : undefined}
+      onPress={onPress}
     >
-      <View style={[styles.iconBox, { backgroundColor: bg }]}>
-        <Ionicons name={icon} size={20} color={color} />
-      </View>
-      <View style={styles.textCol}>
-        <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
+      <View style={styles.row1}>
+        <View style={[styles.iconBox, { backgroundColor: `${color}1A` }]}>
+          <Ionicons name={icon} size={15} color={color} />
+        </View>
+        <Text
+          style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
+          numberOfLines={1}
+        >
           {title}
         </Text>
-        <Text style={[styles.subtitle, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-          {subtitle}
-        </Text>
       </View>
+      <Text style={[styles.stat, { color: Colors.textSecondary, fontFamily: Fonts.regular }]} numberOfLines={1}>
+        {stat}
+      </Text>
     </TouchableOpacity>
   );
 }
 
 export default function FeatureGrid() {
+  const { Colors, Fonts } = useTheme();
+  const router = useRouter();
+  const annualBudget = useSettingsStore((s) => s.settings.annualBudget);
+  const currency = useSettingsStore((s) => s.settings.currency);
+  const todayMood = useMoodStore((s) => s.todayMood);
+
+  const [budgetOpen, setBudgetOpen] = useState(false);
+  const [moodCalendarOpen, setMoodCalendarOpen] = useState(false);
+
+  const mood = moodMeta(todayMood);
+  const stats = {
+    durables: '42 Items tracked',
+    assets: '8 Portfolios',
+    bills: '3 Unpaid',
+    schedules: 'Next: 14:00',
+    important: 'Anniversary',
+    diary: '58 Entries',
+    budget: annualBudget > 0 ? formatMoney(annualBudget, currency) : 'Not set',
+    mood: mood ? `${mood.emoji} ${mood.label}` : 'Not checked in',
+  };
+
+  const handlePress = (id) => {
+    if (id === 'budget') return setBudgetOpen(true);
+    if (id === 'mood') return setMoodCalendarOpen(true);
+    const feature = FEATURES.find((f) => f.id === id);
+    if (feature?.href) return router.push(feature.href);
+    showToast('Coming soon');
+  };
+
   return (
-    <View style={styles.grid}>
-      {[0, 2, 4].map((i) => (
-        <View key={i} style={styles.row}>
-          <FeatureCard {...FEATURES[i]} />
-          <FeatureCard {...FEATURES[i + 1]} />
-        </View>
-      ))}
+    <View style={styles.container}>
+      <Text style={[styles.heading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+        FUNCTION MODULES
+      </Text>
+
+      <View style={styles.grid}>
+        {FEATURES.map((f) => (
+          <FeatureCard
+            key={f.id}
+            title={f.title}
+            icon={f.icon}
+            color={f.color}
+            stat={stats[f.id]}
+            onPress={() => handlePress(f.id)}
+          />
+        ))}
+      </View>
+
+      <BudgetModal visible={budgetOpen} onClose={() => setBudgetOpen(false)} />
+      <MoodCalendarModal visible={moodCalendarOpen} onClose={() => setMoodCalendarOpen(false)} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  grid: {
-    gap: 16,
+  container: {
+    gap: 12,
   },
-  row: {
+  heading: {
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.6,
+    paddingHorizontal: 4,
+  },
+  grid: {
     flexDirection: 'row',
-    gap: 16,
+    flexWrap: 'wrap',
+    gap: 12,
   },
   card: {
-    flex: 1,
-    height: 128,
-    padding: 16,
+    width: '48%',
+    flexGrow: 1,
+    flexBasis: '45%',
+    padding: 14,
     borderWidth: 1,
-    borderRadius: 32,
-    justifyContent: 'space-between',
+    gap: 8,
+  },
+  row1: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   iconBox: {
-    width: 40,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 24,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  textCol: {
-    gap: 2,
-  },
   title: {
-    fontSize: 16,
-    lineHeight: 28,
+    fontSize: 13,
+    lineHeight: 18,
+    flexShrink: 1,
   },
-  subtitle: {
-    fontSize: 14,
-    lineHeight: 22,
+  stat: {
+    fontSize: 11,
+    lineHeight: 16,
+    paddingLeft: 36,
   },
 });

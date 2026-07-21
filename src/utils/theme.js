@@ -1,13 +1,17 @@
 /**
  * Timemory Design Tokens — MD3 "Soft Tech"
  * Extracted from Figma: Shpa1ZGC0Fl1urN2atnLlH
+ *
+ * useTheme() is reactive: it re-renders consumers when the global
+ * darkMode setting changes (persisted via src/store/settings.js).
  */
+import { useSettingsStore } from '../store/settings';
 
-export const Colors = {
+export const LightColors = {
   // Surfaces
   bg: '#F5F5F5',
   card: '#FFFFFF',
-  inkDeep: '#1A1A1A', // dark cards only
+  inkDeep: '#1A1A1A', // feature cards & primary buttons
 
   // Brand
   purple: '#6B5CE7',
@@ -35,6 +39,48 @@ export const Colors = {
   white40: 'rgba(255, 255, 255, 0.4)',
   white60: 'rgba(255, 255, 255, 0.6)',
   white: '#FFFFFF',
+
+  // Modal & tints
+  overlay: 'rgba(26, 26, 26, 0.45)',
+  purpleTint: 'rgba(107, 92, 231, 0.1)',
+};
+
+export const DarkColors = {
+  // Surfaces — inkDeep stays dark (elevated) so white text/icons keep contrast
+  bg: '#121316',
+  card: '#1C1E22',
+  inkDeep: '#26292F',
+
+  // Brand — slightly lifted for dark backgrounds
+  purple: '#7D70F0',
+  orange: '#F59A66',
+  green: '#5BBB78',
+  rose: '#EE8080',
+  peach: '#FFB690',
+
+  // Text
+  textPrimary: '#F0F1F2',
+  textSecondary: '#9BA0A6',
+  textTertiary: '#7E8288',
+  textDark: '#F0F1F2',
+
+  // Borders & overlays
+  cardBorder: 'rgba(255, 255, 255, 0.08)',
+  grayDot: '#3A3D44',
+  lightGray: '#2E3138',
+  iconBg: '#23262B',
+  avatarBg: '#2A2D33',
+
+  // White overlays (unchanged — still sit on dark feature cards)
+  white05: 'rgba(255, 255, 255, 0.05)',
+  white10: 'rgba(255, 255, 255, 0.1)',
+  white40: 'rgba(255, 255, 255, 0.4)',
+  white60: 'rgba(255, 255, 255, 0.6)',
+  white: '#FFFFFF',
+
+  // Modal & tints
+  overlay: 'rgba(0, 0, 0, 0.6)',
+  purpleTint: 'rgba(125, 112, 240, 0.16)',
 };
 
 export const Radius = {
@@ -64,6 +110,9 @@ export const Shadows = {
 };
 
 export const Spacing = {
+  sm: 8,
+  md: 12,
+  lg: 16,
   page: 24,
   section: 16,
 };
@@ -74,10 +123,25 @@ export const Fonts = {
   bold: 'WorkSans_700Bold',
 };
 
-const theme = { Colors, Radius, Shadows, Spacing, Fonts };
-
-export function useTheme() {
-  return theme;
+/** hexToRgba('#6B5CE7', 0.1) -> 'rgba(107, 92, 231, 0.1)' */
+export function hexToRgba(hex, alpha = 1) {
+  const h = hex.replace('#', '');
+  const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const n = parseInt(full, 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${alpha})`;
 }
 
-export default theme;
+/**
+ * Reactive theme hook. Re-renders the consumer only when darkMode flips.
+ * All components must read tokens through this hook.
+ */
+export function useTheme() {
+  const darkMode = useSettingsStore((s) => s.settings.darkMode);
+  return {
+    Colors: darkMode ? DarkColors : LightColors,
+    Radius,
+    Shadows,
+    Spacing,
+    Fonts,
+  };
+}

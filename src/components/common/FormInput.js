@@ -1,7 +1,7 @@
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 import { useTheme } from '../../utils/theme';
 
-export default function FormInput({ label, placeholder, value, onChangeText, multiline }) {
+export default function FormInput({ label, placeholder, value, onChangeText, multiline, keyboardType = 'default' }) {
   const { Colors, Radius, Fonts } = useTheme();
 
   return (
@@ -25,6 +25,7 @@ export default function FormInput({ label, placeholder, value, onChangeText, mul
           value={value}
           onChangeText={onChangeText}
           multiline={multiline}
+          keyboardType={keyboardType}
           numberOfLines={multiline ? 4 : undefined}
           textAlignVertical={multiline ? 'top' : 'center'}
         />

@@ -1,24 +1,31 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
+import { ACQUISITION_METHODS } from '../../utils/constant';
 
-const METHODS = ['PURCHASE', 'GIFT/OTHER'];
+const methodKey = (ns, key) => `${ns}.acquisition${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 
-export default function AcquisitionPicker({ selected, onSelect }) {
+/**
+ * Acquisition-method chip picker shared by durable/asset forms.
+ * `ns` is the i18n namespace ('durable' | 'asset') holding acquisition* keys.
+ */
+export default function AcquisitionPicker({ selected, onSelect, ns = 'durable' }) {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.field}>
       <Text style={[styles.label, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-        ACQUISITION METHOD
+        {t(`${ns}.acquisitionLabel`)} *
       </Text>
       <View style={styles.row}>
-        {METHODS.map((method, i) => {
-          const isActive = i === selected;
+        {ACQUISITION_METHODS.map((m) => {
+          const isActive = m.key === selected;
           return (
             <TouchableOpacity
-              key={method}
+              key={m.key}
               activeOpacity={0.7}
-              onPress={() => onSelect(i)}
+              onPress={() => onSelect(m.key)}
               style={[
                 styles.btn,
                 {
@@ -34,7 +41,7 @@ export default function AcquisitionPicker({ selected, onSelect }) {
                   { color: isActive ? Colors.white : Colors.textSecondary, fontFamily: Fonts.bold },
                 ]}
               >
-                {method}
+                {t(methodKey(ns, m.key))}
               </Text>
             </TouchableOpacity>
           );
@@ -55,11 +62,11 @@ const styles = StyleSheet.create({
   },
   row: {
     flexDirection: 'row',
-    gap: 12,
+    flexWrap: 'wrap',
+    gap: 10,
   },
   btn: {
-    flex: 1,
-    height: 48,
+    height: 44,
     borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',

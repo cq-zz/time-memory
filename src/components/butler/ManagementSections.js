@@ -1,14 +1,36 @@
+import { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useTheme } from '../../utils/theme';
+import { useSettingsStore, currencyMeta } from '../../store/settings';
+import { CATEGORY_TYPE_LABELS } from '../../utils/constant';
+import CurrencyModal from './CurrencyModal';
+import YearRangeModal from './YearRangeModal';
+import DataManagement from './DataManagement';
 
-function SettingsRow({ icon, label, value, showBorder }) {
+const CATEGORY_ROW_ICONS = {
+  item: 'pricetag-outline',
+  bill: 'receipt-outline',
+  asset: 'diamond-outline',
+};
+
+const CATEGORY_ROUTES = {
+  item: '/settings/categories',
+  bill: '/settings/categories/bill',
+  asset: '/settings/categories/asset',
+};
+
+const CATEGORY_TYPES = ['item', 'bill', 'asset'];
+
+function SettingsRow({ icon, label, value, showBorder, onPress }) {
   const { Colors, Fonts } = useTheme();
 
   return (
     <TouchableOpacity
       style={[styles.settingsRow, showBorder && { borderTopColor: Colors.cardBorder, borderTopWidth: 1 }]}
       activeOpacity={0.7}
+      onPress={onPress}
     >
       <View style={styles.rowLeft}>
         <Ionicons name={icon} size={18} color={Colors.textPrimary} />
@@ -44,34 +66,13 @@ function RemindRow({ label, showBorder }) {
   );
 }
 
-function DataButton({ icon, label, danger }) {
-  const { Colors, Fonts } = useTheme();
-
-  return (
-    <TouchableOpacity
-      style={[
-        styles.dataBtn,
-        danger
-          ? { backgroundColor: 'rgba(232, 107, 107, 0.1)', borderColor: 'rgba(232, 107, 107, 0.2)' }
-          : { backgroundColor: Colors.card, borderColor: Colors.grayDot },
-      ]}
-      activeOpacity={0.7}
-    >
-      <Ionicons name={icon} size={16} color={danger ? Colors.rose : Colors.textDark} />
-      <Text
-        style={[
-          styles.dataBtnText,
-          { color: danger ? Colors.rose : Colors.textDark, fontFamily: Fonts.semiBold },
-        ]}
-      >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-}
-
 export default function ManagementSections() {
   const { Colors, Fonts } = useTheme();
+  const router = useRouter();
+  const settings = useSettingsStore((s) => s.settings);
+
+  const [currencyOpen, setCurrencyOpen] = useState(false);
+  const [yearRangeOpen, setYearRangeOpen] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -81,9 +82,37 @@ export default function ManagementSections() {
 
       {/* Settings card */}
       <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.grayDot }]}>
-        <SettingsRow icon="wallet-outline" label="Annual Budget" />
-        <SettingsRow icon="cash-outline" label="Currency Selection" value="USD ($)" showBorder />
-        <SettingsRow icon="calendar-outline" label="Year Range" value="2023 - 2024" showBorder />
+        <SettingsRow
+          icon="cash-outline"
+          label="Currency Selection"
+          value={currencyMeta(settings.currency).label}
+          onPress={() => setCurrencyOpen(true)}
+        />
+        <SettingsRow
+          icon="calendar-outline"
+          label="Year Range"
+          value={`${settings.yearStart} - ${settings.yearEnd}`}
+          showBorder
+          onPress={() => setYearRangeOpen(true)}
+        />
+      </View>
+
+      {/* Category management card */}
+      <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.grayDot }]}>
+        <View style={styles.subHeadingWrap}>
+          <Text style={[styles.subHeading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+            CATEGORY MANAGEMENT
+          </Text>
+        </View>
+        {CATEGORY_TYPES.map((type, i) => (
+          <SettingsRow
+            key={type}
+            icon={CATEGORY_ROW_ICONS[type]}
+            label={CATEGORY_TYPE_LABELS[type]}
+            showBorder={i > 0}
+            onPress={() => router.push(CATEGORY_ROUTES[type])}
+          />
+        ))}
       </View>
 
       {/* Remind settings card */}
@@ -99,11 +128,10 @@ export default function ManagementSections() {
       </View>
 
       {/* Data management */}
-      <View style={styles.dataRow}>
-        <DataButton icon="download-outline" label="Import" />
-        <DataButton icon="cloud-upload-outline" label="Export" />
-        <DataButton icon="trash-outline" label="Reset" danger />
-      </View>
+      <DataManagement />
+
+      <CurrencyModal visible={currencyOpen} onClose={() => setCurrencyOpen(false)} />
+      <YearRangeModal visible={yearRangeOpen} onClose={() => setYearRangeOpen(false)} />
     </View>
   );
 }
@@ -122,6 +150,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+  },
+  subHeadingWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   card: {
     borderWidth: 1,
@@ -162,23 +194,5 @@ const styles = StyleSheet.create({
   rowValue: {
     fontSize: 14,
     lineHeight: 22,
-  },
-  dataRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  dataBtn: {
-    flex: 1,
-    paddingVertical: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    borderWidth: 1,
-    borderRadius: 32,
-  },
-  dataBtnText: {
-    fontSize: 14,
-    lineHeight: 22,
-    textAlign: 'center',
   },
 });

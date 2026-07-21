@@ -17,8 +17,12 @@ function StatCard({ label, value, icon, iconColor }) {
         {label}
       </Text>
       <View style={styles.statValueRow}>
-        {icon && <Ionicons name={icon} size={18} color={iconColor} />}
-        <Text style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
+        {icon ? <Ionicons name={icon} size={18} color={iconColor} /> : null}
+        <Text
+          style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >
           {value}
         </Text>
       </View>
@@ -32,25 +36,41 @@ function DarkStatCard({ label, value }) {
   return (
     <View style={[styles.statCard, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }, Shadows.dark]}>
       <Text style={[styles.statLabel, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>{label}</Text>
-      <Text style={[styles.statValue, { color: Colors.white, fontFamily: Fonts.semiBold }]}>{value}</Text>
+      <Text
+        style={[styles.statValue, { color: Colors.white, fontFamily: Fonts.semiBold }]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+      >
+        {value}
+      </Text>
     </View>
   );
 }
 
-export default function StatsGrid({ detail }) {
+export default function StatsGrid({
+  categoryLabel,
+  categoryIcon,
+  purchaseDateText,
+  dailyCostText,
+  companionText,
+  expectedDailyText,
+  percent,
+  lifespanNoteText,
+}) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const hasProgress = percent != null;
 
   return (
     <View style={styles.container}>
       {/* 2x2 stats grid */}
       <View style={styles.gridBlock}>
         <View style={styles.row}>
-          <StatCard label="CATEGORY" value={detail.categoryValue} icon={detail.categoryIcon} iconColor={detail.categoryColor} />
-          <StatCard label="PURCHASE DATE" value={detail.purchaseDate} />
+          <StatCard label="CATEGORY" value={categoryLabel} icon={categoryIcon} iconColor={Colors.purple} />
+          <StatCard label="PURCHASE DATE" value={purchaseDateText} />
         </View>
         <View style={styles.row}>
-          <StatCard label="DAILY COST" value={detail.dailyCost} />
-          <DarkStatCard label="COMPANION TIME" value={detail.companionTime} />
+          <StatCard label="DAILY COST" value={dailyCostText} />
+          <DarkStatCard label="COMPANION TIME" value={companionText} />
         </View>
       </View>
 
@@ -69,7 +89,7 @@ export default function StatsGrid({ detail }) {
             </Text>
             <View style={styles.dailyValueRow}>
               <Text style={[styles.dailyValue, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-                {detail.expectedDaily}
+                {expectedDailyText}
               </Text>
               <Text style={[styles.dailyUnit, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
                 /day
@@ -85,13 +105,17 @@ export default function StatsGrid({ detail }) {
           <View
             style={[
               styles.dailyFill,
-              { backgroundColor: Colors.purple, borderRadius: Radius.pill, width: `${detail.lifespanPercent}%` },
+              {
+                backgroundColor: Colors.purple,
+                borderRadius: Radius.pill,
+                width: `${hasProgress ? percent : 0}%`,
+              },
             ]}
           />
         </View>
 
         <Text style={[styles.dailyNote, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-          {detail.lifespanNote}
+          {lifespanNoteText}
         </Text>
       </View>
     </View>
@@ -131,6 +155,7 @@ const styles = StyleSheet.create({
   statValue: {
     fontSize: 20,
     lineHeight: 28,
+    flexShrink: 1,
   },
   dailyCard: {
     padding: 24,

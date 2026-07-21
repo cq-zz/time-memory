@@ -34,7 +34,10 @@ export default function FinancialSummary() {
         <Text style={[styles.amount, { color: Colors.white, fontFamily: Fonts.bold }]}>
           $124,509.32
         </Text>
-        <Text style={[styles.desc, { color: Colors.white60, fontFamily: Fonts.regular }]}>
+        <Text
+          style={[styles.desc, { color: Colors.white60, fontFamily: Fonts.regular }]}
+          numberOfLines={1}
+        >
           Total purchase price of all active items and assets
         </Text>
       </View>
@@ -58,12 +61,12 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   amount: {
-    fontSize: 48,
-    lineHeight: 56,
-    letterSpacing: -0.96,
+    fontSize: 36,
+    lineHeight: 44,
+    letterSpacing: -0.72,
   },
   desc: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 11,
+    lineHeight: 16,
   },
 });

@@ -1,15 +1,22 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
+import { formatMoney } from '../../store/settings';
 
-export default function DurablesStats() {
+export default function DurablesStats({ stats, currency }) {
   const { Colors, Fonts, Shadows } = useTheme();
+  const { t } = useTranslation();
+
+  const value = stats ? formatMoney(stats.inUseValue, currency) : '--';
+  const inUseCount = stats ? stats.inUseCount : '--';
+  const totalCount = stats ? stats.totalCount : '--';
 
   return (
     <View style={styles.container}>
       {/* Title row */}
       <View style={styles.titleRow}>
         <Text style={[styles.pageTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-          Durables
+          {t('nav.durable')}
         </Text>
         <Text style={[styles.trackingLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
           LIFESPAN TRACKING
@@ -22,20 +29,20 @@ export default function DurablesStats() {
           <Text style={[styles.statLabel, { color: Colors.white, fontFamily: Fonts.bold }]}>
             IN-USE TOTAL VALUE
           </Text>
-          <Text style={[styles.statValue, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            $24,850
+          <Text style={[styles.statValue, { color: Colors.white, fontFamily: Fonts.bold }]} numberOfLines={1}>
+            {value}
           </Text>
         </View>
         <View style={styles.pillsWrap}>
           <View style={styles.pillsRow}>
             <View style={[styles.pill, { backgroundColor: 'rgba(74, 168, 104, 0.2)' }]}>
               <Text style={[styles.pillText, { color: Colors.green, fontFamily: Fonts.bold }]}>
-                32 ITEMS IN-USE
+                {inUseCount} IN-USE
               </Text>
             </View>
             <View style={[styles.pill, { backgroundColor: Colors.white10 }]}>
               <Text style={[styles.pillText, { color: 'rgba(255, 255, 255, 0.7)', fontFamily: Fonts.bold }]}>
-                142 TOTAL ITEMS
+                {totalCount} TOTAL
               </Text>
             </View>
           </View>

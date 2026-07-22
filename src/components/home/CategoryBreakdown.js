@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useCategoryStore, getMergedCategories, BUILTIN_NS } from '../../store/categories';
 
-const SIZE = 96;
-const STROKE = 12;
+const SIZE = 80;
+const STROKE = 10;
 const R = (SIZE - STROKE) / 2;
 const C = 2 * Math.PI * R;
 
@@ -91,7 +91,7 @@ function BreakdownCard({ title, segments, emptyText }) {
     <View
       style={[
         styles.card,
-        { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
+        { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.lg },
         Shadows.card,
       ]}
     >
@@ -102,7 +102,10 @@ function BreakdownCard({ title, segments, emptyText }) {
             <View key={seg.name} style={styles.legendRow}>
               <View style={styles.legendLeft}>
                 <View style={[styles.dot, { backgroundColor: seg.color }]} />
-                <Text style={[styles.legendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+                <Text
+                  numberOfLines={1}
+                  style={[styles.legendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}
+                >
                   {seg.name}
                 </Text>
               </View>
@@ -112,7 +115,10 @@ function BreakdownCard({ title, segments, emptyText }) {
             </View>
           ))
         ) : (
-          <Text style={[styles.legendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+          <Text
+            numberOfLines={2}
+            style={[styles.legendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}
+          >
             {emptyText}
           </Text>
         )}
@@ -157,21 +163,21 @@ export default function CategoryBreakdown({ bills = [] }) {
 
 const styles = StyleSheet.create({
   section: {
-    gap: 16,
+    gap: 12,
   },
   sectionTitle: {
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 24,
   },
   cards: {
-    gap: 16,
+    gap: 12,
   },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
     borderWidth: 1,
-    gap: 24,
+    gap: 12,
   },
   donutWrap: {
     width: SIZE,
@@ -201,6 +207,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   legendLeft: {
+    flex: 1,
+    minWidth: 0,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
@@ -211,6 +219,7 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   legendName: {
+    flexShrink: 1,
     fontSize: 14,
     lineHeight: 22,
   },

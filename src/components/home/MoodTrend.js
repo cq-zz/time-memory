@@ -5,7 +5,7 @@ import { useTheme } from '../../utils/theme';
 import { useMoodStore } from '../../store/mood';
 import { moodMeta } from '../../utils/constant';
 
-const MAX_BAR = 96;
+const MAX_BAR = 72;
 const SCORE_COLORS = { 5: '#4AA868', 4: '#6BAA90', 3: '#E8B830', 2: '#F28B50', 1: '#D94452' };
 
 /** Last 7 days (oldest → today) as { label, mood, score, emoji }. */
@@ -48,7 +48,7 @@ export default function MoodTrend() {
       <View
         style={[
           styles.card,
-          { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
+          { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.lg },
           Shadows.card,
         ]}
       >
@@ -126,16 +126,16 @@ export default function MoodTrend() {
 
 const styles = StyleSheet.create({
   section: {
-    gap: 16,
+    gap: 12,
   },
   sectionTitle: {
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 24,
   },
   card: {
-    padding: 24,
+    padding: 16,
     borderWidth: 1,
-    gap: 16,
+    gap: 12,
   },
   rangeLabel: {
     fontSize: 12,
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
   barCol: {
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   barTrack: {
     height: MAX_BAR,
@@ -172,7 +172,7 @@ const styles = StyleSheet.create({
   empty: {
     alignItems: 'center',
     gap: 8,
-    paddingVertical: 32,
+    paddingVertical: 24,
   },
   emptyTitle: {
     fontSize: 15,
@@ -210,11 +210,11 @@ const styles = StyleSheet.create({
   insightLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
   },
   insightIcon: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   },
   insightTitle: {
     fontSize: 16,
-    lineHeight: 28,
+    lineHeight: 24,
   },
   insightDesc: {
     fontSize: 14,

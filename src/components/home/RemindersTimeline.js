@@ -35,9 +35,11 @@ function ReminderCard({ item, time, timeColor, meta, active, onPress }) {
   if (active) {
     return (
       <TouchableOpacity
-        style={[styles.activeCard, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }, Shadows.dark]}
+        style={[styles.activeCard, { backgroundColor: Colors.inkDeep, borderRadius: Radius.lg }, Shadows.dark]}
         activeOpacity={0.8}
         onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={`${time}, ${item.title}, ${meta}`}
       >
         <View style={styles.cardTopRow}>
           <Text style={[styles.timeText, { color: Colors.orange, fontFamily: Fonts.bold }]}>
@@ -45,11 +47,11 @@ function ReminderCard({ item, time, timeColor, meta, active, onPress }) {
           </Text>
           <Ionicons name="notifications" size={15} color={Colors.white40} />
         </View>
-        <Text style={[styles.cardTitle, { color: Colors.white, fontFamily: Fonts.bold }]}>
+        <Text numberOfLines={1} style={[styles.cardTitle, { color: Colors.white, fontFamily: Fonts.bold }]}>
           {item.title}
         </Text>
         <View style={styles.metaRow}>
-          <Text style={[styles.activeDesc, { color: Colors.white60, fontFamily: Fonts.regular }]}>
+          <Text numberOfLines={1} style={[styles.activeDesc, { color: Colors.white60, fontFamily: Fonts.regular }]}>
             {meta}
           </Text>
         </View>
@@ -61,23 +63,25 @@ function ReminderCard({ item, time, timeColor, meta, active, onPress }) {
     <TouchableOpacity
       style={[
         styles.card,
-        { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
+        { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.lg },
         Shadows.card,
       ]}
       activeOpacity={0.8}
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${time}, ${item.title}${meta ? `, ${meta}` : ''}`}
     >
       <View style={styles.cardTopRow}>
         <Text style={[styles.timeText, { color: timeColor, fontFamily: Fonts.bold }]}>{time}</Text>
         <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
       </View>
-      <Text style={[styles.cardTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
+      <Text numberOfLines={1} style={[styles.cardTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
         {item.title}
       </Text>
       {meta ? (
         <View style={styles.metaRow}>
           <Ionicons name="location-outline" size={13} color={Colors.textSecondary} />
-          <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+          <Text numberOfLines={1} style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
             {meta}
           </Text>
         </View>
@@ -97,7 +101,13 @@ export default function RemindersTimeline({ reminders = [], onPressItem, onViewA
         <Text style={[styles.sectionTitle, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
           {t('home.todaysReminders')}
         </Text>
-        <TouchableOpacity onPress={onViewAll} activeOpacity={0.7}>
+        <TouchableOpacity
+          onPress={onViewAll}
+          activeOpacity={0.7}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={t('home.viewAll')}
+        >
           <Text style={[styles.viewAll, { color: Colors.orange, fontFamily: Fonts.bold }]}>
             {t('home.viewAll')}
           </Text>
@@ -151,7 +161,7 @@ export default function RemindersTimeline({ reminders = [], onPressItem, onViewA
 
 const styles = StyleSheet.create({
   section: {
-    gap: 16,
+    gap: 12,
   },
   headerRow: {
     flexDirection: 'row',
@@ -159,8 +169,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   sectionTitle: {
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 24,
   },
   viewAll: {
     fontSize: 12,
@@ -168,7 +178,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   emptyCard: {
-    padding: 20,
+    padding: 16,
     borderWidth: 1,
     borderRadius: 32,
     alignItems: 'center',
@@ -190,7 +200,7 @@ const styles = StyleSheet.create({
   },
   itemWrap: {
     paddingLeft: 40,
-    paddingBottom: 32,
+    paddingBottom: 20,
     position: 'relative',
   },
   itemWrapLast: {
@@ -223,12 +233,12 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   card: {
-    padding: 16,
+    padding: 12,
     borderWidth: 1,
     gap: 4,
   },
   activeCard: {
-    padding: 16,
+    padding: 12,
     gap: 4,
   },
   cardTopRow: {
@@ -243,7 +253,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    lineHeight: 28,
+    lineHeight: 24,
   },
   metaRow: {
     flexDirection: 'row',
@@ -252,10 +262,12 @@ const styles = StyleSheet.create({
     paddingTop: 4,
   },
   metaText: {
+    flex: 1,
     fontSize: 14,
     lineHeight: 22,
   },
   activeDesc: {
+    flex: 1,
     fontSize: 14,
     lineHeight: 22,
   },

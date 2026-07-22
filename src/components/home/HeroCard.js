@@ -21,8 +21,8 @@ export default function HeroCard() {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 24,
-    paddingBottom: 30,
+    padding: 18,
+    paddingBottom: 22,
     overflow: 'hidden',
   },
   circleOuter: {
@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   title: {
-    fontSize: 28,
-    lineHeight: 35,
+    fontSize: 24,
+    lineHeight: 30,
   },
 });

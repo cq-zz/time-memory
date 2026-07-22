@@ -41,14 +41,17 @@ export default function MonthlyRecordsCard({ bills = [] }) {
         {
           backgroundColor: Colors.inkDeep,
           borderColor: Colors.white05,
-          borderRadius: Radius.xl,
+          borderRadius: Radius.lg,
         },
         Shadows.dark,
       ]}
     >
       {/* Header */}
       <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: Colors.white, fontFamily: Fonts.semiBold }]}>
+        <Text
+          numberOfLines={1}
+          style={[styles.title, { color: Colors.white, fontFamily: Fonts.semiBold }]}
+        >
           {t('home.monthlyRecords')}
         </Text>
         {mom != null ? (
@@ -67,15 +70,18 @@ export default function MonthlyRecordsCard({ bills = [] }) {
           <Text style={[styles.recordLabel, { color: Colors.white40, fontFamily: Fonts.bold }]}>
             {t('home.monthlyExpense')}
           </Text>
-          <Text style={[styles.recordValue, { color: Colors.white, fontFamily: Fonts.bold }]}>
+          <Text
+            numberOfLines={1}
+            style={[styles.recordValue, { color: Colors.white, fontFamily: Fonts.bold }]}
+          >
             {cur.expenseCount ? formatMoney(cur.expenseTotal, currency) : '--'}
           </Text>
         </View>
         <View style={styles.recordRight}>
-          <Text style={[styles.recordMeta, { color: Colors.white60, fontFamily: Fonts.regular }]}>
+          <Text numberOfLines={1} style={[styles.recordMeta, { color: Colors.white60, fontFamily: Fonts.regular }]}>
             {t('home.transactions', { count: cur.expenseCount })}
           </Text>
-          <Text style={[styles.recordSub, { color: Colors.white40, fontFamily: Fonts.regular }]}>
+          <Text numberOfLines={1} style={[styles.recordSub, { color: Colors.white40, fontFamily: Fonts.regular }]}>
             {cur.expenseCount
               ? t('home.dailyAvg', { amount: formatMoney(cur.expenseTotal / dayOfMonth, currency) })
               : '--'}
@@ -92,15 +98,18 @@ export default function MonthlyRecordsCard({ bills = [] }) {
           <Text style={[styles.recordLabel, { color: Colors.white40, fontFamily: Fonts.bold }]}>
             {t('home.monthlyIncome')}
           </Text>
-          <Text style={[styles.recordValue, { color: Colors.green, fontFamily: Fonts.bold }]}>
+          <Text
+            numberOfLines={1}
+            style={[styles.recordValue, { color: Colors.green, fontFamily: Fonts.bold }]}
+          >
             {cur.incomeCount ? formatMoney(cur.incomeTotal, currency) : '--'}
           </Text>
         </View>
         <View style={styles.recordRight}>
-          <Text style={[styles.recordMeta, { color: Colors.white60, fontFamily: Fonts.regular }]}>
+          <Text numberOfLines={1} style={[styles.recordMeta, { color: Colors.white60, fontFamily: Fonts.regular }]}>
             {t('home.transactions', { count: cur.incomeCount })}
           </Text>
-          <Text style={[styles.recordSub, { color: Colors.white40, fontFamily: Fonts.regular }]}>
+          <Text numberOfLines={1} style={[styles.recordSub, { color: Colors.white40, fontFamily: Fonts.regular }]}>
             {cur.incomeCount
               ? t('home.dailyAvg', { amount: formatMoney(cur.incomeTotal / dayOfMonth, currency) })
               : '--'}
@@ -113,9 +122,9 @@ export default function MonthlyRecordsCard({ bills = [] }) {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 24,
+    padding: 16,
     borderWidth: 1,
-    gap: 24,
+    gap: 12,
   },
   headerRow: {
     flexDirection: 'row',
@@ -123,8 +132,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   title: {
-    fontSize: 20,
-    lineHeight: 28,
+    flexShrink: 1,
+    fontSize: 18,
+    lineHeight: 24,
   },
   momBadge: {
     flexDirection: 'row',
@@ -142,6 +152,8 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   recordLeft: {
+    flex: 1,
+    minWidth: 0,
     gap: 4,
   },
   recordLabel: {
@@ -150,11 +162,14 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   recordValue: {
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 24,
+    lineHeight: 30,
   },
   recordRight: {
+    flexShrink: 1,
+    minWidth: 0,
     alignItems: 'flex-end',
+    marginLeft: 12,
   },
   recordMeta: {
     fontSize: 14,

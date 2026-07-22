@@ -1,4 +1,4 @@
-import { Image, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image, View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
@@ -14,11 +14,11 @@ export default function ButlerHeader() {
     <View style={styles.container}>
       {/* Left: avatar + greeting */}
       <View style={styles.left}>
-        <View style={[styles.avatar, { backgroundColor: Colors.avatarBg, borderColor: Colors.white }, Shadows.card]}>
+        <View style={[styles.avatar, { backgroundColor: Colors.avatarBg }, Shadows.card]}>
           {avatar ? (
             <Image source={{ uri: avatar }} style={styles.avatarImg} />
           ) : (
-            <Ionicons name="person" size={24} color={Colors.textSecondary} />
+            <Ionicons name="person" size={20} color={Colors.textSecondary} />
           )}
         </View>
         <View style={styles.textCol}>
@@ -30,11 +30,6 @@ export default function ButlerHeader() {
           </Text>
         </View>
       </View>
-
-      {/* Right: menu button */}
-      <TouchableOpacity style={[styles.menuBtn, { backgroundColor: Colors.avatarBg }]} activeOpacity={0.7}>
-        <Ionicons name="menu" size={20} color={Colors.textPrimary} />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -54,10 +49,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   avatar: {
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     borderRadius: 9999,
-    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -67,23 +61,16 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   textCol: {
-    gap: 1,
+    gap: 0,
   },
   label: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
   greeting: {
-    fontSize: 20,
-    lineHeight: 28,
-  },
-  menuBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
+    fontSize: 18,
+    lineHeight: 24,
   },
 });

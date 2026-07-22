@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 
 const W = 294;
-const H = 136;
-const PAD_Y = 14;
+const H = 112;
+const PAD_Y = 12;
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
 /** Last 6 months (oldest → newest) as { key, label, income, expense }. */
@@ -82,7 +82,7 @@ export default function TrendsCard({ bills = [] }) {
       <View
         style={[
           styles.card,
-          { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
+          { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.lg },
           Shadows.card,
         ]}
       >
@@ -122,21 +122,21 @@ export default function TrendsCard({ bills = [] }) {
 
 const styles = StyleSheet.create({
   section: {
-    gap: 16,
+    gap: 12,
   },
   sectionTitle: {
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 24,
   },
   card: {
-    padding: 24,
+    padding: 16,
     borderWidth: 1,
-    gap: 16,
+    gap: 12,
   },
   legendRow: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 16,
+    gap: 12,
   },
   legendItem: {
     flexDirection: 'row',
@@ -154,8 +154,7 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   chartWrap: {
-    paddingTop: 8,
-    height: 136,
+    height: H,
     justifyContent: 'center',
   },
   monthsRow: {

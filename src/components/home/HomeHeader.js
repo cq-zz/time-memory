@@ -12,9 +12,8 @@ export default function HomeHeader() {
 
   return (
     <View style={styles.container}>
-      {/* Left: avatar + nickname */}
       <View style={styles.left}>
-        <View style={[styles.avatar, { backgroundColor: Colors.avatarBg, borderColor: Colors.white }, Shadows.card]}>
+        <View style={[styles.avatar, { backgroundColor: Colors.avatarBg }, Shadows.card]}>
           {avatar ? (
             <Image source={{ uri: avatar }} style={styles.avatarImg} />
           ) : (
@@ -25,14 +24,6 @@ export default function HomeHeader() {
           {nickname || t('common.newUser')}
         </Text>
       </View>
-
-      {/* Right: online status */}
-      <View style={styles.right}>
-        <View style={[styles.onlineDot, { backgroundColor: Colors.green }]} />
-        <Text style={[styles.sysText, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>
-          {t('home.sysOnline')}
-        </Text>
-      </View>
     </View>
   );
 }
@@ -41,7 +32,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 10,
@@ -55,7 +45,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 9999,
-    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -67,20 +56,5 @@ const styles = StyleSheet.create({
   nickname: {
     fontSize: 20,
     lineHeight: 28,
-  },
-  right: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  onlineDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 9999,
-  },
-  sysText: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
   },
 });

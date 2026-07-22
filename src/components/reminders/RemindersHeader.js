@@ -1,4 +1,4 @@
-import { Image, View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { Image, View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
@@ -13,7 +13,7 @@ export default function RemindersHeader() {
   return (
     <View style={styles.container}>
       <View style={styles.left}>
-        <View style={[styles.avatar, { backgroundColor: Colors.avatarBg, borderColor: Colors.white }, Shadows.card]}>
+        <View style={[styles.avatar, { backgroundColor: Colors.avatarBg }, Shadows.card]}>
           {avatar ? (
             <Image source={{ uri: avatar }} style={styles.avatarImg} />
           ) : (
@@ -28,9 +28,6 @@ export default function RemindersHeader() {
         </View>
       </View>
 
-      <TouchableOpacity style={[styles.menuBtn, { backgroundColor: Colors.white }, Shadows.dark]} activeOpacity={0.7}>
-        <Ionicons name="menu" size={20} color={Colors.textPrimary} />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -53,7 +50,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 9999,
-    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -63,22 +59,15 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   textCol: {
-    gap: 1,
+    gap: 0,
   },
   label: {
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
     letterSpacing: 0.6,
   },
   name: {
-    fontSize: 20,
-    lineHeight: 25,
-  },
-  menuBtn: {
-    width: 48,
-    height: 48,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
+    fontSize: 18,
+    lineHeight: 22,
   },
 });

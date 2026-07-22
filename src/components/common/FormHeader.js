@@ -14,7 +14,7 @@ export default function FormHeader({ title }) {
         onPress={() => router.back()}
         activeOpacity={0.7}
       >
-        <Ionicons name="chevron-back" size={22} color={Colors.textPrimary} />
+        <Ionicons name="chevron-back" size={22} color={Colors.purple} />
       </TouchableOpacity>
 
       <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>{title}</Text>
@@ -29,6 +29,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
+    paddingTop: 8,
     paddingBottom: 10,
   },
   backBtn: {

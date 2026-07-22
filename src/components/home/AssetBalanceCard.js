@@ -45,8 +45,8 @@ export default function AssetBalanceCard({ durables = [], assets = [] }) {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 24,
-    paddingBottom: 32,
+    padding: 18,
+    paddingBottom: 20,
     alignItems: 'center',
     overflow: 'hidden',
   },
@@ -64,8 +64,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   amount: {
-    fontSize: 32,
-    lineHeight: 40,
+    fontSize: 28,
+    lineHeight: 34,
     letterSpacing: -0.32,
     textAlign: 'center',
   },
@@ -74,8 +74,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   desc: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 13,
+    lineHeight: 19,
     textAlign: 'center',
   },
 });

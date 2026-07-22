@@ -21,17 +21,20 @@ function StatCard({ value, label, icon, color }) {
         Shadows.card,
       ]}
     >
-      <View style={styles.topRow}>
-        <View style={[styles.iconCircle, { backgroundColor: Colors.iconBg }]}>
-          <Ionicons name={icon} size={20} color={color} />
-        </View>
+      <View style={[styles.iconBlock, { backgroundColor: Colors.iconBg }]}>
+        <Ionicons name={icon} size={18} color={color} />
+      </View>
+      <View style={styles.copy}>
+        <Text
+          style={[styles.label, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
         <Text style={[styles.value, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
           {value}
         </Text>
       </View>
-      <Text style={[styles.label, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-        {label}
-      </Text>
     </View>
   );
 }
@@ -72,37 +75,39 @@ export default function StatsGrid({ durables = [], schedules = [], assets = [] }
 
 const styles = StyleSheet.create({
   grid: {
-    gap: 16,
+    gap: 12,
   },
   row: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
   },
   card: {
     flex: 1,
-    padding: 16,
+    minWidth: 0,
+    padding: 12,
     borderWidth: 1,
-    gap: 12,
-  },
-  topRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    gap: 10,
   },
-  iconCircle: {
-    width: 40,
-    height: 40,
-    borderRadius: 9999,
+  iconBlock: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  copy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 1,
+  },
   value: {
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 21,
+    lineHeight: 24,
   },
   label: {
-    fontSize: 12,
+    fontSize: 12.5,
     lineHeight: 16,
-    letterSpacing: 0.6,
   },
 });

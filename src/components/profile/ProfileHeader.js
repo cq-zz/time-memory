@@ -13,7 +13,7 @@ export default function ProfileHeader() {
   return (
     <View style={styles.container}>
       <View style={styles.left}>
-        <View style={[styles.avatar, { backgroundColor: Colors.avatarBg, borderColor: Colors.white }, Shadows.card]}>
+        <View style={[styles.avatar, { backgroundColor: Colors.avatarBg }, Shadows.card]}>
           {avatar ? (
             <Image source={{ uri: avatar }} style={styles.avatarImg} />
           ) : (
@@ -43,7 +43,6 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 9999,
-    borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',

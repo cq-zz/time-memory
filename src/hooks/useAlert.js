@@ -35,14 +35,18 @@ export function AlertProvider({ children }) {
   return (
     <AlertContext.Provider value={show}>
       {children}
-      <AlertModal
-        visible={!!alertState}
-        onClose={close}
-        title={alertState?.title}
-        message={alertState?.message}
-        type={alertState?.type}
-        buttons={alertState?.buttons}
-      />
+      {/* Mounted on demand: react-native-web stacks Modal portals by mount
+          order, so a fresh mount lands on top of any open sheet modal. */}
+      {alertState ? (
+        <AlertModal
+          visible
+          onClose={close}
+          title={alertState.title}
+          message={alertState.message}
+          type={alertState.type}
+          buttons={alertState.buttons}
+        />
+      ) : null}
     </AlertContext.Provider>
   );
 }

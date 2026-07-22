@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
 import FieldLabel from './FieldLabel';
+import WheelColumn from './WheelColumn';
 
 const LEVEL_CONFIG = {
   year: { cols: ['year'], format: 'YYYY', titleKey: 'common.selectYear' },
@@ -15,84 +16,12 @@ const LEVEL_CONFIG = {
   minute: { cols: ['year', 'month', 'day', 'hour', 'minute'], format: 'YYYY-MM-DD HH:mm', titleKey: 'common.selectDateTime' },
 };
 
-const COLUMN_WIDTH = 72;
-const ITEM_HEIGHT = 40;
-const VISIBLE_ITEMS = 5;
-const COL_HEIGHT = ITEM_HEIGHT * VISIBLE_ITEMS;
-
 function getDaysInMonth(year, month) {
   return new Date(year, month, 0).getDate();
 }
 
 function pad(n) {
   return String(n).padStart(2, '0');
-}
-
-function WheelColumn({ items, selected, colKey, onChange }) {
-  const { Colors, Radius, Fonts } = useTheme();
-  const ref = useRef(null);
-  const timerRef = useRef(null);
-  const idx = items.indexOf(selected);
-  const initialY = idx >= 0 ? idx * ITEM_HEIGHT : 0;
-
-  useEffect(() => {
-    const t = setTimeout(() => {
-      ref.current?.scrollTo({ y: initialY, animated: false });
-    }, 60);
-    return () => clearTimeout(t);
-  }, []);
-
-  const handleScroll = useCallback((e) => {
-    if (timerRef.current) clearTimeout(timerRef.current);
-    const currentOffset = e.nativeEvent.contentOffset.y;
-    const index = Math.round(currentOffset / ITEM_HEIGHT);
-    timerRef.current = setTimeout(() => {
-      const val = items[index];
-      if (val !== undefined && val !== selected) {
-        onChange(colKey, val);
-      }
-      const targetY = index * ITEM_HEIGHT;
-      if (Math.abs(currentOffset - targetY) > 2) {
-        ref.current?.scrollTo({ y: targetY, animated: true });
-      }
-    }, 120);
-  }, [items, selected, colKey, onChange]);
-
-  return (
-    <View style={[styles.col, { height: COL_HEIGHT }]}>
-      <View
-        style={[styles.colHighlight, { backgroundColor: Colors.purpleTint, borderRadius: Radius.sm }]}
-        pointerEvents="none"
-      />
-      <ScrollView
-        ref={ref}
-        contentContainerStyle={{ paddingVertical: (COL_HEIGHT - ITEM_HEIGHT) / 2 }}
-        snapToInterval={ITEM_HEIGHT}
-        decelerationRate="fast"
-        showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={80}
-      >
-        {items.map((item) => (
-          <View key={item} style={styles.colItem}>
-            <Text
-              style={[
-                styles.colItemText,
-                { color: Colors.textTertiary, fontFamily: Fonts.regular },
-                item === selected && {
-                  color: Colors.textPrimary,
-                  fontFamily: Fonts.bold,
-                  fontSize: 18,
-                },
-              ]}
-            >
-              {colKey === 'year' ? item : pad(item)}
-            </Text>
-          </View>
-        ))}
-      </ScrollView>
-    </View>
-  );
 }
 
 /**
@@ -121,7 +50,9 @@ export default function WheelPicker({
   const allLabel = t('common.all');
 
   const isAll = allOption && value === 'all';
-  const parsed = value && !isAll ? dayjs(value) : null;
+  // Memoized on primitives: a fresh dayjs object every render would make
+  // `parts` (and the [open, parts] sync effect below) re-fire endlessly.
+  const parsed = useMemo(() => (value && !isAll ? dayjs(value) : null), [value, isAll]);
   const hasValue = isAll || (parsed && parsed.isValid());
   const displayValue = isAll ? allLabel : (hasValue ? parsed.format(config.format) : '');
 
@@ -152,15 +83,16 @@ export default function WheelPicker({
 
   const ranges = useMemo(() => {
     const year = [];
-    if (allOption) year.push(allLabel);
-    for (let y = yearStart; y <= yearEnd; y++) year.push(y);
-    const month = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    if (allOption) year.push({ value: allLabel, label: allLabel });
+    for (let y = yearStart; y <= yearEnd; y++) year.push({ value: y, label: String(y) });
+    const month = [];
+    for (let m = 1; m <= 12; m++) month.push({ value: m, label: pad(m) });
     const day = [];
-    for (let d = 1; d <= draftDaysInMonth; d++) day.push(d);
+    for (let d = 1; d <= draftDaysInMonth; d++) day.push({ value: d, label: pad(d) });
     const hour = [];
-    for (let h = 0; h < 24; h++) hour.push(h);
+    for (let h = 0; h < 24; h++) hour.push({ value: h, label: pad(h) });
     const minute = [];
-    for (let m = 0; m < 60; m++) minute.push(m);
+    for (let m = 0; m < 60; m++) minute.push({ value: m, label: pad(m) });
     return { year, month, day, hour, minute };
   }, [yearStart, yearEnd, draftDaysInMonth, allOption, allLabel]);
 
@@ -269,8 +201,7 @@ export default function WheelPicker({
                       key={colKey}
                       items={ranges[colKey]}
                       selected={draft[colKey]}
-                      colKey={colKey}
-                      onChange={handleColumnChange}
+                      onChange={(val) => handleColumnChange(colKey, val)}
                     />
                   ))}
                 </View>
@@ -359,26 +290,5 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     gap: 2,
-  },
-  col: {
-    width: COLUMN_WIDTH,
-    overflow: 'hidden',
-    position: 'relative',
-  },
-  colHighlight: {
-    position: 'absolute',
-    top: (VISIBLE_ITEMS * ITEM_HEIGHT - ITEM_HEIGHT) / 2,
-    left: 4,
-    right: 4,
-    height: ITEM_HEIGHT,
-  },
-  colItem: {
-    height: ITEM_HEIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  colItemText: {
-    fontSize: 16,
-    lineHeight: 24,
   },
 });

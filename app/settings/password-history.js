@@ -44,11 +44,17 @@ export default function PasswordHistoryScreen() {
             </Text>
           </View>
         ) : (
-          <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl }]}>
+          <View style={styles.list}>
             {records.map((rec, i) => {
               const meta = typeMeta(rec.type);
               return (
-                <View key={`${rec.time}-${i}`} style={styles.row}>
+                <View
+                  key={`${rec.time}-${i}`}
+                  style={[
+                    styles.rowCard,
+                    { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
+                  ]}
+                >
                   <View style={[styles.iconWrap, { backgroundColor: hexToRgba(meta.color, 0.12) }]}>
                     <Ionicons name={meta.icon} size={18} color={meta.color} />
                   </View>
@@ -80,16 +86,16 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     paddingBottom: 32,
   },
-  card: {
-    padding: 8,
-    borderWidth: 1,
+  list: {
+    gap: 12,
   },
-  row: {
+  rowCard: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-    paddingHorizontal: 8,
+    paddingHorizontal: 16,
     paddingVertical: 12,
+    borderWidth: 1,
   },
   iconWrap: {
     width: 36,

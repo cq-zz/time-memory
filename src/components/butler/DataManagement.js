@@ -492,19 +492,18 @@ function ImportModal({ visible, onClose }) {
 export default function DataManagement() {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
-  const { alert } = useAlert();
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
 
   const handleReset = async () => {
+    setResetOpen(false);
     try {
       await clearAllData();
       await useMoodStore.getState().loadMoods();
-      setResetOpen(false);
       showToast(t('butler.allDataCleared'));
     } catch (e) {
-      alert(t('butler.resetFailedTitle'), e?.message || t('butler.resetFailedDesc'));
+      showToast(t('butler.resetFailedDesc'));
     }
   };
 

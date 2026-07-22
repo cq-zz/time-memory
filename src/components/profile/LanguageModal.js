@@ -1,18 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore, LANGUAGES, languageMeta } from '../../store/settings';
 import { showToast } from '../common/Toast';
+import WheelColumn from '../common/WheelColumn';
+
+const LANGUAGE_ITEMS = LANGUAGES.map((l) => ({ value: l.code, label: l.label }));
 
 /**
- * Language picker (bottom sheet). The confirmed code is written to the
- * global settings store — updateSetting('language') applies it to i18n
- * immediately and persists it.
+ * Language picker (bottom sheet + scroll wheel). The confirmed code is
+ * written to the global settings store — updateSetting('language') applies
+ * it to i18n immediately and persists it. The sheet mounts on demand so
+ * the wheel scrolls to the current language each time it opens.
  */
 export default function LanguageModal({ visible, onClose }) {
-  const { Colors, Radius, Fonts } = useTheme();
+  const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
   const language = useSettingsStore((s) => s.settings.language);
   const updateSetting = useSettingsStore((s) => s.updateSetting);
@@ -30,8 +33,10 @@ export default function LanguageModal({ visible, onClose }) {
     onClose();
   };
 
+  if (!visible) return null;
+
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.modalRoot}>
         <Pressable style={[styles.overlay, { backgroundColor: Colors.overlay }]} onPress={onClose} />
         <View style={[styles.panel, { backgroundColor: Colors.card }]}>
@@ -52,34 +57,14 @@ export default function LanguageModal({ visible, onClose }) {
             </Pressable>
           </View>
 
-          <ScrollView style={styles.list} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
-            {LANGUAGES.map((l) => {
-              const isActive = selected === l.code;
-              return (
-                <Pressable
-                  key={l.code}
-                  style={({ pressed }) => [
-                    styles.row,
-                    {
-                      backgroundColor: isActive ? Colors.purpleTint : Colors.card,
-                      borderColor: isActive ? Colors.purple : Colors.cardBorder,
-                      borderRadius: Radius.sm,
-                    },
-                    pressed && { opacity: 0.75 },
-                  ]}
-                  onPress={() => setSelected(l.code)}
-                >
-                  <View style={[styles.radio, { borderColor: isActive ? Colors.purple : Colors.grayDot }]}>
-                    {isActive && <View style={[styles.radioDot, { backgroundColor: Colors.purple }]} />}
-                  </View>
-                  <Text style={[styles.rowLabel, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-                    {l.label}
-                  </Text>
-                  {isActive && <Ionicons name="checkmark" size={18} color={Colors.purple} />}
-                </Pressable>
-              );
-            })}
-          </ScrollView>
+          <View style={styles.pickerBody}>
+            <WheelColumn
+              items={LANGUAGE_ITEMS}
+              selected={selected}
+              onChange={setSelected}
+              width={180}
+            />
+          </View>
         </View>
       </View>
     </Modal>
@@ -98,7 +83,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-    maxHeight: '75%',
   },
   panelHeader: {
     flexDirection: 'row',
@@ -120,38 +104,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
-  list: {
-    flexGrow: 0,
-  },
-  listContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  row: {
-    flexDirection: 'row',
+  pickerBody: {
+    paddingVertical: 16,
     alignItems: 'center',
-    gap: 12,
-    paddingHorizontal: 14,
-    height: 52,
-    borderWidth: 1,
-  },
-  radio: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-  },
-  rowLabel: {
-    flex: 1,
-    fontSize: 14,
-    lineHeight: 20,
   },
 });

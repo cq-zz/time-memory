@@ -26,20 +26,28 @@ export default function ToastProvider({ children }) {
   const opacity = useSharedValue(0);
   const translateY = useSharedValue(-60);
   const timerRef = useRef(null);
+  const tokenRef = useRef(0);
+
+  const hideIfCurrent = useCallback((token) => {
+    if (tokenRef.current === token) setVisible(false);
+  }, []);
 
   const show = useCallback((msg, duration = 2000) => {
+    const token = ++tokenRef.current;
     if (timerRef.current) clearTimeout(timerRef.current);
     setMessage(msg);
     setVisible(true);
     opacity.value = withTiming(1, { duration: 250 });
     translateY.value = withTiming(0, { duration: 250 });
     timerRef.current = setTimeout(() => {
-      opacity.value = withTiming(0, { duration: 250 }, () => {
-        runOnJS(setVisible)(false);
+      opacity.value = withTiming(0, { duration: 250 }, (finished) => {
+        // finished=false means a newer toast cancelled this fade-out —
+        // never hide the toast that superseded this one.
+        if (finished) runOnJS(hideIfCurrent)(token);
       });
       translateY.value = withTiming(-60, { duration: 250 });
     }, duration);
-  }, [opacity, translateY]);
+  }, [opacity, translateY, hideIfCurrent]);
 
   useEffect(() => {
     toastRef = show;

@@ -91,7 +91,7 @@ export const MAX_YEAR_DEFAULT = new Date().getFullYear() + 10;
 /** Built-in item (durable) categories. `icon` is an Ionicons name. */
 export const ITEM_CATEGORIES = [
   { key: 'electronics', label: 'Electronics', icon: 'laptop-outline' },
-  { key: 'appliance', label: 'Appliance', icon: 'snow-outline' },
+  { key: 'appliance', label: 'Appliance', icon: 'thermometer-outline' },
   { key: 'home', label: 'Home', icon: 'home-outline' },
   { key: 'furniture', label: 'Furniture', icon: 'bed-outline' },
   { key: 'kitchen', label: 'Kitchen', icon: 'restaurant-outline' },

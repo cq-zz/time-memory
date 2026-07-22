@@ -55,7 +55,7 @@ export default function DurableHero({ image, fallbackIcon, title, statusText, st
         <View style={styles.imageTag} pointerEvents="none">
           <View style={[styles.valueChip, { backgroundColor: hexToRgba(Colors.inkDeep, 0.55) }]}>
             <Text style={[styles.valueLabel, { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.bold }]}>
-              {t('detail.totalCost')}
+              {t('durable.totalCost')}
             </Text>
             <Text style={[styles.valueText, { color: Colors.white, fontFamily: Fonts.bold }]}>
               {totalCostText}

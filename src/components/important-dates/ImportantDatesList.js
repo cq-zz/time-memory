@@ -72,26 +72,23 @@ function ImportantDateCard({ item, isLast }) {
   );
 }
 
-export default function ImportantDatesList({ items, search, filter, loading }) {
+export default function ImportantDatesList({ items = [], search = '', filter = 'all', loading }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
-  const filtered = items.filter((item) => {
-    if (filter !== 'all' && item.type !== filter) return false;
-    if (search && !(item.name || '').toLowerCase().includes(search.toLowerCase())) return false;
+  const safeItems = Array.isArray(items) ? items.filter(Boolean) : [];
+  const query = String(search || '').trim().toLowerCase();
+  const filtered = safeItems.filter((item) => {
+    if (filter !== 'all' && item?.type !== filter) return false;
+    if (query && !String(item?.name || '').toLowerCase().includes(query)) return false;
     return true;
   });
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={[styles.count, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-          {t('common.count', { count: filtered.length })}
-        </Text>
-      </View>
-
       {filtered.length === 0 ? (
         <View style={styles.empty}>
+          <Ionicons name="calendar-outline" size={48} color={hexToRgba(Colors.purple, 0.3)} />
           <Text style={[styles.emptyText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
             {loading ? t('common.loading') : t('importantDate.empty')}
           </Text>
@@ -108,16 +105,6 @@ export default function ImportantDatesList({ items, search, filter, loading }) {
 const styles = StyleSheet.create({
   container: {
     gap: 0,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  count: {
-    fontSize: 14,
-    lineHeight: 20,
   },
   card: {
     padding: 16,
@@ -197,6 +184,7 @@ const styles = StyleSheet.create({
   empty: {
     paddingVertical: 48,
     alignItems: 'center',
+    gap: 12,
   },
   emptyText: {
     fontSize: 14,

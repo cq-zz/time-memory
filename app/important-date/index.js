@@ -5,10 +5,11 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/utils/theme';
-import { listImportantDates } from '../../src/services/importantDate';
+import { importantDateStats, listImportantDates } from '../../src/services/importantDate';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import ImportantDatesList from '../../src/components/important-dates/ImportantDatesList';
+import ImportantDatesStats from '../../src/components/important-dates/ImportantDatesStats';
 
 const TYPE_FILTERS = [
   { key: 'all', labelKey: 'common.all' },
@@ -24,13 +25,16 @@ export default function ImportantDatesScreen() {
   const router = useRouter();
 
   const [items, setItems] = useState([]);
+  const [stats, setStats] = useState(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
-      setItems(await listImportantDates());
+      const [rows, summary] = await Promise.all([listImportantDates(), importantDateStats()]);
+      setItems(rows);
+      setStats(summary);
     } finally {
       setLoading(false);
     }
@@ -50,9 +54,12 @@ export default function ImportantDatesScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[0]}
+        stickyHeaderIndices={[1]}
       >
-        {/* Index 0 — sticky filter bar (search + type) */}
+        <View style={styles.statsSection}>
+          <ImportantDatesStats stats={stats} />
+        </View>
+
         <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
           <SearchFilterBar
             search={search}
@@ -92,6 +99,9 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 112,
   },
+  statsSection: {
+    paddingHorizontal: 16,
+  },
   stickyBar: {
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -100,7 +110,7 @@ const styles = StyleSheet.create({
   },
   listSection: {
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 16,
   },
   fab: {
     position: 'absolute',

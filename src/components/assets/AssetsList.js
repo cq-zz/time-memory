@@ -89,24 +89,20 @@ function AssetCard({ item, currency, isLast }) {
   );
 }
 
-export default function AssetsList({ items, search, filter, currency, loading }) {
+export default function AssetsList({ items, year, month, search, filter, currency, loading }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
   const filtered = items.filter((item) => {
     if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
+    if (year != null && item.purchase_date && Number(item.purchase_date.slice(0, 4)) !== year) return false;
+    if (month != null && item.purchase_date && Number(item.purchase_date.slice(5, 7)) !== month) return false;
     if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-          {t('common.count', { count: filtered.length })}
-        </Text>
-      </View>
-
       {filtered.length === 0 ? (
         <View style={styles.empty}>
           <Text style={[styles.emptyText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
@@ -125,16 +121,6 @@ export default function AssetsList({ items, search, filter, currency, loading })
 const styles = StyleSheet.create({
   container: {
     gap: 0,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 14,
-    lineHeight: 20,
   },
   card: {
     padding: 16,

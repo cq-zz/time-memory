@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -12,11 +12,12 @@ import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
 import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
-import FieldLabel from '../../src/components/common/FieldLabel';
+import AmountField from '../../src/components/common/AmountField';
 import CategoryPicker from '../../src/components/common/CategoryPicker';
 import AcquisitionPicker from '../../src/components/common/AcquisitionPicker';
+import FormSaveFooter from '../../src/components/common/FormSaveFooter';
+import ScreenState from '../../src/components/common/ScreenState';
 import LinkedAssetPicker from '../../src/components/durable-form/LinkedAssetPicker';
-import { sanitizeAmount } from '../../src/utils/money';
 
 export default function DurableFormScreen() {
   const { Colors, Radius, Fonts } = useTheme();
@@ -38,11 +39,21 @@ export default function DurableFormScreen() {
   const [status, setStatus] = useState('in_use');
   const [notes, setNotes] = useState('');
   const [loaded, setLoaded] = useState(!isEdit);
+  const [loadError, setLoadError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     if (!isEdit) return;
-    getDurable(id).then((row) => {
-      if (row) {
+    let active = true;
+    (async () => {
+      try {
+        const row = await getDurable(id);
+        if (!active) return;
+        if (!row) {
+          setLoadError('durable.itemNotFound');
+          return;
+        }
         setImage(row.image || '');
         setName(row.name || '');
         setCategory(row.category || 'other');
@@ -54,12 +65,19 @@ export default function DurableFormScreen() {
         setLinkedAssetId(row.linked_asset_id || '');
         setStatus(row.status || 'in_use');
         setNotes(row.notes || '');
+      } catch {
+        if (active) setLoadError('durable.loadFailed');
+      } finally {
+        if (active) setLoaded(true);
       }
-      setLoaded(true);
-    });
+    })();
+    return () => {
+      active = false;
+    };
   }, [isEdit, id]);
 
   const handleSave = async () => {
+    if (savingRef.current) return;
     const trimmedName = name.trim();
     if (!trimmedName) {
       showToast(t('durable.nameRequired'));
@@ -88,12 +106,33 @@ export default function DurableFormScreen() {
       notes,
       currency,
     };
-    await saveDurable(values, isEdit ? id : undefined);
-    showToast(t('common.saved'));
-    router.back();
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      await saveDurable(values, isEdit ? id : undefined);
+      showToast(t('common.saved'));
+      router.back();
+    } catch {
+      showToast(t('common.saveFailed'));
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
   };
 
-  if (!loaded) return null;
+  if (!loaded || loadError) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
+        <FormHeader title={isEdit ? t('nav.editDurable') : t('nav.addDurable')} />
+        <ScreenState
+          loading={!loaded}
+          message={!loaded ? t('durable.loadingDetail') : t(loadError)}
+          onBack={() => router.replace('/durable')}
+          backLabel={t('common.backToList')}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
@@ -129,32 +168,12 @@ export default function DurableFormScreen() {
           value={purchaseDate}
           onChange={setPurchaseDate}
         />
-        {/* Purchase price — currency symbol block + amount input block */}
-        <View style={styles.field}>
-          <FieldLabel label={`${t('durable.purchasePriceLabel')} *`} />
-          <View style={styles.priceRow}>
-            <View style={[styles.currencyBlock, { backgroundColor: Colors.avatarBg, borderRadius: Radius.sm }]}>
-              <Text style={[styles.currencySymbol, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-                {currencyMeta(currency).symbol}
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.priceInputBlock,
-                { backgroundColor: Colors.card, borderColor: Colors.grayDot, borderRadius: Radius.sm },
-              ]}
-            >
-              <TextInput
-                style={[styles.priceInput, { color: Colors.textPrimary, fontFamily: Fonts.regular }]}
-                placeholder="0.00"
-                placeholderTextColor={Colors.textSecondary}
-                value={price}
-                onChangeText={(v) => setPrice(sanitizeAmount(v))}
-                keyboardType="decimal-pad"
-              />
-            </View>
-          </View>
-        </View>
+        <AmountField
+          label={t('durable.purchasePriceLabel')}
+          value={price}
+          onChangeText={setPrice}
+          symbol={currencyMeta(currency).symbol}
+        />
         <WheelPicker
           label={t('durable.expectedLifespan')}
           level="date"
@@ -215,18 +234,12 @@ export default function DurableFormScreen() {
         />
       </ScrollView>
 
-      {/* Save button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }]}
-          activeOpacity={0.8}
-          onPress={handleSave}
-        >
-          <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {t('durable.confirmSave')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <FormSaveFooter
+        label={t('durable.confirmSave')}
+        savingLabel={t('common.saving')}
+        saving={saving}
+        onPress={handleSave}
+      />
     </SafeAreaView>
   );
 }
@@ -251,34 +264,6 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     letterSpacing: 0.6,
   },
-  priceRow: {
-    flexDirection: 'row',
-    alignItems: 'stretch',
-    gap: 12,
-  },
-  currencyBlock: {
-    height: 56,
-    minWidth: 56,
-    paddingHorizontal: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  currencySymbol: {
-    fontSize: 16,
-    lineHeight: 22,
-  },
-  priceInputBlock: {
-    flex: 1,
-    height: 56,
-    borderWidth: 1,
-    paddingHorizontal: 16,
-    justifyContent: 'center',
-  },
-  priceInput: {
-    fontSize: 15,
-    lineHeight: 20,
-    padding: 0,
-  },
   statusRow: {
     flexDirection: 'row',
     gap: 12,
@@ -294,20 +279,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-  },
-  saveBtn: {
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveText: {
-    fontSize: 14,
-    lineHeight: 20,
-    letterSpacing: 1,
   },
 });

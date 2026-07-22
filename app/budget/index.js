@@ -6,8 +6,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../src/utils/theme';
 import { useSettingsStore, formatMoney } from '../../src/store/settings';
-import { listBudgets, removeBudget } from '../../src/services/budget';
+import { budgetStats, listBudgets, removeBudget } from '../../src/services/budget';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
+import ModuleStatsCard from '../../src/components/common/ModuleStatsCard';
 import ConfirmModal from '../../src/components/common/ConfirmModal';
 
 function BudgetCard({ item, isLast, onDelete }) {
@@ -35,7 +36,10 @@ function BudgetCard({ item, isLast, onDelete }) {
         </View>
         <TouchableOpacity
           activeOpacity={0.7}
-          onPress={() => onDelete(item)}
+          onPress={(event) => {
+            event.stopPropagation();
+            onDelete(item);
+          }}
           style={[styles.deleteBtn, { backgroundColor: hexToRgba(Colors.rose, 0.1) }]}
         >
           <Ionicons name="trash-outline" size={16} color={Colors.rose} />
@@ -72,12 +76,15 @@ export default function BudgetScreen() {
   const currency = useSettingsStore((s) => s.settings.currency);
 
   const [items, setItems] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      setItems(await listBudgets());
+      const [rows, summary] = await Promise.all([listBudgets(), budgetStats()]);
+      setItems(rows);
+      setStats(summary);
     } finally {
       setLoading(false);
     }
@@ -89,6 +96,18 @@ export default function BudgetScreen() {
     }, [load])
   );
 
+  const safeStats = stats && typeof stats === 'object' ? stats : null;
+  const expenseTotal =
+    safeStats && Number.isFinite(Number(safeStats.expenseBudget))
+      ? formatMoney(Number(safeStats.expenseBudget), currency)
+      : '--';
+  const incomeTotal =
+    safeStats && Number.isFinite(Number(safeStats.incomeTarget))
+      ? formatMoney(Number(safeStats.incomeTarget), currency)
+      : '--';
+  const planCount =
+    safeStats && Number.isFinite(Number(safeStats.totalCount)) ? Number(safeStats.totalCount) : '--';
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
       <ModuleHeader title={t('nav.budget')} />
@@ -98,24 +117,36 @@ export default function BudgetScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.headerRow}>
-          <Text style={[styles.count, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-            {t('common.count', { count: items.length })}
-          </Text>
+        <View style={styles.statsSection}>
+          <ModuleStatsCard
+            label={t('budget.totalExpenseBudget')}
+            value={expenseTotal}
+            pills={[
+              {
+                key: 'income',
+                label: t('budget.totalIncomePill', { amount: incomeTotal }),
+                backgroundColor: 'rgba(74,168,104,0.2)',
+                color: Colors.green,
+              },
+              { key: 'count', label: t('budget.planCountPill', { count: planCount }) },
+            ]}
+          />
         </View>
 
-        {items.length === 0 ? (
-          <View style={styles.empty}>
-            <Ionicons name="flag-outline" size={48} color={hexToRgba(Colors.orange, 0.3)} />
-            <Text style={[styles.emptyText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-              {loading ? t('common.loading') : t('budget.empty')}
-            </Text>
-          </View>
-        ) : (
-          items.map((item, i) => (
-            <BudgetCard key={item.id} item={item} isLast={i === items.length - 1} onDelete={setDeleteTarget} />
-          ))
-        )}
+        <View style={styles.listSection}>
+          {items.length === 0 ? (
+            <View style={styles.empty}>
+              <Ionicons name="flag-outline" size={48} color={hexToRgba(Colors.orange, 0.3)} />
+              <Text style={[styles.emptyText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+                {loading ? t('common.loading') : t('budget.empty')}
+              </Text>
+            </View>
+          ) : (
+            items.map((item, i) => (
+              <BudgetCard key={item.id} item={item} isLast={i === items.length - 1} onDelete={setDeleteTarget} />
+            ))
+          )}
+        </View>
       </ScrollView>
 
       {/* Floating action button */}
@@ -152,18 +183,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 112,
   },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+  statsSection: {
+    paddingHorizontal: 16,
   },
-  count: {
-    fontSize: 14,
-    lineHeight: 20,
+  listSection: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
   },
   card: {
     padding: 16,

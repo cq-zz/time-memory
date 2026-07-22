@@ -18,7 +18,7 @@ function StatCard({ label, value, icon, iconColor, dotColor }) {
         {label}
       </Text>
       <View style={styles.statValueRow}>
-        {icon ? <Ionicons name={icon} size={18} color={iconColor} /> : null}
+        {icon ? <Ionicons name={icon} size={16} color={iconColor} /> : null}
         {dotColor ? <View style={[styles.dot, { backgroundColor: dotColor }]} /> : null}
         <Text
           style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
@@ -40,6 +40,8 @@ export default function ImportantDateStatsGrid({
   priorityLabel,
   priorityColor,
   reminderOn,
+  reminderTypeText,
+  reminderDaysText,
   yearsText,
 }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
@@ -60,19 +62,38 @@ export default function ImportantDateStatsGrid({
           iconColor={reminderOn ? Colors.purple : Colors.textSecondary}
         />
       </View>
+      <View style={styles.row}>
+        <StatCard
+          label={t('importantDate.reminderType')}
+          value={reminderTypeText}
+          icon="repeat-outline"
+          iconColor={Colors.purple}
+        />
+        <StatCard
+          label={t('importantDate.reminderDaysBefore')}
+          value={reminderDaysText}
+          icon="time-outline"
+          iconColor={Colors.purple}
+        />
+      </View>
 
-      {/* Years hero card */}
-      <View style={[styles.yearsCard, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }, Shadows.dark]}>
+      <View
+        style={[
+          styles.yearsCard,
+          { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
+          Shadows.card,
+        ]}
+      >
         <View style={styles.yearsTop}>
-          <Text style={[styles.yearsLabel, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>
+          <Text style={[styles.yearsLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
             {t('detail.years')}
           </Text>
-          <View style={[styles.yearsIconBox, { backgroundColor: Colors.white10, borderRadius: Radius.circle }]}>
-            <Ionicons name="hourglass-outline" size={22} color={Colors.white} />
+          <View style={[styles.yearsIconBox, { backgroundColor: Colors.iconBg, borderRadius: Radius.circle }]}>
+            <Ionicons name="hourglass-outline" size={20} color={Colors.textPrimary} />
           </View>
         </View>
         <Text
-          style={[styles.yearsValue, { color: Colors.white, fontFamily: Fonts.bold }]}
+          style={[styles.yearsValue, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}
           numberOfLines={1}
           adjustsFontSizeToFit
         >
@@ -86,16 +107,15 @@ export default function ImportantDateStatsGrid({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    gap: 20,
+    gap: 16,
   },
   row: {
     flexDirection: 'row',
-    gap: 20,
+    gap: 12,
   },
   statCard: {
     flex: 1,
-    height: 90,
-    padding: 20,
+    padding: 14,
     gap: 4,
     borderWidth: 1,
     justifyContent: 'center',
@@ -117,13 +137,14 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
   },
   statValue: {
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 22,
     flexShrink: 1,
   },
   yearsCard: {
-    padding: 24,
+    padding: 16,
     gap: 12,
+    borderWidth: 1,
   },
   yearsTop: {
     flexDirection: 'row',
@@ -137,8 +158,8 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   yearsIconBox: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },

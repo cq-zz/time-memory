@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -12,6 +12,8 @@ import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
 import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
+import FormSaveFooter from '../../src/components/common/FormSaveFooter';
+import ScreenState from '../../src/components/common/ScreenState';
 
 const STATUS_LABEL = {
   not_started: 'schedule.notStarted',
@@ -42,11 +44,22 @@ export default function ScheduleFormScreen() {
   const [notes, setNotes] = useState('');
   const [checklist, setChecklist] = useState([]);
   const [loaded, setLoaded] = useState(!isEdit);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const saveLockRef = useRef(false);
 
   useEffect(() => {
     if (!isEdit) return;
-    getSchedule(id).then((row) => {
-      if (row) {
+    let active = true;
+    (async () => {
+      try {
+        const row = await getSchedule(id);
+        if (!active) return;
+        if (!row) {
+          setLoadFailed(true);
+          showToast(t('schedule.loadFailed'));
+          return;
+        }
         setImage(row.image || '');
         setPlanName(row.title || '');
         setStartDate(row.start_date || '');
@@ -56,12 +69,22 @@ export default function ScheduleFormScreen() {
         setReminderEnabled(Number(row.reminder_enabled) !== 0);
         setNotes(row.notes || '');
         setChecklist(parseChecklist(row));
+      } catch {
+        if (active) {
+          setLoadFailed(true);
+          showToast(t('schedule.loadFailed'));
+        }
+      } finally {
+        if (active) setLoaded(true);
       }
-      setLoaded(true);
-    });
-  }, [isEdit, id]);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [isEdit, id, t]);
 
   const handleSave = async () => {
+    if (saveLockRef.current) return;
     const trimmedName = planName.trim();
     if (!trimmedName) {
       showToast(t('schedule.planName') + ' *');
@@ -82,12 +105,36 @@ export default function ScheduleFormScreen() {
       notes,
       checklist,
     };
-    await saveSchedule(values, isEdit ? id : undefined);
-    showToast(t('common.saved'));
-    router.back();
+    saveLockRef.current = true;
+    setSaving(true);
+    try {
+      await saveSchedule(values, isEdit ? id : undefined);
+      showToast(t('common.saved'));
+      router.back();
+    } catch {
+      showToast(t('common.saveFailed'));
+    } finally {
+      saveLockRef.current = false;
+      setSaving(false);
+    }
   };
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return <ScreenState loading message={t('common.loading')} />;
+  }
+
+  if (loadFailed) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
+        <FormHeader title={t('nav.editSchedule')} />
+        <ScreenState
+          message={t('schedule.loadFailed')}
+          onBack={() => router.replace('/schedule')}
+          backLabel={t('common.backToList')}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
@@ -231,18 +278,12 @@ export default function ScheduleFormScreen() {
         />
       </ScrollView>
 
-      {/* Save button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }]}
-          activeOpacity={0.8}
-          onPress={handleSave}
-        >
-          <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {t('common.saveRecord')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <FormSaveFooter
+        label={t('common.saveRecord')}
+        savingLabel={t('common.loading')}
+        saving={saving}
+        onPress={handleSave}
+      />
     </SafeAreaView>
   );
 }
@@ -256,9 +297,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 24,
-    gap: 24,
+    gap: 16,
   },
   field: {
     gap: 12,
@@ -314,20 +354,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.4,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-  },
-  saveBtn: {
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveText: {
-    fontSize: 14,
-    lineHeight: 20,
-    letterSpacing: 1,
   },
 });

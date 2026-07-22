@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -15,17 +15,20 @@ import AssetHero from '../../src/components/asset-detail/AssetHero';
 import AssetStatsGrid from '../../src/components/asset-detail/AssetStatsGrid';
 import RelatedBills from '../../src/components/common/RelatedBills';
 import DetailFooter from '../../src/components/common/DetailFooter';
+import DetailTextSection from '../../src/components/common/DetailTextSection';
+import ScreenState from '../../src/components/common/ScreenState';
 
 const acquisitionLabel = (t, key) =>
   key ? t(`asset.acquisition${key.charAt(0).toUpperCase()}${key.slice(1)}`) : '--';
 
 export default function AssetDetailScreen() {
-  const { Colors, Fonts } = useTheme();
+  const { Colors } = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const currency = useSettingsStore((s) => s.settings.currency);
+  const darkMode = useSettingsStore((s) => s.settings.darkMode);
   const categoryState = useCategoryStore();
 
   const [row, setRow] = useState(null);
@@ -37,11 +40,19 @@ export default function AssetDetailScreen() {
       let active = true;
       setLoading(true);
       (async () => {
-        const item = id ? await getAsset(id) : null;
-        if (!active) return;
-        setRow(item);
-        setRelatedBills(item ? await listBillsBySource(item.id) : []);
-        setLoading(false);
+        try {
+          const item = id ? await getAsset(id) : null;
+          const bills = item ? await listBillsBySource(item.id) : [];
+          if (!active) return;
+          setRow(item);
+          setRelatedBills(bills);
+        } catch {
+          if (!active) return;
+          setRow(null);
+          setRelatedBills([]);
+        } finally {
+          if (active) setLoading(false);
+        }
       })();
       return () => {
         active = false;
@@ -51,32 +62,16 @@ export default function AssetDetailScreen() {
 
   // ── Loading / not-found states ──────────────────
   if (loading) {
-    return (
-      <View style={[styles.stateWrap, { backgroundColor: Colors.bg }]}>
-        <ActivityIndicator size="large" color={Colors.purple} />
-        <Text style={[styles.stateText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-          {t('asset.loadingDetail')}
-        </Text>
-      </View>
-    );
+    return <ScreenState loading message={t('asset.loadingDetail')} />;
   }
 
   if (!row) {
     return (
-      <View style={[styles.stateWrap, { backgroundColor: Colors.bg }]}>
-        <Ionicons name="file-tray-outline" size={48} color={Colors.textTertiary} />
-        <Text style={[styles.stateText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-          {t('asset.itemNotFound')}
-        </Text>
-        <Pressable
-          onPress={() => router.replace('/asset')}
-          style={[styles.stateBtn, { backgroundColor: Colors.inkDeep }]}
-        >
-          <Text style={[styles.stateBtnText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {t('common.backToList')}
-          </Text>
-        </Pressable>
-      </View>
+      <ScreenState
+        message={t('asset.itemNotFound')}
+        onBack={() => router.replace('/asset')}
+        backLabel={t('common.backToList')}
+      />
     );
   }
 
@@ -109,6 +104,8 @@ export default function AssetDetailScreen() {
             sourceText={acquisitionLabel(t, row.acquisition_method)}
             purchaseDateText={formatDisplay(row.purchase_date)}
             purchasePriceText={priceText}
+            expiryDateText={formatDisplay(row.expiry_date)}
+            currentValueText={formatMoney(value, currency)}
             companionText={days != null ? `${days} ${t('common.days')}` : '--'}
           />
           <RelatedBills
@@ -118,6 +115,7 @@ export default function AssetDetailScreen() {
             incomeTitle={t('asset.otherIncomes')}
             subtotalLabel={t('asset.subtotal')}
           />
+          <DetailTextSection title={t('asset.notes')} text={row.notes} />
         </View>
       </ScrollView>
 
@@ -142,7 +140,7 @@ export default function AssetDetailScreen() {
         />
       </View>
 
-      <StatusBar style="light" />
+      <StatusBar style={darkMode ? 'light' : 'dark'} />
     </View>
   );
 }
@@ -155,11 +153,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
   sections: {
-    paddingTop: 20,
-    gap: 24,
+    paddingTop: 16,
+    gap: 16,
   },
   backBtn: {
     position: 'absolute',
@@ -169,26 +167,5 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  stateWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    paddingHorizontal: 32,
-  },
-  stateText: {
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  stateBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 9999,
-  },
-  stateBtnText: {
-    fontSize: 14,
-    lineHeight: 20,
   },
 });

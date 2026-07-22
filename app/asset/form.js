@@ -1,10 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/utils/theme';
-import { useSettingsStore } from '../../src/store/settings';
+import { useSettingsStore, currencyMeta } from '../../src/store/settings';
 import { getAsset, saveAsset } from '../../src/services/asset';
 import { ASSET_STATUS_OPTIONS } from '../../src/utils/constant';
 import { showToast } from '../../src/components/common/Toast';
@@ -12,9 +12,11 @@ import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
 import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
+import AmountField from '../../src/components/common/AmountField';
 import CategoryPicker from '../../src/components/common/CategoryPicker';
 import AcquisitionPicker from '../../src/components/common/AcquisitionPicker';
-import { sanitizeAmount } from '../../src/utils/money';
+import FormSaveFooter from '../../src/components/common/FormSaveFooter';
+import ScreenState from '../../src/components/common/ScreenState';
 
 export default function AssetFormScreen() {
   const { Colors, Radius, Fonts } = useTheme();
@@ -35,11 +37,22 @@ export default function AssetFormScreen() {
   const [status, setStatus] = useState('active');
   const [notes, setNotes] = useState('');
   const [loaded, setLoaded] = useState(!isEdit);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const saveLockRef = useRef(false);
 
   useEffect(() => {
     if (!isEdit) return;
-    getAsset(id).then((row) => {
-      if (row) {
+    let active = true;
+    (async () => {
+      try {
+        const row = await getAsset(id);
+        if (!active) return;
+        if (!row) {
+          setLoadFailed(true);
+          showToast(t('asset.itemNotFound'));
+          return;
+        }
         setImage(row.image || '');
         setName(row.name || '');
         setCategory(row.category || 'other');
@@ -50,12 +63,22 @@ export default function AssetFormScreen() {
         setExpiryDate(row.expiry_date || '');
         setStatus(row.status || 'active');
         setNotes(row.notes || '');
+      } catch {
+        if (active) {
+          setLoadFailed(true);
+          showToast(t('asset.loadFailed'));
+        }
+      } finally {
+        if (active) setLoaded(true);
       }
-      setLoaded(true);
-    });
-  }, [isEdit, id]);
+    })();
+    return () => {
+      active = false;
+    };
+  }, [isEdit, id, t]);
 
   const handleSave = async () => {
+    if (saveLockRef.current) return;
     const trimmedName = name.trim();
     if (!trimmedName) {
       showToast(t('asset.assetName') + ' *');
@@ -88,12 +111,36 @@ export default function AssetFormScreen() {
       notes,
       currency,
     };
-    await saveAsset(values, isEdit ? id : undefined);
-    showToast(t('common.saved'));
-    router.back();
+    saveLockRef.current = true;
+    setSaving(true);
+    try {
+      await saveAsset(values, isEdit ? id : undefined);
+      showToast(t('common.saved'));
+      router.back();
+    } catch {
+      showToast(t('common.saveFailed'));
+    } finally {
+      saveLockRef.current = false;
+      setSaving(false);
+    }
   };
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return <ScreenState loading message={t('common.loading')} />;
+  }
+
+  if (loadFailed) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
+        <FormHeader title={t('nav.editAsset')} />
+        <ScreenState
+          message={t('asset.itemNotFound')}
+          onBack={() => router.replace('/asset')}
+          backLabel={t('common.backToList')}
+        />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
@@ -129,19 +176,18 @@ export default function AssetFormScreen() {
           value={purchaseDate}
           onChange={setPurchaseDate}
         />
-        <FormInput
-          label={`${t('asset.purchasePrice')} *`}
-          placeholder={`${currency} 0.00`}
+        <AmountField
+          label={t('asset.purchasePrice')}
           value={purchasePrice}
-          onChangeText={(v) => setPurchasePrice(sanitizeAmount(v))}
-          keyboardType="decimal-pad"
+          onChangeText={setPurchasePrice}
+          symbol={currencyMeta(currency).symbol}
         />
-        <FormInput
-          label={`${t('asset.currentPrice')} *`}
-          placeholder={`${currency} 0.00 · ${t('asset.currentPriceHint')}`}
+        <AmountField
+          label={t('asset.currentPrice')}
           value={currentPrice}
-          onChangeText={(v) => setCurrentPrice(sanitizeAmount(v))}
-          keyboardType="decimal-pad"
+          onChangeText={setCurrentPrice}
+          symbol={currencyMeta(currency).symbol}
+          hint={t('asset.currentPriceHint')}
         />
         <WheelPicker
           label={t('asset.expiryDate')}
@@ -195,18 +241,12 @@ export default function AssetFormScreen() {
         />
       </ScrollView>
 
-      {/* Save button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }]}
-          activeOpacity={0.8}
-          onPress={handleSave}
-        >
-          <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {t('asset.confirmSave')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <FormSaveFooter
+        label={t('asset.confirmSave')}
+        savingLabel={t('common.loading')}
+        saving={saving}
+        onPress={handleSave}
+      />
     </SafeAreaView>
   );
 }
@@ -220,9 +260,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 24,
-    gap: 24,
+    gap: 16,
   },
   field: {
     gap: 12,
@@ -247,20 +286,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-  },
-  saveBtn: {
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveText: {
-    fontSize: 14,
-    lineHeight: 20,
-    letterSpacing: 1,
   },
 });

@@ -10,6 +10,19 @@ export async function listBudgets() {
   return rows.sort((a, b) => (b.year || '').localeCompare(a.year || ''));
 }
 
+/** Current-currency totals used by the budget overview card. */
+export async function budgetStats() {
+  const rows = await listBudgets();
+  return rows.reduce(
+    (stats, row) => ({
+      totalCount: stats.totalCount + 1,
+      expenseBudget: stats.expenseBudget + (Number(row.expense_budget) || 0),
+      incomeTarget: stats.incomeTarget + (Number(row.income_target) || 0),
+    }),
+    { totalCount: 0, expenseBudget: 0, incomeTarget: 0 },
+  );
+}
+
 export async function getBudget(id) {
   return getRowById(TABLE, id);
 }
@@ -39,11 +52,9 @@ export async function saveBudget(values, id) {
   fields.year = String(fields.year);
   fields.currency = useSettingsStore.getState().settings.currency;
 
-  // Duplicate-year guard when creating a new record.
-  if (!id) {
-    const existing = await getBudgetByYear(fields.year);
-    if (existing) throw new Error('yearDuplicate');
-  }
+  // A currency can only have one plan per year, including when editing.
+  const existing = await getBudgetByYear(fields.year);
+  if (existing && String(existing.id) !== String(id || '')) throw new Error('yearDuplicate');
 
   if (id) {
     await updateRow(TABLE, id, { ...fields, updated_at: now });

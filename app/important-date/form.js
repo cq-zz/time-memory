@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -12,6 +12,8 @@ import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
 import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
+import FormSaveFooter from '../../src/components/common/FormSaveFooter';
+import ScreenState from '../../src/components/common/ScreenState';
 
 const TYPE_LABEL = {
   birthday: 'importantDate.typeBirthday',
@@ -46,11 +48,23 @@ export default function ImportantDateFormScreen() {
   const [reminderDaysBefore, setReminderDaysBefore] = useState('1');
   const [notes, setNotes] = useState('');
   const [loaded, setLoaded] = useState(!isEdit);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     if (!isEdit) return;
-    getImportantDate(id).then((row) => {
-      if (row) {
+    let active = true;
+    setLoaded(false);
+    setLoadFailed(false);
+    (async () => {
+      try {
+        const row = await getImportantDate(id);
+        if (!active) return;
+        if (!row) {
+          setLoadFailed(true);
+          return;
+        }
         setImage(row.image || '');
         setName(row.name || '');
         setDate(row.date || '');
@@ -60,12 +74,19 @@ export default function ImportantDateFormScreen() {
         setReminderEnabled(Number(row.reminder_enabled) !== 0);
         setReminderDaysBefore(row.reminder_days_before != null ? String(row.reminder_days_before) : '1');
         setNotes(row.notes || '');
+      } catch {
+        if (active) setLoadFailed(true);
+      } finally {
+        if (active) setLoaded(true);
       }
-      setLoaded(true);
-    });
+    })();
+    return () => {
+      active = false;
+    };
   }, [isEdit, id]);
 
   const handleSave = async () => {
+    if (savingRef.current) return;
     if (!name.trim()) {
       showToast(t('importantDate.name') + ' *');
       return;
@@ -74,7 +95,15 @@ export default function ImportantDateFormScreen() {
       showToast(t('importantDate.dateRequired'));
       return;
     }
-    const daysNum = Number(reminderDaysBefore);
+    const daysText = reminderDaysBefore.trim();
+    const daysNum = Number(daysText);
+    if (
+      reminderEnabled &&
+      (!/^\d+$/.test(daysText) || !Number.isInteger(daysNum) || daysNum < 0 || daysNum > 365)
+    ) {
+      showToast(t('importantDate.reminderDaysInvalid'));
+      return;
+    }
     const values = {
       image,
       name: name.trim(),
@@ -83,15 +112,40 @@ export default function ImportantDateFormScreen() {
       priority,
       reminder_type: reminderType,
       reminder_enabled: reminderEnabled,
-      reminder_days_before: Number.isFinite(daysNum) && daysNum >= 0 ? Math.round(daysNum) : 1,
+      reminder_days_before: reminderEnabled ? daysNum : 0,
       notes,
     };
-    await saveImportantDate(values, isEdit ? id : undefined);
-    showToast(t('common.saved'));
-    router.back();
+    savingRef.current = true;
+    setSaving(true);
+    try {
+      await saveImportantDate(values, isEdit ? id : undefined);
+      showToast(t('common.saved'));
+      router.back();
+    } catch (error) {
+      showToast(
+        error?.message === 'reminderDaysInvalid'
+          ? t('importantDate.reminderDaysInvalid')
+          : t('common.saveFailed'),
+      );
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
+    }
   };
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return <ScreenState loading message={t('common.loading')} />;
+  }
+
+  if (loadFailed) {
+    return (
+      <ScreenState
+        message={t('importantDate.itemNotFound')}
+        onBack={() => router.replace('/important-date')}
+        backLabel={t('common.backToList')}
+      />
+    );
+  }
 
   const renderChips = (options, selected, onSelect, labelMap) => (
     <View style={styles.chipRow}>
@@ -203,13 +257,15 @@ export default function ImportantDateFormScreen() {
           />
         </View>
 
-        <FormInput
-          label={t('importantDate.reminderDaysBefore')}
-          placeholder="1"
-          value={reminderDaysBefore}
-          onChangeText={setReminderDaysBefore}
-          keyboardType="number-pad"
-        />
+        {reminderEnabled ? (
+          <FormInput
+            label={t('importantDate.reminderDaysBefore')}
+            placeholder="1"
+            value={reminderDaysBefore}
+            onChangeText={setReminderDaysBefore}
+            keyboardType="number-pad"
+          />
+        ) : null}
 
         <FormInput
           label={t('importantDate.notes')}
@@ -220,18 +276,12 @@ export default function ImportantDateFormScreen() {
         />
       </ScrollView>
 
-      {/* Save button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }]}
-          activeOpacity={0.8}
-          onPress={handleSave}
-        >
-          <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {t('common.saveRecord')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <FormSaveFooter
+        label={t('common.saveRecord')}
+        savingLabel={t('common.saving')}
+        saving={saving}
+        onPress={handleSave}
+      />
     </SafeAreaView>
   );
 }
@@ -245,9 +295,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 24,
-    gap: 24,
+    gap: 16,
   },
   field: {
     gap: 12,
@@ -300,20 +349,5 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.4,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-  },
-  saveBtn: {
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveText: {
-    fontSize: 14,
-    lineHeight: 20,
-    letterSpacing: 1,
   },
 });

@@ -5,8 +5,10 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/utils/theme';
-import { listSchedules } from '../../src/services/schedule';
+import { effectiveStatus, listSchedules } from '../../src/services/schedule';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
+import ModuleStatsCard from '../../src/components/common/ModuleStatsCard';
+import YearMonthPicker from '../../src/components/common/YearMonthPicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import SchedulesList from '../../src/components/schedules/SchedulesList';
 
@@ -24,9 +26,13 @@ export default function SchedulesScreen() {
   const router = useRouter();
 
   const [items, setItems] = useState([]);
+  const [year, setYear] = useState(null);
+  const [month, setMonth] = useState(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
+  const inProgressCount = items.filter((item) => effectiveStatus(item) === 'in_progress').length;
+  const doneCount = items.filter((item) => effectiveStatus(item) === 'done').length;
 
   const load = useCallback(async () => {
     try {
@@ -52,10 +58,36 @@ export default function SchedulesScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[0]}
+        stickyHeaderIndices={[1]}
       >
-        {/* Index 0 — sticky filter bar (search + status) */}
+        <View style={styles.statsSection}>
+          <ModuleStatsCard
+            label={t('schedule.totalPlans')}
+            value={items.length}
+            pills={[
+              {
+                key: 'inProgress',
+                label: t('schedule.inProgressPill', { count: inProgressCount }),
+                backgroundColor: 'rgba(74, 168, 104, 0.2)',
+                color: Colors.green,
+              },
+              { key: 'done', label: t('schedule.donePill', { count: doneCount }) },
+            ]}
+          />
+        </View>
+
+        {/* Index 1 — sticky filter bar (search + status) */}
         <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
+          <YearMonthPicker
+            year={year}
+            month={month}
+            showAllOption
+            style={styles.dateFilter}
+            onChange={({ year: y, month: m }) => {
+              setYear(y);
+              setMonth(m);
+            }}
+          />
           <SearchFilterBar
             search={search}
             onSearchChange={setSearch}
@@ -66,9 +98,17 @@ export default function SchedulesScreen() {
           />
         </View>
 
-        {/* Index 1 — list */}
+        {/* Index 2 — list */}
         <View style={styles.listSection}>
-          <SchedulesList items={items} search={search} filter={filter} loading={loading} onChanged={load} />
+          <SchedulesList
+            items={items}
+            year={year}
+            month={month}
+            search={search}
+            filter={filter}
+            loading={loading}
+            onChanged={load}
+          />
         </View>
       </ScrollView>
 
@@ -94,6 +134,12 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 112,
   },
+  statsSection: {
+    paddingHorizontal: 16,
+  },
+  dateFilter: {
+    marginBottom: 12,
+  },
   stickyBar: {
     paddingHorizontal: 16,
     paddingTop: 16,
@@ -102,7 +148,7 @@ const styles = StyleSheet.create({
   },
   listSection: {
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 16,
   },
   fab: {
     position: 'absolute',

@@ -58,6 +58,23 @@ export async function listImportantDates() {
   });
 }
 
+/** Summary values used by the module overview card. */
+export async function importantDateStats() {
+  const rows = await getAllRows(TABLE);
+  const upcoming = rows.filter((row) => {
+    const days = countdownDays(row);
+    return days != null && days >= 0 && days <= 30;
+  });
+  return {
+    totalCount: rows.length,
+    upcomingCount: upcoming.length,
+    nextDays: rows.reduce((min, row) => {
+      const days = countdownDays(row);
+      return days != null && days >= 0 ? Math.min(min, days) : min;
+    }, Infinity),
+  };
+}
+
 export async function getImportantDate(id) {
   return getRowById(TABLE, id);
 }
@@ -67,6 +84,14 @@ export async function saveImportantDate(values, id) {
   const now = new Date().toISOString();
   const fields = { ...values };
   fields.reminder_enabled = fields.reminder_enabled ? 1 : 0;
+  const reminderDays = Number(fields.reminder_days_before);
+  if (
+    fields.reminder_enabled &&
+    (!Number.isInteger(reminderDays) || reminderDays < 0 || reminderDays > 365)
+  ) {
+    throw new Error('reminderDaysInvalid');
+  }
+  fields.reminder_days_before = fields.reminder_enabled ? reminderDays : 0;
   if (id) {
     await updateRow(TABLE, id, { ...fields, updated_at: now });
     return id;

@@ -81,12 +81,6 @@ export default function BillsList({ items, year, month, search, filter, loading 
 
   return (
     <View>
-      <View style={styles.headerRow}>
-        <Text style={[styles.count, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-          {t('common.count', { count: filtered.length })}
-        </Text>
-      </View>
-
       {filtered.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="receipt-outline" size={48} color={hexToRgba(Colors.orange, 0.3)} />
@@ -102,15 +96,6 @@ export default function BillsList({ items, year, month, search, filter, loading 
 }
 
 const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  count: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',

@@ -15,11 +15,11 @@ WEATHER_OPTIONS.forEach((w) => {
 });
 
 export function weatherLabel(key, t) {
-  if (!key) return '';
+  if (typeof key !== 'string' || !key) return '';
   return t(`diary.weather${key.charAt(0).toUpperCase()}${key.slice(1)}`);
 }
 
-function DiaryCard({ item, index, onPress }) {
+function DiaryCard({ item, index, isLast, onPress }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
   const [imageError, setImageError] = useState(false);
@@ -38,7 +38,7 @@ function DiaryCard({ item, index, onPress }) {
         styles.card,
         { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
         Shadows.card,
-        index > 0 && styles.cardGap,
+        !isLast && styles.cardGap,
       ]}
     >
       {/* Accent bar */}
@@ -93,24 +93,26 @@ function DiaryCard({ item, index, onPress }) {
  * Tapping a card calls onPressItem(item) — the page decides whether to
  * gate private entries behind the password modal.
  */
-export default function DiaryList({ items, year, month, loading, onPressItem }) {
+export default function DiaryList({ items = [], year, month, search = '', loading, onPressItem = () => {} }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
-  const filtered = items.filter((item) => {
-    if (year != null && item.date && Number(item.date.slice(0, 4)) !== year) return false;
-    if (month != null && item.date && Number(item.date.slice(5, 7)) !== month) return false;
+  const safeItems = Array.isArray(items) ? items.filter(Boolean) : [];
+  const query = String(search || '').trim().toLowerCase();
+  const filtered = safeItems.filter((item) => {
+    const itemDate = typeof item?.date === 'string' ? item.date : '';
+    if (year != null && itemDate && Number(itemDate.slice(0, 4)) !== year) return false;
+    if (month != null && itemDate && Number(itemDate.slice(5, 7)) !== month) return false;
+    if (
+      query &&
+      !String(item?.title || '').toLowerCase().includes(query) &&
+      !String(item?.content || '').toLowerCase().includes(query)
+    ) return false;
     return true;
   });
 
   return (
     <View>
-      <View style={styles.headerRow}>
-        <Text style={[styles.count, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-          {t('common.count', { count: filtered.length })}
-        </Text>
-      </View>
-
       {filtered.length === 0 ? (
         <View style={styles.empty}>
           <Ionicons name="book-outline" size={48} color={hexToRgba(ACCENT_CYCLE[0], 0.3)} />
@@ -120,7 +122,13 @@ export default function DiaryList({ items, year, month, loading, onPressItem }) 
         </View>
       ) : (
         filtered.map((item, i) => (
-          <DiaryCard key={item.id} item={item} index={i} onPress={onPressItem} />
+          <DiaryCard
+            key={item.id}
+            item={item}
+            index={i}
+            isLast={i === filtered.length - 1}
+            onPress={onPressItem}
+          />
         ))
       )}
     </View>
@@ -128,15 +136,6 @@ export default function DiaryList({ items, year, month, loading, onPressItem }) 
 }
 
 const styles = StyleSheet.create({
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  count: {
-    fontSize: 14,
-    lineHeight: 20,
-  },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -147,7 +146,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   cardGap: {
-    marginTop: 16,
+    marginBottom: 16,
   },
   bar: {
     width: 3,

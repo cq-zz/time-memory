@@ -1,13 +1,14 @@
 import { useCallback, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme, hexToRgba } from '../../src/utils/theme';
+import { useTheme } from '../../src/utils/theme';
 import { useSettingsStore, formatMoney } from '../../src/store/settings';
 import { listBills, billSummary } from '../../src/services/bill';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
+import ModuleStatsCard from '../../src/components/common/ModuleStatsCard';
 import YearMonthPicker from '../../src/components/common/YearMonthPicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import BillsList from '../../src/components/bill/BillsList';
@@ -17,30 +18,6 @@ const BILL_FILTERS = [
   { key: 'expense', labelKey: 'bills.expense' },
   { key: 'income', labelKey: 'bills.income' },
 ];
-
-function SummaryCard({ label, total, count, color, icon, currency }) {
-  const { Colors, Radius, Shadows, Fonts } = useTheme();
-  return (
-    <View
-      style={[
-        styles.summaryCard,
-        { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
-        Shadows.card,
-      ]}
-    >
-      <View style={[styles.summaryIcon, { backgroundColor: hexToRgba(color, 0.12) }]}>
-        <Ionicons name={icon} size={18} color={color} />
-      </View>
-      <Text style={[styles.summaryLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>{label}</Text>
-      <Text style={[styles.summaryTotal, { color: Colors.textPrimary, fontFamily: Fonts.bold }]} numberOfLines={1} adjustsFontSizeToFit>
-        {formatMoney(total, currency)}
-      </Text>
-      <Text style={[styles.summaryCount, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-        {count}
-      </Text>
-    </View>
-  );
-}
 
 export default function BillsScreen() {
   const { Colors, Shadows } = useTheme();
@@ -91,25 +68,27 @@ export default function BillsScreen() {
         stickyHeaderIndices={[1]}
       >
         {/* Index 0 — period summary (scrolls away) */}
-        <View style={styles.summarySection}>
-          <View style={styles.summaryRow}>
-            <SummaryCard
-              label={t('bills.totalExpense')}
-              total={summary.expenseTotal}
-              count={summary.expenseCount}
-              color={Colors.rose}
-              icon="trending-down-outline"
-              currency={currency}
-            />
-            <SummaryCard
-              label={t('bills.totalIncome')}
-              total={summary.incomeTotal}
-              count={summary.incomeCount}
-              color={Colors.green}
-              icon="trending-up-outline"
-              currency={currency}
-            />
-          </View>
+        <View style={styles.statsSection}>
+          <ModuleStatsCard
+            label={t('bills.totalExpense')}
+            value={formatMoney(summary.expenseTotal, currency)}
+            pills={[
+              {
+                key: 'income',
+                label: t('bills.totalIncomePill', {
+                  amount: formatMoney(summary.incomeTotal, currency),
+                }),
+                backgroundColor: 'rgba(74, 168, 104, 0.2)',
+                color: Colors.green,
+              },
+              {
+                key: 'count',
+                label: t('bills.transactionCountPill', {
+                  count: summary.expenseCount + summary.incomeCount,
+                }),
+              },
+            ]}
+          />
         </View>
 
         {/* Index 1 — sticky filter bar (date + search + type) */}
@@ -161,9 +140,8 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 112,
   },
-  summarySection: {
+  statsSection: {
     paddingHorizontal: 16,
-    paddingTop: 8,
   },
   dateFilter: {
     marginBottom: 12,
@@ -177,36 +155,6 @@ const styles = StyleSheet.create({
   listSection: {
     paddingHorizontal: 16,
     paddingTop: 16,
-  },
-  summaryRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  summaryCard: {
-    flex: 1,
-    padding: 16,
-    borderWidth: 1,
-    gap: 6,
-  },
-  summaryIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  summaryLabel: {
-    fontSize: 11,
-    lineHeight: 16,
-    letterSpacing: 0.4,
-  },
-  summaryTotal: {
-    fontSize: 20,
-    lineHeight: 26,
-  },
-  summaryCount: {
-    fontSize: 11,
-    lineHeight: 16,
   },
   fab: {
     position: 'absolute',

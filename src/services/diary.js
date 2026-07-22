@@ -20,6 +20,17 @@ export async function listDiaries() {
     );
 }
 
+/** Summary values used by the diary overview card. */
+export async function diaryStats() {
+  const rows = await listDiaries();
+  const currentYear = todayStr().slice(0, 4);
+  return {
+    totalCount: rows.length,
+    currentYearCount: rows.filter((row) => String(row?.date || '').startsWith(currentYear)).length,
+    privateCount: rows.filter((row) => Number(row?.is_private) === 1).length,
+  };
+}
+
 export async function getDiary(id) {
   return getRowById(TABLE, id);
 }

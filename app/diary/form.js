@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -13,7 +13,10 @@ import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
 import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
+import FormSaveFooter from '../../src/components/common/FormSaveFooter';
+import ScreenState from '../../src/components/common/ScreenState';
 import { weatherLabel } from '../../src/components/diary/DiaryList';
+import { todayStr } from '../../src/utils/date';
 
 export default function DiaryFormScreen() {
   const { Colors, Radius, Fonts } = useTheme();
@@ -30,24 +33,50 @@ export default function DiaryFormScreen() {
   const [isPrivate, setIsPrivate] = useState(false);
   const [hasPwd, setHasPwd] = useState(false);
   const [loaded, setLoaded] = useState(!isEdit);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   useEffect(() => {
-    hasPassword().then(setHasPwd);
-    if (!isEdit) return;
-    getDiary(id).then((row) => {
-      if (row) {
-        setImage(row.image || '');
-        setTitle(row.title || '');
-        setDate(row.date || '');
-        setWeather(row.weather || '');
-        setContent(row.content || '');
-        setIsPrivate(Number(row.is_private) === 1);
-      }
-      setLoaded(true);
-    });
+    let active = true;
+    hasPassword()
+      .then((value) => {
+        if (active) setHasPwd(value);
+      })
+      .catch(() => {
+        if (active) setHasPwd(false);
+      });
+    if (isEdit) {
+      setLoaded(false);
+      setLoadFailed(false);
+      (async () => {
+        try {
+          const row = await getDiary(id);
+          if (!active) return;
+          if (!row) {
+            setLoadFailed(true);
+            return;
+          }
+          setImage(row.image || '');
+          setTitle(row.title || '');
+          setDate(row.date || '');
+          setWeather(row.weather || '');
+          setContent(row.content || '');
+          setIsPrivate(Number(row.is_private) === 1);
+        } catch {
+          if (active) setLoadFailed(true);
+        } finally {
+          if (active) setLoaded(true);
+        }
+      })();
+    }
+    return () => {
+      active = false;
+    };
   }, [isEdit, id]);
 
   const handleSave = async () => {
+    if (savingRef.current) return;
     if (!title.trim()) {
       showToast(t('diary.title') + ' *');
       return;
@@ -64,6 +93,8 @@ export default function DiaryFormScreen() {
       content,
       is_private: isPrivate,
     };
+    savingRef.current = true;
+    setSaving(true);
     try {
       await saveDiary(values, isEdit ? id : undefined);
     } catch (e) {
@@ -71,14 +102,30 @@ export default function DiaryFormScreen() {
         showToast(t('diary.date') + ' ≤ ' + t('common.today'));
         return;
       }
-      showToast(t('diary.title') + ' *');
+      showToast(t('common.saveFailed'));
       return;
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
     showToast(t('common.saved'));
     router.back();
   };
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return <ScreenState loading message={t('common.loading')} />;
+  }
+
+  if (loadFailed) {
+    return (
+      <ScreenState
+        icon="book-outline"
+        message={t('diary.loadFailed')}
+        onBack={() => router.replace('/diary')}
+        backLabel={t('common.backToList')}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
@@ -108,7 +155,13 @@ export default function DiaryFormScreen() {
           label={`${t('diary.date')} *`}
           level="date"
           value={date}
-          onChange={setDate}
+          onChange={(nextDate) => {
+            if (nextDate && nextDate > todayStr()) {
+              showToast(t('diary.futureDateNotAllowed'));
+              return;
+            }
+            setDate(nextDate);
+          }}
         />
 
         {/* Weather chips */}
@@ -184,18 +237,12 @@ export default function DiaryFormScreen() {
         ) : null}
       </ScrollView>
 
-      {/* Save button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }]}
-          activeOpacity={0.8}
-          onPress={handleSave}
-        >
-          <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {t('common.saveRecord')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <FormSaveFooter
+        label={t('common.saveRecord')}
+        savingLabel={t('common.saving')}
+        saving={saving}
+        onPress={handleSave}
+      />
     </SafeAreaView>
   );
 }
@@ -209,9 +256,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 24,
-    gap: 24,
+    gap: 16,
   },
   field: {
     gap: 12,
@@ -260,19 +306,5 @@ const styles = StyleSheet.create({
   privateSubtitle: {
     fontSize: 12,
     lineHeight: 17,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-  },
-  saveBtn: {
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveText: {
-    fontSize: 16,
-    lineHeight: 22,
   },
 });

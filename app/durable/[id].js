@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -27,9 +27,11 @@ import StatsGrid from '../../src/components/durable-detail/StatsGrid';
 import LinkedAsset from '../../src/components/durable-detail/LinkedAsset';
 import RelatedBills from '../../src/components/common/RelatedBills';
 import DetailFooter from '../../src/components/common/DetailFooter';
+import DetailTextSection from '../../src/components/common/DetailTextSection';
+import ScreenState from '../../src/components/common/ScreenState';
 
 export default function DurableDetailScreen() {
-  const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { Colors } = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
@@ -48,12 +50,23 @@ export default function DurableDetailScreen() {
       let active = true;
       setLoading(true);
       (async () => {
-        const item = id ? await getDurable(id) : null;
-        if (!active) return;
-        setRow(item);
-        setLinkedAsset(item ? await getLinkedAsset(item) : null);
-        setRelatedBills(item ? await listBillsBySource(item.id) : []);
-        setLoading(false);
+        try {
+          const item = id ? await getDurable(id) : null;
+          const [asset, bills] = item
+            ? await Promise.all([getLinkedAsset(item), listBillsBySource(item.id)])
+            : [null, []];
+          if (!active) return;
+          setRow(item);
+          setLinkedAsset(asset);
+          setRelatedBills(bills);
+        } catch {
+          if (!active) return;
+          setRow(null);
+          setLinkedAsset(null);
+          setRelatedBills([]);
+        } finally {
+          if (active) setLoading(false);
+        }
       })();
       return () => {
         active = false;
@@ -63,32 +76,16 @@ export default function DurableDetailScreen() {
 
   // ── Loading / not-found states ──────────────────
   if (loading) {
-    return (
-      <View style={[styles.stateWrap, { backgroundColor: Colors.bg }]}>
-        <ActivityIndicator size="large" color={Colors.purple} />
-        <Text style={[styles.stateText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-          {t('durable.loadingDetail')}
-        </Text>
-      </View>
-    );
+    return <ScreenState loading message={t('durable.loadingDetail')} />;
   }
 
   if (!row) {
     return (
-      <View style={[styles.stateWrap, { backgroundColor: Colors.bg }]}>
-        <Ionicons name="file-tray-outline" size={48} color={Colors.textTertiary} />
-        <Text style={[styles.stateText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-          {t('durable.itemNotFound')}
-        </Text>
-        <Pressable
-          onPress={() => router.replace('/durable')}
-          style={[styles.stateBtn, { backgroundColor: Colors.inkDeep }]}
-        >
-          <Text style={[styles.stateBtnText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {t('common.backToList')}
-          </Text>
-        </Pressable>
-      </View>
+      <ScreenState
+        message={t('durable.itemNotFound')}
+        onBack={() => router.replace('/durable')}
+        backLabel={t('common.backToList')}
+      />
     );
   }
 
@@ -146,25 +143,7 @@ export default function DurableDetailScreen() {
             subtotalLabel={t('durable.subtotal')}
           />
 
-          {/* Notes */}
-          {row.notes ? (
-            <View style={styles.notesWrap}>
-              <Text style={[styles.notesLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-                {t('durable.notesLabel')}
-              </Text>
-              <View
-                style={[
-                  styles.notesCard,
-                  { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
-                  Shadows.card,
-                ]}
-              >
-                <Text style={[styles.notesText, { color: Colors.textPrimary, fontFamily: Fonts.regular }]}>
-                  {row.notes}
-                </Text>
-              </View>
-            </View>
-          ) : null}
+          <DetailTextSection title={t('durable.notesLabel')} text={row.notes} />
         </View>
       </ScrollView>
 
@@ -208,23 +187,6 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     gap: 16,
   },
-  notesWrap: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  notesLabel: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
-  },
-  notesCard: {
-    padding: 16,
-    borderWidth: 1,
-  },
-  notesText: {
-    fontSize: 14,
-    lineHeight: 22,
-  },
   backBtn: {
     position: 'absolute',
     left: 16,
@@ -233,26 +195,5 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  stateWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    paddingHorizontal: 32,
-  },
-  stateText: {
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  stateBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 9999,
-  },
-  stateBtnText: {
-    fontSize: 14,
-    lineHeight: 20,
   },
 });

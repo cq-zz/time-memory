@@ -5,11 +5,13 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/utils/theme';
-import { listDiaries } from '../../src/services/diary';
+import { diaryStats, listDiaries } from '../../src/services/diary';
 import { hasPassword } from '../../src/utils/password';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import YearMonthPicker from '../../src/components/common/YearMonthPicker';
+import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import DiaryList from '../../src/components/diary/DiaryList';
+import DiaryStats from '../../src/components/diary/DiaryStats';
 import PasswordModal from '../../src/components/common/PasswordModal';
 
 export default function DiaryScreen() {
@@ -19,16 +21,20 @@ export default function DiaryScreen() {
 
   const now = new Date();
   const [items, setItems] = useState([]);
+  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(null);
+  const [search, setSearch] = useState('');
   const [hasPwd, setHasPwd] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
   const [pendingItem, setPendingItem] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      setItems(await listDiaries());
+      const [rows, summary] = await Promise.all([listDiaries(), diaryStats()]);
+      setItems(rows);
+      setStats(summary);
       setHasPwd(await hasPassword());
     } finally {
       setLoading(false);
@@ -58,23 +64,42 @@ export default function DiaryScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[0]}
+        stickyHeaderIndices={[1]}
       >
-        {/* Index 0 — sticky filter bar (date) */}
+        <View style={styles.statsSection}>
+          <DiaryStats stats={stats} />
+        </View>
+
         <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
           <YearMonthPicker
             year={year}
             month={month}
+            style={styles.dateFilter}
             onChange={({ year: y, month: m }) => {
               setYear(y);
               setMonth(m);
             }}
           />
+          <SearchFilterBar
+            search={search}
+            onSearchChange={setSearch}
+            filter="all"
+            onFilterChange={() => {}}
+            filters={[]}
+            placeholder={t('diary.searchPlaceholder')}
+          />
         </View>
 
         {/* Index 1 — list */}
         <View style={styles.listSection}>
-          <DiaryList items={items} year={year} month={month} loading={loading} onPressItem={handlePressItem} />
+          <DiaryList
+            items={items}
+            year={year}
+            month={month}
+            search={search}
+            loading={loading}
+            onPressItem={handlePressItem}
+          />
         </View>
       </ScrollView>
 
@@ -109,15 +134,21 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 112,
   },
+  statsSection: {
+    paddingHorizontal: 16,
+  },
+  dateFilter: {
+    marginBottom: 12,
+  },
   stickyBar: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
   listSection: {
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 16,
   },
   fab: {
     position: 'absolute',

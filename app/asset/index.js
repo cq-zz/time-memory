@@ -9,6 +9,7 @@ import { useSettingsStore } from '../../src/store/settings';
 import { listAssets, assetStats } from '../../src/services/asset';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import AssetsStats from '../../src/components/assets/AssetsStats';
+import YearMonthPicker from '../../src/components/common/YearMonthPicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import AssetsList from '../../src/components/assets/AssetsList';
 
@@ -26,6 +27,8 @@ export default function AssetsScreen() {
 
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState(null);
+  const [year, setYear] = useState(null);
+  const [month, setMonth] = useState(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -64,6 +67,16 @@ export default function AssetsScreen() {
 
         {/* Index 1 — sticky filter bar (search + status) */}
         <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
+          <YearMonthPicker
+            year={year}
+            month={month}
+            showAllOption
+            style={styles.dateFilter}
+            onChange={({ year: y, month: m }) => {
+              setYear(y);
+              setMonth(m);
+            }}
+          />
           <SearchFilterBar
             search={search}
             onSearchChange={setSearch}
@@ -76,7 +89,15 @@ export default function AssetsScreen() {
 
         {/* Index 2 — list */}
         <View style={styles.listSection}>
-          <AssetsList items={items} search={search} filter={filter} currency={currency} loading={loading} />
+          <AssetsList
+            items={items}
+            year={year}
+            month={month}
+            search={search}
+            filter={filter}
+            currency={currency}
+            loading={loading}
+          />
         </View>
       </ScrollView>
 
@@ -104,18 +125,19 @@ const styles = StyleSheet.create({
   },
   statsSection: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 20,
+  },
+  dateFilter: {
+    marginBottom: 12,
   },
   stickyBar: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
   listSection: {
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 16,
   },
   fab: {
     position: 'absolute',

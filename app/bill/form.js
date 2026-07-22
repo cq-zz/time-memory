@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,8 +16,10 @@ import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
 import CategoryPicker from '../../src/components/common/CategoryPicker';
 import FieldLabel from '../../src/components/common/FieldLabel';
+import AmountField from '../../src/components/common/AmountField';
+import FormSaveFooter from '../../src/components/common/FormSaveFooter';
+import ScreenState from '../../src/components/common/ScreenState';
 import BillingObjectPicker from '../../src/components/bill/BillingObjectPicker';
-import { sanitizeAmount } from '../../src/utils/money';
 
 export default function BillFormScreen() {
   const { Colors, Radius, Fonts } = useTheme();
@@ -39,12 +41,22 @@ export default function BillFormScreen() {
   const [receiptImage, setReceiptImage] = useState('');
   const [notes, setNotes] = useState('');
   const [loaded, setLoaded] = useState(!isEdit);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const saveLockRef = useRef(false);
 
   useEffect(() => {
     if (!isEdit) return;
+    let active = true;
     (async () => {
-      const row = await getBill(id);
-      if (row) {
+      try {
+        const row = await getBill(id);
+        if (!active) return;
+        if (!row) {
+          setLoadFailed(true);
+          showToast(t('bills.loadFailed'));
+          return;
+        }
         setBillType(row.bill_type === 'income' ? 'income' : 'expense');
         setAmount(row.amount != null ? String(row.amount) : '');
         setName(row.name || '');
@@ -58,12 +70,21 @@ export default function BillFormScreen() {
         if (row.source && row.source_id) {
           const linked =
             row.source === 'asset' ? await getAsset(row.source_id) : await getDurable(row.source_id);
-          setSourceName(linked?.name || '');
+          if (active) setSourceName(linked?.name || '');
         }
+      } catch {
+        if (active) {
+          setLoadFailed(true);
+          showToast(t('bills.loadFailed'));
+        }
+      } finally {
+        if (active) setLoaded(true);
       }
-      setLoaded(true);
     })();
-  }, [isEdit, id]);
+    return () => {
+      active = false;
+    };
+  }, [isEdit, id, t]);
 
   const handleBillingObject = (sel) => {
     if (!sel) {
@@ -78,6 +99,7 @@ export default function BillFormScreen() {
   };
 
   const handleSave = async () => {
+    if (saveLockRef.current) return;
     if (!name.trim()) {
       showToast(t('bills.name') + ' *');
       return;
@@ -93,6 +115,8 @@ export default function BillFormScreen() {
       receipt_image: receiptImage,
       notes,
     };
+    saveLockRef.current = true;
+    setSaving(true);
     try {
       await saveBill(values, isEdit ? id : undefined);
     } catch (e) {
@@ -100,14 +124,33 @@ export default function BillFormScreen() {
         showToast(t('bills.amountLabel', { type: billType === 'income' ? t('bills.income') : t('bills.expense') }) + ' > 0');
         return;
       }
-      showToast(t('bills.name') + ' *');
+      showToast(t('common.saveFailed'));
       return;
+    } finally {
+      saveLockRef.current = false;
+      setSaving(false);
     }
     showToast(t('common.saved'));
     router.back();
   };
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return <ScreenState loading message={t('common.loading')} />;
+  }
+
+  if (loadFailed) {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
+        <FormHeader title={t('nav.editBill')} />
+        <ScreenState
+          icon="receipt-outline"
+          message={t('bills.loadFailed')}
+          onBack={() => router.replace('/bill')}
+          backLabel={t('common.backToList')}
+        />
+      </SafeAreaView>
+    );
+  }
 
   const TypeButton = ({ typeKey, icon, activeColor }) => {
     const isActive = billType === typeKey;
@@ -155,30 +198,14 @@ export default function BillFormScreen() {
           </View>
         </View>
 
-        {/* Amount */}
-        <View style={styles.field}>
-          <FieldLabel
-            label={`${t('bills.amountLabel', { type: billType === 'income' ? t('bills.income') : t('bills.expense') })} *`}
-          />
-          <View
-            style={[
-              styles.amountBox,
-              { backgroundColor: Colors.card, borderColor: Colors.grayDot, borderRadius: Radius.sm },
-            ]}
-          >
-            <Text style={[styles.amountSymbol, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-              {symbol}
-            </Text>
-            <TextInput
-              style={[styles.amountInput, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}
-              placeholder="0.00"
-              placeholderTextColor={Colors.textTertiary}
-              value={amount}
-              onChangeText={(v) => setAmount(sanitizeAmount(v))}
-              keyboardType="decimal-pad"
-            />
-          </View>
-        </View>
+        <AmountField
+          label={t('bills.amountLabel', {
+            type: billType === 'income' ? t('bills.income') : t('bills.expense'),
+          })}
+          value={amount}
+          onChangeText={setAmount}
+          symbol={symbol}
+        />
 
         <FormInput
           label={`${t('bills.name')} *`}
@@ -226,18 +253,12 @@ export default function BillFormScreen() {
         />
       </ScrollView>
 
-      {/* Save button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }]}
-          activeOpacity={0.8}
-          onPress={handleSave}
-        >
-          <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {t('common.saveRecord')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <FormSaveFooter
+        label={t('common.saveRecord')}
+        savingLabel={t('common.loading')}
+        saving={saving}
+        onPress={handleSave}
+      />
     </SafeAreaView>
   );
 }
@@ -251,9 +272,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 24,
-    gap: 24,
+    gap: 16,
   },
   field: {
     gap: 12,
@@ -274,37 +294,5 @@ const styles = StyleSheet.create({
   typeBtnText: {
     fontSize: 14,
     lineHeight: 20,
-  },
-  amountBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 56,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    gap: 8,
-  },
-  amountSymbol: {
-    fontSize: 18,
-    lineHeight: 24,
-  },
-  amountInput: {
-    flex: 1,
-    fontSize: 22,
-    lineHeight: 28,
-    padding: 0,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-  },
-  saveBtn: {
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveText: {
-    fontSize: 16,
-    lineHeight: 22,
   },
 });

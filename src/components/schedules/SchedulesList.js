@@ -6,6 +6,8 @@ import { useTheme, hexToRgba } from '../../utils/theme';
 import { effectiveStatus, progress, patchSchedule } from '../../services/schedule';
 import { statusMeta, priorityMeta, nextStatus, dateRangeText } from '../../utils/scheduleMeta';
 
+const datePart = (value) => (typeof value === 'string' ? value.slice(0, 10) : '');
+
 function ScheduleCard({ item, isLast, onChanged }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
@@ -93,24 +95,37 @@ function ScheduleCard({ item, isLast, onChanged }) {
   );
 }
 
-export default function SchedulesList({ items, search, filter, loading, onChanged }) {
+export default function SchedulesList({ items, year, month, search, filter, loading, onChanged }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
   const filtered = items.filter((item) => {
     if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
+    if (year != null) {
+      const periodStart = month
+        ? `${year}-${String(month).padStart(2, '0')}-01`
+        : `${year}-01-01`;
+      const periodEndExclusive = month
+        ? month === 12
+          ? `${year + 1}-01-01`
+          : `${year}-${String(month + 1).padStart(2, '0')}-01`
+        : `${year + 1}-01-01`;
+      const scheduleStart = datePart(item.start_date || item.end_date);
+      const scheduleEnd = datePart(item.end_date || item.start_date);
+      if (
+        scheduleStart &&
+        scheduleEnd &&
+        (scheduleStart >= periodEndExclusive || scheduleEnd < periodStart)
+      ) {
+        return false;
+      }
+    }
     if (search && !(item.title || '').toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={[styles.count, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-          {t('common.count', { count: filtered.length })}
-        </Text>
-      </View>
-
       {filtered.length === 0 ? (
         <View style={styles.empty}>
           <Text style={[styles.emptyText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
@@ -129,16 +144,6 @@ export default function SchedulesList({ items, search, filter, loading, onChange
 const styles = StyleSheet.create({
   container: {
     gap: 0,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  count: {
-    fontSize: 14,
-    lineHeight: 20,
   },
   card: {
     padding: 16,

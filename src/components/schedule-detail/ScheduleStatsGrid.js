@@ -3,7 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 
-function StatCard({ label, value, dotColor }) {
+function StatCard({ label, value, dotColor, icon }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
 
   return (
@@ -19,6 +19,7 @@ function StatCard({ label, value, dotColor }) {
       </Text>
       <View style={styles.statValueRow}>
         {dotColor ? <View style={[styles.dot, { backgroundColor: dotColor }]} /> : null}
+        {icon ? <Ionicons name={icon} size={16} color={Colors.textPrimary} /> : null}
         <Text
           style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
           numberOfLines={1}
@@ -38,7 +39,6 @@ export default function ScheduleStatsGrid({
   checklistText,
   reminderOn,
 }) {
-  const { Colors, Radius, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
 
   return (
@@ -49,31 +49,11 @@ export default function ScheduleStatsGrid({
       </View>
       <View style={styles.row}>
         <StatCard label={t('detail.checklist')} value={checklistText} />
-        <View
-          style={[
-            styles.statCard,
-            { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl },
-            Shadows.dark,
-          ]}
-        >
-          <Text style={[styles.statLabel, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>
-            {t('detail.reminder')}
-          </Text>
-          <View style={styles.statValueRow}>
-            <Ionicons
-              name={reminderOn ? 'notifications' : 'notifications-off-outline'}
-              size={18}
-              color={Colors.white}
-            />
-            <Text
-              style={[styles.statValue, { color: Colors.white, fontFamily: Fonts.semiBold }]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-            >
-              {reminderOn ? t('common.enable') : t('common.disabled')}
-            </Text>
-          </View>
-        </View>
+        <StatCard
+          label={t('detail.reminder')}
+          value={reminderOn ? t('common.enable') : t('common.disabled')}
+          icon={reminderOn ? 'notifications' : 'notifications-off-outline'}
+        />
       </View>
     </View>
   );
@@ -82,16 +62,15 @@ export default function ScheduleStatsGrid({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    gap: 20,
+    gap: 16,
   },
   row: {
     flexDirection: 'row',
-    gap: 20,
+    gap: 12,
   },
   statCard: {
     flex: 1,
-    height: 90,
-    padding: 20,
+    padding: 14,
     gap: 4,
     borderWidth: 1,
     justifyContent: 'center',
@@ -108,13 +87,13 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   dot: {
-    width: 9,
-    height: 9,
+    width: 8,
+    height: 8,
     borderRadius: 9999,
   },
   statValue: {
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 22,
     flexShrink: 1,
   },
 });

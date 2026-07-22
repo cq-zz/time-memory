@@ -1,4 +1,5 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
@@ -7,6 +8,7 @@ import { formatMoney } from '../../store/settings';
 export default function LinkedAsset({ asset, currency }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
+  const router = useRouter();
 
   if (!asset) return null;
 
@@ -25,7 +27,10 @@ export default function LinkedAsset({ asset, currency }) {
       </View>
 
       {/* Card */}
-      <View
+      <TouchableOpacity
+        activeOpacity={0.8}
+        accessibilityRole="link"
+        onPress={() => router.push(`/asset/${asset.id}`)}
         style={[
           styles.card,
           { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
@@ -44,7 +49,8 @@ export default function LinkedAsset({ asset, currency }) {
             {value != null && value !== '' ? formatMoney(value, currency) : '--'}
           </Text>
         </View>
-      </View>
+        <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+      </TouchableOpacity>
     </View>
   );
 }

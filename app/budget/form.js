@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -9,38 +9,12 @@ import { getBudget, saveBudget } from '../../src/services/budget';
 import { showToast } from '../../src/components/common/Toast';
 import FormHeader from '../../src/components/common/FormHeader';
 import WheelPicker from '../../src/components/common/WheelPicker';
-import FieldLabel from '../../src/components/common/FieldLabel';
-import { sanitizeAmount } from '../../src/utils/money';
-
-function AmountField({ label, value, onChangeText, symbol }) {
-  const { Colors, Radius, Fonts } = useTheme();
-  return (
-    <View style={styles.field}>
-      <FieldLabel label={`${label} *`} />
-      <View
-        style={[
-          styles.amountBox,
-          { backgroundColor: Colors.card, borderColor: Colors.grayDot, borderRadius: Radius.sm },
-        ]}
-      >
-        <Text style={[styles.amountSymbol, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-          {symbol}
-        </Text>
-        <TextInput
-          style={[styles.amountInput, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}
-          placeholder="0.00"
-          placeholderTextColor={Colors.textTertiary}
-          value={value}
-          onChangeText={(v) => onChangeText(sanitizeAmount(v))}
-          keyboardType="decimal-pad"
-        />
-      </View>
-    </View>
-  );
-}
+import AmountField from '../../src/components/common/AmountField';
+import FormSaveFooter from '../../src/components/common/FormSaveFooter';
+import ScreenState from '../../src/components/common/ScreenState';
 
 export default function BudgetFormScreen() {
-  const { Colors, Radius, Fonts } = useTheme();
+  const { Colors } = useTheme();
   const { t } = useTranslation();
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -52,20 +26,39 @@ export default function BudgetFormScreen() {
   const [expenseBudget, setExpenseBudget] = useState('');
   const [incomeTarget, setIncomeTarget] = useState('');
   const [loaded, setLoaded] = useState(!isEdit);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const savingRef = useRef(false);
 
   useEffect(() => {
     if (!isEdit) return;
-    getBudget(id).then((row) => {
-      if (row) {
+    let active = true;
+    setLoaded(false);
+    setLoadFailed(false);
+    (async () => {
+      try {
+        const row = await getBudget(id);
+        if (!active) return;
+        if (!row) {
+          setLoadFailed(true);
+          return;
+        }
         setYear(row.year || '');
         setExpenseBudget(row.expense_budget != null ? String(row.expense_budget) : '');
         setIncomeTarget(row.income_target != null ? String(row.income_target) : '');
+      } catch {
+        if (active) setLoadFailed(true);
+      } finally {
+        if (active) setLoaded(true);
       }
-      setLoaded(true);
-    });
+    })();
+    return () => {
+      active = false;
+    };
   }, [isEdit, id]);
 
   const handleSave = async () => {
+    if (savingRef.current) return;
     if (!year) {
       showToast(t('budget.year') + ' *');
       return;
@@ -75,6 +68,8 @@ export default function BudgetFormScreen() {
       expense_budget: expenseBudget,
       income_target: incomeTarget,
     };
+    savingRef.current = true;
+    setSaving(true);
     try {
       await saveBudget(values, isEdit ? id : undefined);
     } catch (e) {
@@ -90,14 +85,30 @@ export default function BudgetFormScreen() {
         showToast(t('budget.incomeRequired'));
         return;
       }
-      showToast(t('budget.year') + ' *');
+      showToast(t('common.saveFailed'));
       return;
+    } finally {
+      savingRef.current = false;
+      setSaving(false);
     }
     showToast(t('common.saved'));
     router.back();
   };
 
-  if (!loaded) return null;
+  if (!loaded) {
+    return <ScreenState loading message={t('common.loading')} />;
+  }
+
+  if (loadFailed) {
+    return (
+      <ScreenState
+        icon="flag-outline"
+        message={t('budget.loadFailed')}
+        onBack={() => router.replace('/budget')}
+        backLabel={t('common.backToList')}
+      />
+    );
+  }
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
@@ -130,18 +141,12 @@ export default function BudgetFormScreen() {
         />
       </ScrollView>
 
-      {/* Save button */}
-      <View style={styles.footer}>
-        <TouchableOpacity
-          style={[styles.saveBtn, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }]}
-          activeOpacity={0.8}
-          onPress={handleSave}
-        >
-          <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {t('common.saveRecord')}
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <FormSaveFooter
+        label={t('common.saveRecord')}
+        savingLabel={t('common.saving')}
+        saving={saving}
+        onPress={handleSave}
+      />
     </SafeAreaView>
   );
 }
@@ -155,43 +160,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 24,
-    gap: 24,
-  },
-  field: {
-    gap: 12,
-  },
-  amountBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    minHeight: 56,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    gap: 8,
-  },
-  amountSymbol: {
-    fontSize: 18,
-    lineHeight: 24,
-  },
-  amountInput: {
-    flex: 1,
-    fontSize: 22,
-    lineHeight: 28,
-    padding: 0,
-  },
-  footer: {
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 16,
-  },
-  saveBtn: {
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  saveText: {
-    fontSize: 16,
-    lineHeight: 22,
+    gap: 16,
   },
 });

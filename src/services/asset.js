@@ -26,10 +26,16 @@ export function effectiveStatus(row) {
 /** Days the asset has been (or was) held; null when unknown. */
 export function companionDays(row) {
   if (!row.purchase_date) return null;
-  if ((row.status || 'active') === 'active') return daysBetween(row.purchase_date, todayStr());
-  // disposed: prefer the real end date when present
-  if (row.expiry_date) return daysBetween(row.purchase_date, row.expiry_date);
-  return null;
+  let endDate;
+  if (effectiveStatus(row) === 'active') {
+    endDate = todayStr();
+  } else if (row.expiry_date) {
+    endDate = isPast(row.expiry_date) ? row.expiry_date : todayStr();
+  } else {
+    return null;
+  }
+  const days = daysBetween(row.purchase_date, endDate);
+  return Number.isFinite(days) ? Math.max(0, days) : null;
 }
 
 /** The value to show for an asset: current_price, falling back to purchase_price. */

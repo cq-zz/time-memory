@@ -6,7 +6,8 @@
  * Rules per source:
  * - schedules: reminder_enabled, not done, target = end_date; shows when
  *   daysLeft <= scheduleRemindDays (expired always shows)
- * - durables: in_use with expiry_date; daysLeft <= durableRemindDays
+ * - durables: raw status in_use with expiry_date; daysLeft <=
+ *   durableRemindDays (expired always shows)
  * - assets: active with expiry_date; daysLeft <= assetRemindDays
  * - important_dates: reminder_enabled; per-row reminder_days_before lead;
  *   annual rolls to the next occurrence, once can expire
@@ -53,6 +54,9 @@ export function buildReminders({ schedules, durables, assets, importantDates, se
   });
 
   (durables || []).forEach((row) => {
+    // Reminder eligibility follows the persisted business status. An expired
+    // in-use item has an effective display status of disposed, but its overdue
+    // reminder must remain visible until the user explicitly archives it.
     if ((row.status || 'in_use') !== 'in_use' || !row.expiry_date) return;
     const daysLeft = daysUntil(row.expiry_date);
     if (daysLeft === null) return;

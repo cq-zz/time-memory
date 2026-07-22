@@ -1,11 +1,12 @@
 import { useCallback, useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity, Text, Pressable, ActivityIndicator } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../src/utils/theme';
+import { useSettingsStore } from '../../src/store/settings';
 import {
   getSchedule,
   removeSchedule,
@@ -21,13 +22,16 @@ import ScheduleStatsGrid from '../../src/components/schedule-detail/ScheduleStat
 import QuickStatus from '../../src/components/schedule-detail/QuickStatus';
 import ChecklistSection from '../../src/components/schedule-detail/ChecklistSection';
 import DetailFooter from '../../src/components/common/DetailFooter';
+import DetailTextSection from '../../src/components/common/DetailTextSection';
+import ScreenState from '../../src/components/common/ScreenState';
 
 export default function ScheduleDetailScreen() {
-  const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { Colors } = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
   const router = useRouter();
+  const darkMode = useSettingsStore((s) => s.settings.darkMode);
 
   const [row, setRow] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -37,10 +41,14 @@ export default function ScheduleDetailScreen() {
       let active = true;
       setLoading(true);
       (async () => {
-        const item = id ? await getSchedule(id) : null;
-        if (!active) return;
-        setRow(item);
-        setLoading(false);
+        try {
+          const item = id ? await getSchedule(id) : null;
+          if (active) setRow(item);
+        } catch {
+          if (active) setRow(null);
+        } finally {
+          if (active) setLoading(false);
+        }
       })();
       return () => {
         active = false;
@@ -50,38 +58,26 @@ export default function ScheduleDetailScreen() {
 
   // Lightweight refetch (no spinner) after a quick status change.
   const reload = useCallback(async () => {
-    const item = id ? await getSchedule(id) : null;
-    setRow(item);
+    try {
+      const item = id ? await getSchedule(id) : null;
+      setRow(item);
+    } catch {
+      setRow(null);
+    }
   }, [id]);
 
   // ── Loading / not-found states ──────────────────
   if (loading) {
-    return (
-      <View style={[styles.stateWrap, { backgroundColor: Colors.bg }]}>
-        <ActivityIndicator size="large" color={Colors.purple} />
-        <Text style={[styles.stateText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-          {t('common.loading')}
-        </Text>
-      </View>
-    );
+    return <ScreenState loading message={t('common.loading')} />;
   }
 
   if (!row) {
     return (
-      <View style={[styles.stateWrap, { backgroundColor: Colors.bg }]}>
-        <Ionicons name="file-tray-outline" size={48} color={Colors.textTertiary} />
-        <Text style={[styles.stateText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-          {t('schedule.loadFailed')}
-        </Text>
-        <Pressable
-          onPress={() => router.replace('/schedule')}
-          style={[styles.stateBtn, { backgroundColor: Colors.inkDeep }]}
-        >
-          <Text style={[styles.stateBtnText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {t('common.backToList')}
-          </Text>
-        </Pressable>
-      </View>
+      <ScreenState
+        message={t('schedule.loadFailed')}
+        onBack={() => router.replace('/schedule')}
+        backLabel={t('common.backToList')}
+      />
     );
   }
 
@@ -129,25 +125,7 @@ export default function ScheduleDetailScreen() {
           <QuickStatus current={status} onSetStatus={setStatus} />
           <ChecklistSection items={checklist} />
 
-          {/* Notes */}
-          {row.notes ? (
-            <View style={styles.notesWrap}>
-              <Text style={[styles.notesLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-                {t('schedule.notes')}
-              </Text>
-              <View
-                style={[
-                  styles.notesCard,
-                  { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
-                  Shadows.card,
-                ]}
-              >
-                <Text style={[styles.notesText, { color: Colors.textPrimary, fontFamily: Fonts.regular }]}>
-                  {row.notes}
-                </Text>
-              </View>
-            </View>
-          ) : null}
+          <DetailTextSection title={t('schedule.notes')} text={row.notes} />
         </View>
       </ScrollView>
 
@@ -172,7 +150,7 @@ export default function ScheduleDetailScreen() {
         />
       </View>
 
-      <StatusBar style="light" />
+      <StatusBar style={darkMode ? 'light' : 'dark'} />
     </View>
   );
 }
@@ -185,28 +163,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
   sections: {
-    paddingTop: 20,
-    gap: 24,
-  },
-  notesWrap: {
-    paddingHorizontal: 16,
-    gap: 12,
-  },
-  notesLabel: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
-  },
-  notesCard: {
-    padding: 16,
-    borderWidth: 1,
-  },
-  notesText: {
-    fontSize: 14,
-    lineHeight: 22,
+    paddingTop: 16,
+    gap: 16,
   },
   backBtn: {
     position: 'absolute',
@@ -216,26 +177,5 @@ const styles = StyleSheet.create({
     borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  stateWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 16,
-    paddingHorizontal: 32,
-  },
-  stateText: {
-    fontSize: 15,
-    lineHeight: 22,
-    textAlign: 'center',
-  },
-  stateBtn: {
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 9999,
-  },
-  stateBtnText: {
-    fontSize: 14,
-    lineHeight: 20,
   },
 });

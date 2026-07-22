@@ -39,19 +39,30 @@ const sumBillAmount = (bills) =>
 
 /** Effective status: an in_use item past its expiry_date reads as disposed. */
 export function effectiveStatus(row) {
-  if (row.status === 'in_use' && row.expiry_date && isPast(row.expiry_date)) {
+  const status = row?.status || 'in_use';
+  if (status === 'in_use' && row?.expiry_date && isPast(row.expiry_date)) {
     return 'disposed';
   }
-  return row.status || 'in_use';
+  return status;
 }
 
 /** Days the item has been (or was) a companion; null when unknown. */
 export function companionDays(row) {
-  if (!row.purchase_date) return null;
-  if (row.status === 'in_use') return daysBetween(row.purchase_date, todayStr());
-  // disposed: prefer the real end date when present
-  if (row.expiry_date) return daysBetween(row.purchase_date, row.expiry_date);
-  return null;
+  if (!row?.purchase_date) return null;
+
+  let endDate;
+  if (effectiveStatus(row) === 'in_use') {
+    endDate = todayStr();
+  } else if (row.expiry_date) {
+    // An expired item stops accruing on expiry. For a manually archived item
+    // whose expiry is still in the future, today is the closest safe bound.
+    endDate = isPast(row.expiry_date) ? row.expiry_date : todayStr();
+  } else {
+    return null;
+  }
+
+  const days = daysBetween(row.purchase_date, endDate);
+  return days == null ? null : Math.max(0, days);
 }
 
 /**

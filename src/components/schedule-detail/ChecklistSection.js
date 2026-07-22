@@ -18,7 +18,7 @@ export default function ChecklistSection({ items }) {
     <View style={styles.container}>
       <View style={styles.headerRow}>
         <Text style={[styles.sectionTitle, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-          CHECKLIST
+          {t('detail.checklist')}
         </Text>
         <Text style={[styles.progress, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
           {done}/{items.length}

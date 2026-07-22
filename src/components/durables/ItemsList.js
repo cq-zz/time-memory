@@ -5,19 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { formatMoney } from '../../store/settings';
 import { useCategoryStore, resolveCategoryMeta } from '../../store/categories';
-import { effectiveStatus, companionDays, dailyAvg } from '../../services/durable';
-import { daysBetween } from '../../utils/date';
-
-function expectedYears(row) {
-  const el = row.expected_lifespan;
-  if (!el) return null;
-  if (/^\d{4}-\d{2}-\d{2}/.test(el)) {
-    const d = daysBetween(row.purchase_date, el);
-    return d && d > 0 ? d / 365 : null;
-  }
-  const n = Number(el);
-  return Number.isFinite(n) && n > 0 ? n : null;
-}
+import {
+  effectiveStatus,
+  companionDays,
+  expectedLifespanDays,
+  lifespanPercent,
+} from '../../services/durable';
 
 function ItemCard({ item, currency, isLast }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
@@ -29,9 +22,9 @@ function ItemCard({ item, currency, isLast }) {
   const status = effectiveStatus(item);
   const inUse = status === 'in_use';
   const days = companionDays(item);
-  const usedYears = days != null ? days / 365 : null;
-  const totalYears = expectedYears(item);
-  const progress = usedYears != null && totalYears ? Math.min(usedYears / totalYears, 1) : null;
+  const lifespanDays = expectedLifespanDays(item);
+  const percent = lifespanPercent(item);
+  const progress = percent != null ? percent / 100 : null;
   const barColor = progress == null ? Colors.textSecondary : progress > 0.8 ? Colors.rose : Colors.green;
 
   return (
@@ -85,9 +78,14 @@ function ItemCard({ item, currency, isLast }) {
           </View>
         </View>
 
-        <Text style={[styles.price, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
-          {formatMoney(item.purchase_price, currency)}
-        </Text>
+        <View style={styles.priceCol}>
+          <Text style={[styles.priceLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+            {t('durable.purchasePrice')}
+          </Text>
+          <Text style={[styles.price, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
+            {formatMoney(item.purchase_price, currency)}
+          </Text>
+        </View>
       </View>
 
       {/* Lifespan */}
@@ -97,8 +95,8 @@ function ItemCard({ item, currency, isLast }) {
             {t('durable.companionDuration')}
           </Text>
           <Text style={[styles.lifespanValue, { color: barColor, fontFamily: Fonts.semiBold }]}>
-            {usedYears != null
-              ? `${usedYears.toFixed(1)}${totalYears ? ` / ${totalYears.toFixed(0)}` : ''} YRS`
+            {days != null
+              ? `${days}${lifespanDays ? ` / ${lifespanDays}` : ''} ${t('common.days')}`
               : '--'}
           </Text>
         </View>
@@ -131,7 +129,7 @@ export default function ItemsList({ items, year, month, search, filter, currency
   const filtered = items.filter((item) => {
     if (datePrefix && !(item.purchase_date || '').startsWith(datePrefix)) return false;
     if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
-    if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
+    if (search && !(item.name || '').toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
 
@@ -216,10 +214,20 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     letterSpacing: 0.6,
   },
+  priceCol: {
+    alignItems: 'flex-end',
+    justifyContent: 'center',
+    maxWidth: 110,
+  },
+  priceLabel: {
+    fontSize: 9,
+    lineHeight: 13,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
   price: {
     fontSize: 18,
     lineHeight: 24,
-    maxWidth: 96,
     textAlign: 'right',
   },
   lifespanBlock: {

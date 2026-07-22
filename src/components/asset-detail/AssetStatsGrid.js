@@ -18,7 +18,7 @@ function StatCard({ label, value, icon, iconColor }) {
         {label}
       </Text>
       <View style={styles.statValueRow}>
-        {icon ? <Ionicons name={icon} size={18} color={iconColor} /> : null}
+        {icon ? <Ionicons name={icon} size={16} color={iconColor} /> : null}
         <Text
           style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
           numberOfLines={1}
@@ -37,6 +37,8 @@ export default function AssetStatsGrid({
   sourceText,
   purchaseDateText,
   purchasePriceText,
+  expiryDateText,
+  currentValueText,
   companionText,
 }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
@@ -54,18 +56,28 @@ export default function AssetStatsGrid({
           <StatCard label={t('detail.purchaseDate')} value={purchaseDateText} />
           <StatCard label={t('detail.price')} value={purchasePriceText} />
         </View>
+        <View style={styles.row}>
+          <StatCard label={t('asset.expiryDate')} value={expiryDateText} />
+          <StatCard label={t('detail.currentValue')} value={currentValueText} />
+        </View>
       </View>
 
       {/* Owned / companion time hero card */}
-      <View style={[styles.ownedCard, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }, Shadows.dark]}>
+      <View
+        style={[
+          styles.ownedCard,
+          { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
+          Shadows.card,
+        ]}
+      >
         <View style={styles.ownedTop}>
-          <Text style={[styles.ownedLabel, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>{t('detail.owned')}</Text>
-          <View style={[styles.ownedIconBox, { backgroundColor: Colors.white10, borderRadius: Radius.circle }]}>
-            <Ionicons name="hourglass-outline" size={22} color={Colors.white} />
+          <Text style={[styles.ownedLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>{t('detail.owned')}</Text>
+          <View style={[styles.ownedIconBox, { backgroundColor: Colors.iconBg, borderRadius: Radius.circle }]}>
+            <Ionicons name="hourglass-outline" size={20} color={Colors.textPrimary} />
           </View>
         </View>
         <Text
-          style={[styles.ownedValue, { color: Colors.white, fontFamily: Fonts.bold }]}
+          style={[styles.ownedValue, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}
           numberOfLines={1}
           adjustsFontSizeToFit
         >
@@ -79,19 +91,18 @@ export default function AssetStatsGrid({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    gap: 20,
+    gap: 16,
   },
   gridBlock: {
-    gap: 20,
+    gap: 12,
   },
   row: {
     flexDirection: 'row',
-    gap: 20,
+    gap: 12,
   },
   statCard: {
     flex: 1,
-    height: 90,
-    padding: 20,
+    padding: 14,
     gap: 4,
     borderWidth: 1,
     justifyContent: 'center',
@@ -108,13 +119,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   statValue: {
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 22,
     flexShrink: 1,
   },
   ownedCard: {
-    padding: 24,
-    gap: 12,
+    padding: 16,
+    gap: 6,
+    borderWidth: 1,
   },
   ownedTop: {
     flexDirection: 'row',
@@ -128,13 +140,13 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   ownedIconBox: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
   ownedValue: {
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 20,
+    lineHeight: 26,
   },
 });

@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../utils/theme';
-import { MOODS, MONTH_NAMES, WEEKDAY_LABELS, moodMeta } from '../../utils/constant';
+import { MOODS, moodMeta } from '../../utils/constant';
 import { useMoodStore, todayStr } from '../../store/mood';
 import { showToast } from '../common/Toast';
 
@@ -15,8 +16,12 @@ const dateStr = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
  */
 export default function MoodCalendarModal({ visible, onClose }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { t } = useTranslation();
   const records = useMoodStore((s) => s.records);
   const saveMood = useMoodStore((s) => s.saveMood);
+
+  const monthNames = t('calendar.months', { returnObjects: true });
+  const weekdayLabels = t('calendar.weekdays', { returnObjects: true });
 
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -71,7 +76,13 @@ export default function MoodCalendarModal({ visible, onClose }) {
 
   const handlePickMood = async (mood) => {
     await saveMood(mood.key, pickingDate);
-    showToast(`${mood.emoji} ${mood.label} saved for ${pickingDate}`);
+    showToast(
+      t('butler.moodSaved', {
+        emoji: mood.emoji,
+        label: t(`checkIn.mood.${mood.key}`),
+        date: pickingDate,
+      })
+    );
     setPickingDate(null);
   };
 
@@ -93,7 +104,7 @@ export default function MoodCalendarModal({ visible, onClose }) {
           {/* Header */}
           <View style={styles.header}>
             <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-              Mood Records
+              {t('moodTrend.title')}
             </Text>
             <Pressable onPress={onClose} hitSlop={8}>
               <Ionicons name="close" size={22} color={Colors.textSecondary} />
@@ -106,7 +117,7 @@ export default function MoodCalendarModal({ visible, onClose }) {
               <Ionicons name="chevron-back" size={20} color={Colors.textPrimary} />
             </Pressable>
             <Text style={[styles.monthLabel, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-              {MONTH_NAMES[viewMonth - 1]} {viewYear}
+              {monthNames[viewMonth - 1]} {viewYear}
             </Text>
             <Pressable onPress={goNext} hitSlop={8} style={styles.navBtn}>
               <Ionicons name="chevron-forward" size={20} color={Colors.textPrimary} />
@@ -115,7 +126,7 @@ export default function MoodCalendarModal({ visible, onClose }) {
 
           {/* Weekday header row */}
           <View style={styles.weekRow}>
-            {WEEKDAY_LABELS.map((w, i) => (
+            {weekdayLabels.map((w, i) => (
               <View key={`${w}-${i}`} style={styles.cell}>
                 <Text style={[styles.weekText, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
                   {w}
@@ -171,7 +182,7 @@ export default function MoodCalendarModal({ visible, onClose }) {
           </View>
 
           <Text style={[styles.legend, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-            Tap a day to check in or update its mood
+            {t('butler.moodCalendarHint')}
           </Text>
         </Pressable>
       </Pressable>
@@ -191,7 +202,7 @@ export default function MoodCalendarModal({ visible, onClose }) {
             onPress={() => {}}
           >
             <Text style={[styles.pickerTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-              How were you feeling?
+              {t('butler.moodPastQuestion')}
             </Text>
             <Text style={[styles.pickerDate, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
               {pickingDate}
@@ -212,7 +223,7 @@ export default function MoodCalendarModal({ visible, onClose }) {
                     style={[styles.moodLabel, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
                     numberOfLines={1}
                   >
-                    {m.label}
+                    {t(`checkIn.mood.${m.key}`)}
                   </Text>
                   <Text style={[styles.moodScore, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>
                     {m.score}/5

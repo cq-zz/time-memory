@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { useSettingsStore } from '../../src/store/settings';
 import { listDurables, durableStats } from '../../src/services/durable';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import DurablesStats from '../../src/components/durables/DurablesStats';
+import YearMonthPicker from '../../src/components/common/YearMonthPicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import ItemsList from '../../src/components/durables/ItemsList';
 
@@ -26,6 +27,8 @@ export default function DurablesScreen() {
 
   const [items, setItems] = useState([]);
   const [stats, setStats] = useState(null);
+  const [year, setYear] = useState(null); // null = All
+  const [month, setMonth] = useState(null); // null = full year
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -55,17 +58,46 @@ export default function DurablesScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[1]}
       >
-        <DurablesStats stats={stats} currency={currency} />
-        <SearchFilterBar
-          search={search}
-          onSearchChange={setSearch}
-          filter={filter}
-          onFilterChange={setFilter}
-          filters={DURABLE_FILTERS}
-          placeholder={t('durable.searchPlaceholder')}
-        />
-        <ItemsList items={items} search={search} filter={filter} currency={currency} loading={loading} />
+        {/* Index 0 — stats (scrolls away) */}
+        <View style={styles.statsSection}>
+          <DurablesStats stats={stats} currency={currency} />
+        </View>
+
+        {/* Index 1 — sticky filter bar (date + search + status) */}
+        <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
+          <YearMonthPicker
+            year={year}
+            month={month}
+            showAllOption
+            onChange={({ year: y, month: m }) => {
+              setYear(y);
+              setMonth(m);
+            }}
+          />
+          <SearchFilterBar
+            search={search}
+            onSearchChange={setSearch}
+            filter={filter}
+            onFilterChange={setFilter}
+            filters={DURABLE_FILTERS}
+            placeholder={t('durable.searchPlaceholder')}
+          />
+        </View>
+
+        {/* Index 2 — list */}
+        <View style={styles.listSection}>
+          <ItemsList
+            items={items}
+            year={year}
+            month={month}
+            search={search}
+            filter={filter}
+            currency={currency}
+            loading={loading}
+          />
+        </View>
       </ScrollView>
 
       {/* Floating action button */}
@@ -88,10 +120,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    paddingBottom: 112,
+  },
+  statsSection: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 112,
-    gap: 24,
+    paddingBottom: 20,
+  },
+  stickyBar: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 16,
+    gap: 12,
+    borderBottomWidth: 1,
+  },
+  listSection: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
   },
   fab: {
     position: 'absolute',

@@ -7,7 +7,7 @@ import { useTheme, hexToRgba } from '../../utils/theme';
 import { WEATHER_OPTIONS } from '../../utils/constant';
 import { formatDisplay } from '../../utils/date';
 
-const ACCENT_CYCLE = ['#F28B50', '#6B5CE7', '#4A90D9', '#E86B8A', '#E8B830', '#6BAA90'];
+const ACCENT_CYCLE = ['#F28B50', '#A05C82', '#4A90D9', '#E86B8A', '#E8B830', '#6BAA90'];
 
 const WEATHER_EMOJI = {};
 WEATHER_OPTIONS.forEach((w) => {

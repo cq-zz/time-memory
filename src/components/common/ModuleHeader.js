@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../utils/theme';
 
-/** Standard list-screen header: back button, title, trailing menu button. */
+/** Standard list-screen header: back button + title. */
 export default function ModuleHeader({ title }) {
   const { Colors, Fonts } = useTheme();
   const router = useRouter();
@@ -20,10 +20,6 @@ export default function ModuleHeader({ title }) {
         </TouchableOpacity>
         <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>{title}</Text>
       </View>
-
-      <TouchableOpacity style={styles.menuBtn} activeOpacity={0.7}>
-        <Ionicons name="menu" size={20} color={Colors.textDark} />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -32,7 +28,6 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingTop: 8,
     paddingBottom: 10,
@@ -53,12 +48,5 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     lineHeight: 28,
-  },
-  menuBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 9999,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 });

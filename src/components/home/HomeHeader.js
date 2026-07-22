@@ -1,19 +1,28 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { Image, View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
+import { useProfileStore } from '../../store/profile';
 
 export default function HomeHeader() {
   const { Colors, Fonts, Shadows } = useTheme();
+  const { t } = useTranslation();
+  const avatar = useProfileStore((s) => s.avatar);
+  const nickname = useProfileStore((s) => s.nickname);
 
   return (
     <View style={styles.container}>
       {/* Left: avatar + nickname */}
       <View style={styles.left}>
         <View style={[styles.avatar, { backgroundColor: Colors.avatarBg, borderColor: Colors.white }, Shadows.card]}>
-          <Ionicons name="person" size={20} color={Colors.textSecondary} />
+          {avatar ? (
+            <Image source={{ uri: avatar }} style={styles.avatarImg} />
+          ) : (
+            <Ionicons name="person" size={20} color={Colors.textSecondary} />
+          )}
         </View>
         <Text style={[styles.nickname, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-          Marimar
+          {nickname || t('common.newUser')}
         </Text>
       </View>
 
@@ -21,7 +30,7 @@ export default function HomeHeader() {
       <View style={styles.right}>
         <View style={[styles.onlineDot, { backgroundColor: Colors.green }]} />
         <Text style={[styles.sysText, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>
-          SYS ONLINE
+          {t('home.sysOnline')}
         </Text>
       </View>
     </View>
@@ -50,6 +59,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
+  },
+  avatarImg: {
+    width: '100%',
+    height: '100%',
   },
   nickname: {
     fontSize: 20,

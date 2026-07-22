@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -58,16 +58,24 @@ export default function DiaryScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[0]}
       >
-        <YearMonthPicker
-          year={year}
-          month={month}
-          onChange={({ year: y, month: m }) => {
-            setYear(y);
-            setMonth(m);
-          }}
-        />
-        <DiaryList items={items} year={year} month={month} loading={loading} onPressItem={handlePressItem} />
+        {/* Index 0 — sticky filter bar (date) */}
+        <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
+          <YearMonthPicker
+            year={year}
+            month={month}
+            onChange={({ year: y, month: m }) => {
+              setYear(y);
+              setMonth(m);
+            }}
+          />
+        </View>
+
+        {/* Index 1 — list */}
+        <View style={styles.listSection}>
+          <DiaryList items={items} year={year} month={month} loading={loading} onPressItem={handlePressItem} />
+        </View>
       </ScrollView>
 
       {/* Floating action button */}
@@ -99,10 +107,17 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    paddingBottom: 112,
+  },
+  stickyBar: {
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 112,
-    gap: 16,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+  },
+  listSection: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
   },
   fab: {
     position: 'absolute',

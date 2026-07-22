@@ -13,21 +13,11 @@ export default function DurablesStats({ stats, currency }) {
 
   return (
     <View style={styles.container}>
-      {/* Title row */}
-      <View style={styles.titleRow}>
-        <Text style={[styles.pageTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-          {t('nav.durable')}
-        </Text>
-        <Text style={[styles.trackingLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-          LIFESPAN TRACKING
-        </Text>
-      </View>
-
       {/* Featured stat card */}
       <View style={[styles.statCard, { backgroundColor: Colors.inkDeep }, Shadows.dark]}>
         <View style={styles.statContent}>
           <Text style={[styles.statLabel, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            IN-USE TOTAL VALUE
+            {t('durable.inUseTotalValue')}
           </Text>
           <Text style={[styles.statValue, { color: Colors.white, fontFamily: Fonts.bold }]} numberOfLines={1}>
             {value}
@@ -37,12 +27,12 @@ export default function DurablesStats({ stats, currency }) {
           <View style={styles.pillsRow}>
             <View style={[styles.pill, { backgroundColor: 'rgba(74, 168, 104, 0.2)' }]}>
               <Text style={[styles.pillText, { color: Colors.green, fontFamily: Fonts.bold }]}>
-                {inUseCount} IN-USE
+                {t('durable.inUsePill', { count: inUseCount })}
               </Text>
             </View>
             <View style={[styles.pill, { backgroundColor: Colors.white10 }]}>
               <Text style={[styles.pillText, { color: 'rgba(255, 255, 255, 0.7)', fontFamily: Fonts.bold }]}>
-                {totalCount} TOTAL
+                {t('durable.totalPill', { count: totalCount })}
               </Text>
             </View>
           </View>
@@ -56,20 +46,6 @@ const styles = StyleSheet.create({
   container: {
     gap: 16,
   },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-  },
-  pageTitle: {
-    fontSize: 28,
-    lineHeight: 34,
-  },
-  trackingLabel: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
-  },
   statCard: {
     padding: 24,
     borderRadius: 32,
@@ -82,6 +58,7 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     letterSpacing: 0.6,
     opacity: 0.7,
+    textTransform: 'uppercase',
   },
   statValue: {
     fontSize: 48,

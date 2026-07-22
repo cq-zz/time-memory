@@ -1,5 +1,6 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/utils/theme';
 
 function TabIcon({ name, focused, color }) {
@@ -8,6 +9,7 @@ function TabIcon({ name, focused, color }) {
 
 export default function TabLayout() {
   const { Colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Tabs
@@ -36,7 +38,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: '首页',
+          title: t('tab.home'),
           tabBarIcon: ({ focused, color }) => (
             <TabIcon name={focused ? 'home' : 'home-outline'} focused={focused} color={color} />
           ),
@@ -45,7 +47,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="butler"
         options={{
-          title: '管家',
+          title: t('tab.butler'),
           tabBarIcon: ({ focused, color }) => (
             <TabIcon name={focused ? 'briefcase' : 'briefcase-outline'} focused={focused} color={color} />
           ),
@@ -54,7 +56,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="reminders"
         options={{
-          title: '提醒',
+          title: t('tab.reminder'),
           tabBarIcon: ({ focused, color }) => (
             <TabIcon name={focused ? 'notifications' : 'notifications-outline'} focused={focused} color={color} />
           ),
@@ -63,7 +65,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: '我的',
+          title: t('tab.profile'),
           tabBarIcon: ({ focused, color }) => (
             <TabIcon name={focused ? 'person' : 'person-outline'} focused={focused} color={color} />
           ),

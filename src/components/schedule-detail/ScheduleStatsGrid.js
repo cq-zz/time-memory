@@ -44,11 +44,11 @@ export default function ScheduleStatsGrid({
   return (
     <View style={styles.container}>
       <View style={styles.row}>
-        <StatCard label="PRIORITY" value={priorityLabel} dotColor={priorityColor} />
-        <StatCard label="DATE RANGE" value={dateRangeText} />
+        <StatCard label={t('detail.priority')} value={priorityLabel} dotColor={priorityColor} />
+        <StatCard label={t('detail.dateRange')} value={dateRangeText} />
       </View>
       <View style={styles.row}>
-        <StatCard label="CHECKLIST" value={checklistText} />
+        <StatCard label={t('detail.checklist')} value={checklistText} />
         <View
           style={[
             styles.statCard,
@@ -57,7 +57,7 @@ export default function ScheduleStatsGrid({
           ]}
         >
           <Text style={[styles.statLabel, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>
-            REMINDER
+            {t('detail.reminder')}
           </Text>
           <View style={styles.statValueRow}>
             <Ionicons
@@ -100,6 +100,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   statValueRow: {
     flexDirection: 'row',

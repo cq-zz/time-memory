@@ -1,12 +1,13 @@
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, TextInput, StyleSheet } from 'react-native';
 import { useTheme } from '../../utils/theme';
+import FieldLabel from './FieldLabel';
 
-export default function FormInput({ label, placeholder, value, onChangeText, multiline, keyboardType = 'default' }) {
+export default function FormInput({ label, placeholder, value, onChangeText, multiline, keyboardType = 'default', secure = false }) {
   const { Colors, Radius, Fonts } = useTheme();
 
   return (
     <View style={styles.field}>
-      <Text style={[styles.label, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>{label}</Text>
+      <FieldLabel label={label} />
       <View
         style={[
           styles.inputBox,
@@ -25,6 +26,7 @@ export default function FormInput({ label, placeholder, value, onChangeText, mul
           value={value}
           onChangeText={onChangeText}
           multiline={multiline}
+          secureTextEntry={secure}
           keyboardType={keyboardType}
           numberOfLines={multiline ? 4 : undefined}
           textAlignVertical={multiline ? 'top' : 'center'}
@@ -37,11 +39,6 @@ export default function FormInput({ label, placeholder, value, onChangeText, mul
 const styles = StyleSheet.create({
   field: {
     gap: 8,
-  },
-  label: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
   },
   inputBox: {
     minHeight: 56,

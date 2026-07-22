@@ -3,6 +3,7 @@ import { Linking, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View 
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../utils/theme';
 import { validateImage } from '../../utils/image';
 import useAlert from '../../hooks/useAlert';
@@ -28,6 +29,7 @@ export default function ImageUploadField({
   disabled = false,
 }) {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
   const { alert } = useAlert();
   const [picking, setPicking] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -36,20 +38,20 @@ export default function ImageUploadField({
   const [urlError, setUrlError] = useState('');
   const [previewError, setPreviewError] = useState(false);
   const hasImage = Boolean(value);
-  const finalHint = hint ?? 'Supports JPG, PNG, WebP';
+  const finalHint = hint ?? t('common.imageHint');
 
   // ── Permissions ──
   const showPermissionDenied = (title, message) => {
     alert(title, message, [
-      { text: 'Cancel', style: 'cancel' },
-      { text: 'Go to Settings', onPress: () => Linking.openSettings() },
+      { text: t('common.cancel'), style: 'cancel' },
+      { text: t('common.goToSettings'), onPress: () => Linking.openSettings() },
     ]);
   };
 
   const requestCameraPermission = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
     if (status !== 'granted') {
-      showPermissionDenied('Camera Permission', 'Allow camera access to take photos.');
+      showPermissionDenied(t('common.cameraPermission'), t('common.cameraPermissionDesc'));
       return false;
     }
     return true;
@@ -58,7 +60,7 @@ export default function ImageUploadField({
   const requestLibraryPermission = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      showPermissionDenied('Photo Library Permission', 'Allow photo library access to choose images.');
+      showPermissionDenied(t('common.libraryPermission'), t('common.libraryPermissionDesc'));
       return false;
     }
     return true;
@@ -75,7 +77,7 @@ export default function ImageUploadField({
       fileSize: asset.fileSize ?? 0,
     });
     if (error) {
-      alert('Upload Failed', error);
+      alert(t('common.uploadFailed'), error);
       return;
     }
     onChange(asset.uri);
@@ -96,7 +98,7 @@ export default function ImageUploadField({
       });
       processResult(result);
     } catch (e) {
-      alert('Error', e?.message || 'Failed to open camera');
+      alert(t('common.error'), e?.message || t('common.cameraFailed'));
     } finally {
       setPicking(false);
     }
@@ -117,7 +119,7 @@ export default function ImageUploadField({
       });
       processResult(result);
     } catch (e) {
-      alert('Error', e?.message || 'Failed to open photo library');
+      alert(t('common.error'), e?.message || t('common.libraryFailed'));
     } finally {
       setPicking(false);
     }
@@ -135,11 +137,11 @@ export default function ImageUploadField({
   const handleUrlConfirm = () => {
     const trimmed = urlInput.trim();
     if (!trimmed || !/^https?:\/\//i.test(trimmed)) {
-      setUrlError('Invalid image URL');
+      setUrlError(t('common.imageUrlInvalid'));
       return;
     }
     if (previewError) {
-      setUrlError('Invalid image URL');
+      setUrlError(t('common.imageUrlInvalid'));
       return;
     }
     onChange(trimmed);
@@ -186,7 +188,7 @@ export default function ImageUploadField({
               <Ionicons name="image-outline" size={24} color={Colors.purple} />
             </View>
             <Text style={[styles.placeholderText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
-              {placeholder || 'Tap to add a photo'}
+              {placeholder || t('common.addPhoto')}
             </Text>
             <Text style={[styles.hintText, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
               {finalHint}
@@ -201,10 +203,10 @@ export default function ImageUploadField({
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setUrlModalOpen(false)} />
           <View style={[styles.urlDialog, { backgroundColor: Colors.card, borderRadius: Radius.md }]}>
             <Text style={[styles.urlTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-              Image URL
+              {t('common.imageUrlTitle')}
             </Text>
             <Text style={[styles.urlHint, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-              Paste a direct link to an image
+              {t('common.imageUrlPlaceholder')}
             </Text>
             <TextInput
               style={[
@@ -239,7 +241,7 @@ export default function ImageUploadField({
                 {previewError ? (
                   <View style={styles.previewErrorWrap}>
                     <Text style={[styles.previewErrorText, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-                      Image failed to load
+                      {t('common.imageBroken')}
                     </Text>
                   </View>
                 ) : (
@@ -263,7 +265,7 @@ export default function ImageUploadField({
                 onPress={() => setUrlModalOpen(false)}
               >
                 <Text style={[styles.urlBtnCancelText, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
-                  Cancel
+                  {t('common.cancel')}
                 </Text>
               </Pressable>
               <Pressable
@@ -275,7 +277,7 @@ export default function ImageUploadField({
                 onPress={handleUrlConfirm}
               >
                 <Text style={[styles.urlBtnConfirmText, { color: Colors.white, fontFamily: Fonts.semiBold }]}>
-                  Confirm
+                  {t('common.confirm')}
                 </Text>
               </Pressable>
             </View>
@@ -289,7 +291,7 @@ export default function ImageUploadField({
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setSheetOpen(false)} />
           <View style={[styles.sheet, { backgroundColor: Colors.card }]}>
             <Text style={[styles.sheetTitle, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
-              SELECT IMAGE SOURCE
+              {t('common.selectImageSource')}
             </Text>
             <View style={styles.sheetActions}>
               <Pressable
@@ -304,7 +306,7 @@ export default function ImageUploadField({
                   <Ionicons name="camera-outline" size={22} color={Colors.purple} />
                 </View>
                 <Text style={[styles.sheetBtnText, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-                  Take Photo
+                  {t('common.takePhoto')}
                 </Text>
               </Pressable>
               <Pressable
@@ -319,7 +321,7 @@ export default function ImageUploadField({
                   <Ionicons name="folder-open-outline" size={22} color={Colors.green} />
                 </View>
                 <Text style={[styles.sheetBtnText, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-                  From Library
+                  {t('common.chooseFromLibrary')}
                 </Text>
               </Pressable>
               <Pressable
@@ -334,7 +336,7 @@ export default function ImageUploadField({
                   <Ionicons name="link-outline" size={22} color={Colors.orange} />
                 </View>
                 <Text style={[styles.sheetBtnText, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-                  From URL
+                  {t('common.fromNetwork')}
                 </Text>
               </Pressable>
             </View>
@@ -347,7 +349,7 @@ export default function ImageUploadField({
               onPress={() => setSheetOpen(false)}
             >
               <Text style={[styles.sheetCancelText, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
-                Cancel
+                {t('common.cancel')}
               </Text>
             </Pressable>
           </View>

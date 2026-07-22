@@ -82,7 +82,7 @@ function AssetCard({ item, currency, isLast }) {
           {formatDisplay(item.purchase_date)}
         </Text>
         <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-          {years != null ? `${years.toFixed(1)} ${t('common.years', { defaultValue: 'YRS' })}` : '--'}
+          {years != null ? `${years.toFixed(1)} ${t('common.years')}` : '--'}
         </Text>
       </View>
     </TouchableOpacity>

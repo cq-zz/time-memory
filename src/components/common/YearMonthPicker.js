@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
 
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const MONTHS_PER_ROW = 4;
 
@@ -24,14 +24,15 @@ export default function YearMonthPicker({
   showAllOption = false,
 }) {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   const displayText = useMemo(() => {
-    if (year == null) return 'All';
+    if (year == null) return t('common.all');
     if (yearOnly) return `${year}`;
     if (month) return `${year}-${pad(month)}`;
-    return `${year} · All`;
-  }, [year, month, yearOnly]);
+    return t('common.yearFull', { year });
+  }, [year, month, yearOnly, t]);
 
   const handleSelect = useCallback(
     (y, m) => {
@@ -75,8 +76,10 @@ export default function YearMonthPicker({
 
 function PickerPanel({ currentYear, currentMonth, onSelect, onClose, yearOnly, showAllOption }) {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
   const yearStart = useSettingsStore((s) => s.settings.yearStart);
   const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
+  const monthNames = t('calendar.monthsShort', { returnObjects: true });
 
   const initialYear = currentYear || new Date().getFullYear();
   const [viewYear, setViewYear] = useState(initialYear);
@@ -113,21 +116,21 @@ function PickerPanel({ currentYear, currentMonth, onSelect, onClose, yearOnly, s
         <View style={[styles.panelHeader, { borderBottomColor: Colors.cardBorder }]}>
           <Pressable onPress={onClose}>
             <Text style={[styles.headerBtnCancel, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-              Cancel
+              {t('common.cancel')}
             </Text>
           </Pressable>
           <Text style={[styles.panelTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-            Select Period
+            {t('common.selectPeriod')}
           </Text>
           <Pressable onPress={handleConfirm}>
             <Text style={[styles.headerBtnConfirm, { color: Colors.purple, fontFamily: Fonts.bold }]}>
-              Confirm
+              {t('common.confirm')}
             </Text>
           </Pressable>
         </View>
 
         <Text style={[styles.allHint, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-          Leaving month empty selects the full year
+          {t('common.allYearDefault')}
         </Text>
 
         {showAllOption && (
@@ -156,7 +159,7 @@ function PickerPanel({ currentYear, currentMonth, onSelect, onClose, yearOnly, s
                 { color: localAll ? Colors.white : Colors.textSecondary, fontFamily: Fonts.bold },
               ]}
             >
-              All
+              {t('common.all')}
             </Text>
           </Pressable>
         )}
@@ -189,7 +192,7 @@ function PickerPanel({ currentYear, currentMonth, onSelect, onClose, yearOnly, s
                           { color: isActive ? Colors.white : Colors.textSecondary, fontFamily: Fonts.semiBold },
                         ]}
                       >
-                        {MONTH_NAMES[m - 1]}
+                        {monthNames[m - 1]}
                       </Text>
                     </Pressable>
                   );
@@ -221,7 +224,7 @@ function PickerPanel({ currentYear, currentMonth, onSelect, onClose, yearOnly, s
         {/* Year quick jump */}
         <View style={styles.yearSection}>
           <Text style={[styles.yearSectionLabel, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
-            QUICK JUMP
+            {t('common.quickJumpYear')}
           </Text>
           <ScrollView
             horizontal

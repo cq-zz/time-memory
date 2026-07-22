@@ -14,7 +14,7 @@ export const LightColors = {
   inkDeep: '#1A1A1A', // feature cards & primary buttons
 
   // Brand
-  purple: '#6B5CE7',
+  purple: '#A05C82',
   orange: '#F28B50',
   green: '#4AA868',
   rose: '#E86B6B',
@@ -42,7 +42,7 @@ export const LightColors = {
 
   // Modal & tints
   overlay: 'rgba(26, 26, 26, 0.45)',
-  purpleTint: 'rgba(107, 92, 231, 0.1)',
+  purpleTint: 'rgba(160, 92, 130, 0.1)',
 };
 
 export const DarkColors = {
@@ -52,7 +52,7 @@ export const DarkColors = {
   inkDeep: '#26292F',
 
   // Brand — slightly lifted for dark backgrounds
-  purple: '#7D70F0',
+  purple: '#B26E92',
   orange: '#F59A66',
   green: '#5BBB78',
   rose: '#EE8080',
@@ -80,7 +80,7 @@ export const DarkColors = {
 
   // Modal & tints
   overlay: 'rgba(0, 0, 0, 0.6)',
-  purpleTint: 'rgba(125, 112, 240, 0.16)',
+  purpleTint: 'rgba(178, 110, 146, 0.16)',
 };
 
 export const Radius = {
@@ -123,7 +123,7 @@ export const Fonts = {
   bold: 'WorkSans_700Bold',
 };
 
-/** hexToRgba('#6B5CE7', 0.1) -> 'rgba(107, 92, 231, 0.1)' */
+/** hexToRgba('#A05C82', 0.1) -> 'rgba(160, 92, 130, 0.1)' */
 export function hexToRgba(hex, alpha = 1) {
   const h = hex.replace('#', '');
   const full = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;

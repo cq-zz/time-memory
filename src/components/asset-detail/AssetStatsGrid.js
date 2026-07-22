@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 
 function StatCard({ label, value, icon, iconColor }) {
@@ -39,25 +40,26 @@ export default function AssetStatsGrid({
   companionText,
 }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
       {/* 2x2 stats grid */}
       <View style={styles.gridBlock}>
         <View style={styles.row}>
-          <StatCard label="CATEGORY" value={categoryLabel} icon={categoryIcon} iconColor={Colors.purple} />
-          <StatCard label="SOURCE" value={sourceText} />
+          <StatCard label={t('detail.category')} value={categoryLabel} icon={categoryIcon} iconColor={Colors.purple} />
+          <StatCard label={t('detail.source')} value={sourceText} />
         </View>
         <View style={styles.row}>
-          <StatCard label="PURCHASE DATE" value={purchaseDateText} />
-          <StatCard label="PRICE" value={purchasePriceText} />
+          <StatCard label={t('detail.purchaseDate')} value={purchaseDateText} />
+          <StatCard label={t('detail.price')} value={purchasePriceText} />
         </View>
       </View>
 
       {/* Owned / companion time hero card */}
       <View style={[styles.ownedCard, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }, Shadows.dark]}>
         <View style={styles.ownedTop}>
-          <Text style={[styles.ownedLabel, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>OWNED</Text>
+          <Text style={[styles.ownedLabel, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>{t('detail.owned')}</Text>
           <View style={[styles.ownedIconBox, { backgroundColor: Colors.white10, borderRadius: Radius.circle }]}>
             <Ionicons name="hourglass-outline" size={22} color={Colors.white} />
           </View>
@@ -98,6 +100,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   statValueRow: {
     flexDirection: 'row',
@@ -122,6 +125,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   ownedIconBox: {
     width: 48,

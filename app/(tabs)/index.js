@@ -1,6 +1,14 @@
+import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useTheme } from '../../src/utils/theme';
+import { listDurables } from '../../src/services/durable';
+import { listAssets } from '../../src/services/asset';
+import { listSchedules } from '../../src/services/schedule';
+import { listBills } from '../../src/services/bill';
+import { getBudgetByYear } from '../../src/services/budget';
+import { getReminders } from '../../src/utils/reminders';
 import HomeHeader from '../../src/components/home/HomeHeader';
 import HeroCard from '../../src/components/home/HeroCard';
 import StatsGrid from '../../src/components/home/StatsGrid';
@@ -12,8 +20,35 @@ import CategoryBreakdown from '../../src/components/home/CategoryBreakdown';
 import RemindersTimeline from '../../src/components/home/RemindersTimeline';
 import MoodTrend from '../../src/components/home/MoodTrend';
 
+const EMPTY = { durables: [], assets: [], schedules: [], bills: [], budget: null, reminders: [] };
+
 export default function HomeScreen() {
   const { Colors } = useTheme();
+  const router = useRouter();
+  const [data, setData] = useState(EMPTY);
+
+  // Refresh every time the tab gains focus — module CRUD, reminder lead
+  // days and data resets all happen on other tabs.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      Promise.all([
+        listDurables(),
+        listAssets(),
+        listSchedules(),
+        listBills(),
+        getBudgetByYear(String(new Date().getFullYear())),
+        getReminders(),
+      ])
+        .then(([durables, assets, schedules, bills, budget, reminders]) => {
+          if (active) setData({ durables, assets, schedules, bills, budget, reminders });
+        })
+        .catch(() => {});
+      return () => {
+        active = false;
+      };
+    }, [])
+  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top']}>
@@ -24,13 +59,17 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <HeroCard />
-        <StatsGrid />
-        <AssetBalanceCard />
-        <BudgetCard />
-        <TrendsCard />
-        <MonthlyRecordsCard />
-        <CategoryBreakdown />
-        <RemindersTimeline />
+        <StatsGrid durables={data.durables} schedules={data.schedules} assets={data.assets} />
+        <AssetBalanceCard durables={data.durables} assets={data.assets} />
+        <BudgetCard budget={data.budget} bills={data.bills} />
+        <TrendsCard bills={data.bills} />
+        <MonthlyRecordsCard bills={data.bills} />
+        <CategoryBreakdown bills={data.bills} />
+        <RemindersTimeline
+          reminders={data.reminders}
+          onPressItem={(item) => router.push(item.route)}
+          onViewAll={() => router.push('/reminders')}
+        />
         <MoodTrend />
       </ScrollView>
     </SafeAreaView>

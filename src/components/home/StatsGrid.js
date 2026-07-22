@@ -1,13 +1,10 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
-
-const STATS = [
-  { value: '142', label: 'DURABLES', icon: 'cube-outline', color: '#1A1A1A' },
-  { value: '08', label: 'SCHEDULES', icon: 'calendar-outline', color: '#6B5CE7' },
-  { value: '32', label: 'ASSETS', icon: 'wallet-outline', color: '#F28B50' },
-  { value: '94%', label: 'COMPLETION', icon: 'checkmark-circle-outline', color: '#4AA868' },
-];
+import { effectiveStatus as durableStatus } from '../../services/durable';
+import { effectiveStatus as scheduleStatus } from '../../services/schedule';
+import { effectiveStatus as assetStatus } from '../../services/asset';
 
 function StatCard({ value, label, icon, color }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
@@ -39,7 +36,26 @@ function StatCard({ value, label, icon, color }) {
   );
 }
 
-export default function StatsGrid() {
+export default function StatsGrid({ durables = [], schedules = [], assets = [] }) {
+  const { Colors } = useTheme();
+  const { t } = useTranslation();
+
+  const durableCount = durables.filter((r) => durableStatus(r) === 'in_use').length;
+  const activeSchedules = schedules.filter((r) => {
+    const s = scheduleStatus(r);
+    return s !== 'done' && s !== 'incomplete';
+  }).length;
+  const assetCount = assets.filter((r) => assetStatus(r) === 'active').length;
+  const done = schedules.filter((r) => scheduleStatus(r) === 'done').length;
+  const completion = schedules.length ? `${Math.round((done / schedules.length) * 100)}%` : '--';
+
+  const STATS = [
+    { value: String(durableCount), label: t('home.statDurables'), icon: 'cube-outline', color: Colors.textPrimary },
+    { value: String(activeSchedules), label: t('home.statSchedules'), icon: 'calendar-outline', color: '#A05C82' },
+    { value: String(assetCount), label: t('home.statAssets'), icon: 'wallet-outline', color: '#F28B50' },
+    { value: completion, label: t('home.statCompletion'), icon: 'checkmark-circle-outline', color: '#4AA868' },
+  ];
+
   return (
     <View style={styles.grid}>
       <View style={styles.row}>

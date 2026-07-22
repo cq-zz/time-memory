@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -55,17 +55,29 @@ export default function AssetsScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[1]}
       >
-        <AssetsStats stats={stats} currency={currency} />
-        <SearchFilterBar
-          search={search}
-          onSearchChange={setSearch}
-          filter={filter}
-          onFilterChange={setFilter}
-          filters={ASSET_FILTERS}
-          placeholder={t('asset.searchPlaceholder')}
-        />
-        <AssetsList items={items} search={search} filter={filter} currency={currency} loading={loading} />
+        {/* Index 0 — stats (scrolls away) */}
+        <View style={styles.statsSection}>
+          <AssetsStats stats={stats} currency={currency} />
+        </View>
+
+        {/* Index 1 — sticky filter bar (search + status) */}
+        <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
+          <SearchFilterBar
+            search={search}
+            onSearchChange={setSearch}
+            filter={filter}
+            onFilterChange={setFilter}
+            filters={ASSET_FILTERS}
+            placeholder={t('asset.searchPlaceholder')}
+          />
+        </View>
+
+        {/* Index 2 — list */}
+        <View style={styles.listSection}>
+          <AssetsList items={items} search={search} filter={filter} currency={currency} loading={loading} />
+        </View>
       </ScrollView>
 
       {/* Floating action button */}
@@ -88,10 +100,22 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    paddingBottom: 112,
+  },
+  statsSection: {
     paddingHorizontal: 16,
     paddingTop: 16,
-    paddingBottom: 112,
-    gap: 24,
+    paddingBottom: 20,
+  },
+  stickyBar: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 16,
+    borderBottomWidth: 1,
+  },
+  listSection: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
   },
   fab: {
     position: 'absolute',

@@ -88,46 +88,54 @@ export default function BillsScreen() {
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        stickyHeaderIndices={[1]}
       >
-        {/* Period summary */}
-        <View style={styles.summaryRow}>
-          <SummaryCard
-            label={t('bills.totalExpense')}
-            total={summary.expenseTotal}
-            count={summary.expenseCount}
-            color={Colors.rose}
-            icon="trending-down-outline"
-            currency={currency}
+        {/* Index 0 — period summary (scrolls away) */}
+        <View style={styles.summarySection}>
+          <View style={styles.summaryRow}>
+            <SummaryCard
+              label={t('bills.totalExpense')}
+              total={summary.expenseTotal}
+              count={summary.expenseCount}
+              color={Colors.rose}
+              icon="trending-down-outline"
+              currency={currency}
+            />
+            <SummaryCard
+              label={t('bills.totalIncome')}
+              total={summary.incomeTotal}
+              count={summary.incomeCount}
+              color={Colors.green}
+              icon="trending-up-outline"
+              currency={currency}
+            />
+          </View>
+        </View>
+
+        {/* Index 1 — sticky filter bar (date + search + type) */}
+        <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
+          <YearMonthPicker
+            year={year}
+            month={month}
+            onChange={({ year: y, month: m }) => {
+              setYear(y);
+              setMonth(m);
+            }}
           />
-          <SummaryCard
-            label={t('bills.totalIncome')}
-            total={summary.incomeTotal}
-            count={summary.incomeCount}
-            color={Colors.green}
-            icon="trending-up-outline"
-            currency={currency}
+          <SearchFilterBar
+            search={search}
+            onSearchChange={setSearch}
+            filter={filter}
+            onFilterChange={setFilter}
+            filters={BILL_FILTERS}
+            placeholder={t('bills.searchPlaceholder')}
           />
         </View>
 
-        <YearMonthPicker
-          year={year}
-          month={month}
-          onChange={({ year: y, month: m }) => {
-            setYear(y);
-            setMonth(m);
-          }}
-        />
-
-        <SearchFilterBar
-          search={search}
-          onSearchChange={setSearch}
-          filter={filter}
-          onFilterChange={setFilter}
-          filters={BILL_FILTERS}
-          placeholder={t('bills.searchPlaceholder')}
-        />
-
-        <BillsList items={items} year={year} month={month} search={search} filter={filter} loading={loading} />
+        {/* Index 2 — list */}
+        <View style={styles.listSection}>
+          <BillsList items={items} year={year} month={month} search={search} filter={filter} loading={loading} />
+        </View>
       </ScrollView>
 
       {/* Floating action button */}
@@ -150,10 +158,23 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
+    paddingBottom: 112,
+  },
+  summarySection: {
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 112,
-    gap: 16,
+    paddingBottom: 20,
+  },
+  stickyBar: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 16,
+    gap: 12,
+    borderBottomWidth: 1,
+  },
+  listSection: {
+    paddingHorizontal: 16,
+    paddingTop: 20,
   },
   summaryRow: {
     flexDirection: 'row',

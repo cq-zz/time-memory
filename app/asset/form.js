@@ -10,10 +10,11 @@ import { ASSET_STATUS_OPTIONS } from '../../src/utils/constant';
 import { showToast } from '../../src/components/common/Toast';
 import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
-import DatePickerField from '../../src/components/common/DatePickerField';
+import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
 import CategoryPicker from '../../src/components/common/CategoryPicker';
 import AcquisitionPicker from '../../src/components/common/AcquisitionPicker';
+import { sanitizeAmount } from '../../src/utils/money';
 
 export default function AssetFormScreen() {
   const { Colors, Radius, Fonts } = useTheme();
@@ -122,9 +123,9 @@ export default function AssetFormScreen() {
           label={`${t('asset.category')} *`}
         />
         <AcquisitionPicker selected={acquisition} onSelect={setAcquisition} ns="asset" />
-        <DatePickerField
+        <WheelPicker
           label={`${t('asset.purchaseDate')} *`}
-          mode="date"
+          level="date"
           value={purchaseDate}
           onChange={setPurchaseDate}
         />
@@ -132,19 +133,19 @@ export default function AssetFormScreen() {
           label={`${t('asset.purchasePrice')} *`}
           placeholder={`${currency} 0.00`}
           value={purchasePrice}
-          onChangeText={setPurchasePrice}
+          onChangeText={(v) => setPurchasePrice(sanitizeAmount(v))}
           keyboardType="decimal-pad"
         />
         <FormInput
           label={`${t('asset.currentPrice')} *`}
           placeholder={`${currency} 0.00 · ${t('asset.currentPriceHint')}`}
           value={currentPrice}
-          onChangeText={setCurrentPrice}
+          onChangeText={(v) => setCurrentPrice(sanitizeAmount(v))}
           keyboardType="decimal-pad"
         />
-        <DatePickerField
+        <WheelPicker
           label={t('asset.expiryDate')}
-          mode="date"
+          level="date"
           value={expiryDate}
           onChange={setExpiryDate}
         />

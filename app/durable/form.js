@@ -10,11 +10,12 @@ import { DURABLE_STATUS_OPTIONS } from '../../src/utils/constant';
 import { showToast } from '../../src/components/common/Toast';
 import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
-import DatePickerField from '../../src/components/common/DatePickerField';
+import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
 import CategoryPicker from '../../src/components/common/CategoryPicker';
 import AcquisitionPicker from '../../src/components/common/AcquisitionPicker';
 import LinkedAssetPicker from '../../src/components/durable-form/LinkedAssetPicker';
+import { sanitizeAmount } from '../../src/utils/money';
 
 export default function DurableFormScreen() {
   const { Colors, Radius, Fonts } = useTheme();
@@ -60,7 +61,7 @@ export default function DurableFormScreen() {
   const handleSave = async () => {
     const trimmedName = name.trim();
     if (!trimmedName) {
-      showToast(t('durable.nameRequired', { defaultValue: 'Please enter a name' }));
+      showToast(t('durable.nameRequired'));
       return;
     }
     if (!purchaseDate) {
@@ -121,9 +122,9 @@ export default function DurableFormScreen() {
           label={`${t('durable.category')} *`}
         />
         <AcquisitionPicker selected={acquisition} onSelect={setAcquisition} ns="durable" />
-        <DatePickerField
+        <WheelPicker
           label={`${t('durable.purchaseDate')} *`}
-          mode="date"
+          level="date"
           value={purchaseDate}
           onChange={setPurchaseDate}
         />
@@ -131,18 +132,18 @@ export default function DurableFormScreen() {
           label={t('durable.purchasePriceLabel')}
           placeholder={`${currency} 0.00`}
           value={price}
-          onChangeText={setPrice}
+          onChangeText={(v) => setPrice(sanitizeAmount(v))}
           keyboardType="decimal-pad"
         />
-        <DatePickerField
+        <WheelPicker
           label={t('durable.expectedLifespan')}
-          mode="date"
+          level="date"
           value={expectedLifespan}
           onChange={setExpectedLifespan}
         />
-        <DatePickerField
+        <WheelPicker
           label={t('durable.expiryDate')}
-          mode="date"
+          level="date"
           value={expiryDate}
           onChange={setExpiryDate}
         />

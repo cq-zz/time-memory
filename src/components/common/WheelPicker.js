@@ -2,15 +2,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
+import FieldLabel from './FieldLabel';
 
 const LEVEL_CONFIG = {
-  year: { cols: ['year'], format: 'YYYY', title: 'Select Year' },
-  month: { cols: ['year', 'month'], format: 'YYYY-MM', title: 'Select Year & Month' },
-  date: { cols: ['year', 'month', 'day'], format: 'YYYY-MM-DD', title: 'Select Date' },
-  hour: { cols: ['year', 'month', 'day', 'hour'], format: 'YYYY-MM-DD HH', title: 'Select Date & Hour' },
-  minute: { cols: ['year', 'month', 'day', 'hour', 'minute'], format: 'YYYY-MM-DD HH:mm', title: 'Select Date & Time' },
+  year: { cols: ['year'], format: 'YYYY', titleKey: 'common.selectYear' },
+  month: { cols: ['year', 'month'], format: 'YYYY-MM', titleKey: 'common.selectYearMonth' },
+  date: { cols: ['year', 'month', 'day'], format: 'YYYY-MM-DD', titleKey: 'common.selectDate' },
+  hour: { cols: ['year', 'month', 'day', 'hour'], format: 'YYYY-MM-DD HH', titleKey: 'common.selectDateHour' },
+  minute: { cols: ['year', 'month', 'day', 'hour', 'minute'], format: 'YYYY-MM-DD HH:mm', titleKey: 'common.selectDateTime' },
 };
 
 const COLUMN_WIDTH = 72;
@@ -109,13 +111,14 @@ export default function WheelPicker({
   allOption = false,
 }) {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
   const yearStart = useSettingsStore((s) => s.settings.yearStart);
   const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
 
   const [open, setOpen] = useState(false);
   const config = LEVEL_CONFIG[level] || LEVEL_CONFIG.date;
-  const resolvedPlaceholder = placeholder ?? 'Please select';
-  const allLabel = 'All';
+  const resolvedPlaceholder = placeholder ?? t('common.pleaseSelect');
+  const allLabel = t('common.all');
 
   const isAll = allOption && value === 'all';
   const parsed = value && !isAll ? dayjs(value) : null;
@@ -134,7 +137,7 @@ export default function WheelPicker({
       hour: d.hour(),
       minute: d.minute(),
     };
-  }, [hasValue, parsed, isAll]);
+  }, [hasValue, parsed, isAll, allLabel]);
 
   const [draft, setDraft] = useState(parts);
 
@@ -159,7 +162,7 @@ export default function WheelPicker({
     const minute = [];
     for (let m = 0; m < 60; m++) minute.push(m);
     return { year, month, day, hour, minute };
-  }, [yearStart, yearEnd, draftDaysInMonth, allOption]);
+  }, [yearStart, yearEnd, draftDaysInMonth, allOption, allLabel]);
 
   const handleColumnChange = useCallback((colKey, val) => {
     setDraft((prev) => {
@@ -193,11 +196,7 @@ export default function WheelPicker({
 
   return (
     <View style={[styles.wrap, style]}>
-      {label ? (
-        <Text style={[styles.label, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-          {label}
-        </Text>
-      ) : null}
+      {label ? <FieldLabel label={label} /> : null}
       <Pressable
         style={({ pressed }) => [
           styles.trigger,
@@ -251,15 +250,15 @@ export default function WheelPicker({
               <View style={[styles.panelHeader, { borderBottomColor: Colors.cardBorder }]}>
                 <Pressable onPress={() => setOpen(false)}>
                   <Text style={[styles.headerBtnCancel, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-                    Cancel
+                    {t('common.cancel')}
                   </Text>
                 </Pressable>
                 <Text style={[styles.panelTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-                  {config.title}
+                  {t(config.titleKey)}
                 </Text>
                 <Pressable onPress={handleConfirm}>
                   <Text style={[styles.headerBtnConfirm, { color: Colors.purple, fontFamily: Fonts.bold }]}>
-                    Confirm
+                    {t('common.confirm')}
                   </Text>
                 </Pressable>
               </View>
@@ -288,11 +287,6 @@ const styles = StyleSheet.create({
   wrap: {
     gap: 8,
     width: '100%',
-  },
-  label: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
   },
   trigger: {
     flexDirection: 'row',

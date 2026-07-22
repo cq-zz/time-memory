@@ -1,5 +1,6 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 
 function StatCard({ label, value, icon, iconColor }) {
@@ -58,6 +59,7 @@ export default function StatsGrid({
   lifespanNoteText,
 }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { t } = useTranslation();
   const hasProgress = percent != null;
 
   return (
@@ -65,12 +67,12 @@ export default function StatsGrid({
       {/* 2x2 stats grid */}
       <View style={styles.gridBlock}>
         <View style={styles.row}>
-          <StatCard label="CATEGORY" value={categoryLabel} icon={categoryIcon} iconColor={Colors.purple} />
-          <StatCard label="PURCHASE DATE" value={purchaseDateText} />
+          <StatCard label={t('detail.category')} value={categoryLabel} icon={categoryIcon} iconColor={Colors.purple} />
+          <StatCard label={t('detail.purchaseDate')} value={purchaseDateText} />
         </View>
         <View style={styles.row}>
-          <StatCard label="DAILY COST" value={dailyCostText} />
-          <DarkStatCard label="COMPANION TIME" value={companionText} />
+          <StatCard label={t('detail.dailyCost')} value={dailyCostText} />
+          <DarkStatCard label={t('detail.companionTime')} value={companionText} />
         </View>
       </View>
 
@@ -85,14 +87,14 @@ export default function StatsGrid({
         <View style={styles.dailyTop}>
           <View style={styles.dailyLeft}>
             <Text style={[styles.dailyLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-              EXPECTED DAILY COST (LIFESPAN)
+              {t('detail.expectedDailyCost')}
             </Text>
             <View style={styles.dailyValueRow}>
               <Text style={[styles.dailyValue, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
                 {expectedDailyText}
               </Text>
               <Text style={[styles.dailyUnit, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-                /day
+                {t('detail.perDay')}
               </Text>
             </View>
           </View>
@@ -146,6 +148,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   statValueRow: {
     flexDirection: 'row',
@@ -176,6 +179,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   dailyValueRow: {
     flexDirection: 'row',

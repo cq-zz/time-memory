@@ -11,7 +11,7 @@ import { WEATHER_OPTIONS } from '../../src/utils/constant';
 import { showToast } from '../../src/components/common/Toast';
 import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
-import DatePickerField from '../../src/components/common/DatePickerField';
+import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
 import { weatherLabel } from '../../src/components/diary/DiaryList';
 
@@ -104,9 +104,9 @@ export default function DiaryFormScreen() {
           onChangeText={(v) => setTitle(v.slice(0, 20))}
         />
 
-        <DatePickerField
+        <WheelPicker
           label={`${t('diary.date')} *`}
-          mode="date"
+          level="date"
           value={date}
           onChange={setDate}
         />

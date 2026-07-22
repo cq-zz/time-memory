@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../utils/theme';
 
 const ICON_MAP = {
@@ -18,14 +19,15 @@ const ICON_MAP = {
  */
 export default function AlertModal({ visible, onClose, title, message, type = 'tip', buttons }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { t } = useTranslation();
 
   const config = ICON_MAP[type] || ICON_MAP.tip;
   const accentColor = Colors[config.colorKey];
 
   const resolvedButtons = useMemo(() => {
     if (buttons && buttons.length > 0) return buttons;
-    return [{ text: 'Confirm', onPress: onClose }];
-  }, [buttons, onClose]);
+    return [{ text: t('common.confirm'), onPress: onClose }];
+  }, [buttons, onClose, t]);
 
   const isActionSheet = resolvedButtons.length >= 3;
 

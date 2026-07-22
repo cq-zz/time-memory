@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { View, Text, Image, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 
 export default function ScheduleHero({ image, title, statusText, statusColor, timeLeftText }) {
   const { Colors, Fonts } = useTheme();
+  const { t } = useTranslation();
   const [imageError, setImageError] = useState(false);
   const showImage = Boolean(image) && !imageError;
 
@@ -44,7 +46,7 @@ export default function ScheduleHero({ image, title, statusText, statusColor, ti
 
         <View style={styles.costRow}>
           <Text style={[styles.costLabel, { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.bold }]}>
-            TIME LEFT
+            {t('detail.timeLeft')}
           </Text>
           <Text style={[styles.costValue, { color: Colors.white, fontFamily: Fonts.bold }]}>
             {timeLeftText}
@@ -114,6 +116,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+    textTransform: 'uppercase',
   },
   costValue: {
     fontSize: 28,

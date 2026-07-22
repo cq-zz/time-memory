@@ -9,6 +9,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
 import { YEAR_MIN, YEAR_MAX, MIN_YEAR_DEFAULT, MAX_YEAR_DEFAULT } from '../../utils/constant';
@@ -20,6 +21,7 @@ import { showToast } from '../common/Toast';
  */
 export default function YearRangeModal({ visible, onClose }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { t } = useTranslation();
   const yearStart = useSettingsStore((s) => s.settings.yearStart);
   const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
   const updateSetting = useSettingsStore((s) => s.updateSetting);
@@ -42,7 +44,7 @@ export default function YearRangeModal({ visible, onClose }) {
     const maxTrim = maxDraft.trim();
 
     if (minTrim === '' || maxTrim === '') {
-      setError('Both years are required');
+      setError(t('butler.yearBothRequired'));
       return;
     }
 
@@ -50,21 +52,21 @@ export default function YearRangeModal({ visible, onClose }) {
     const maxVal = Number(maxTrim);
 
     if (!Number.isInteger(minVal) || !Number.isInteger(maxVal)) {
-      setError('Please enter whole-number years');
+      setError(t('butler.yearWhole'));
       return;
     }
     if (minVal < YEAR_MIN || minVal > YEAR_MAX || maxVal < YEAR_MIN || maxVal > YEAR_MAX) {
-      setError(`Year must be between ${YEAR_MIN} and ${YEAR_MAX}`);
+      setError(t('butler.yearBetween', { min: YEAR_MIN, max: YEAR_MAX }));
       return;
     }
     if (minVal > maxVal) {
-      setError('Min year cannot be greater than max year');
+      setError(t('butler.yearOrder'));
       return;
     }
 
     await updateSetting('yearStart', minVal);
     await updateSetting('yearEnd', maxVal);
-    showToast(`Year range set to ${minVal} – ${maxVal}`);
+    showToast(t('butler.yearRangeSet', { min: minVal, max: maxVal }));
     onClose();
   };
 
@@ -93,23 +95,23 @@ export default function YearRangeModal({ visible, onClose }) {
             onPress={() => {}}
           >
             <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-              Year Range
+              {t('butler.yearRangeTitle')}
             </Text>
             <Text style={[styles.hint, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-              Limits every year picker in the app
+              {t('butler.yearRangeHint')}
             </Text>
 
             <View style={styles.fields}>
               <View style={styles.field}>
                 <Text style={[styles.fieldLabel, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-                  Min Year
+                  {t('butler.minYearField')}
                 </Text>
                 <View style={inputStyle(error !== '')}>
                   <TextInput
                     style={[styles.input, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
                     value={minDraft}
-                    onChangeText={(t) => {
-                      setMinDraft(t);
+                    onChangeText={(text) => {
+                      setMinDraft(text);
                       setError('');
                     }}
                     placeholder={String(MIN_YEAR_DEFAULT)}
@@ -124,14 +126,14 @@ export default function YearRangeModal({ visible, onClose }) {
 
               <View style={styles.field}>
                 <Text style={[styles.fieldLabel, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-                  Max Year
+                  {t('butler.maxYearField')}
                 </Text>
                 <View style={inputStyle(error !== '')}>
                   <TextInput
                     style={[styles.input, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
                     value={maxDraft}
-                    onChangeText={(t) => {
-                      setMaxDraft(t);
+                    onChangeText={(text) => {
+                      setMaxDraft(text);
                       setError('');
                     }}
                     placeholder={String(MAX_YEAR_DEFAULT)}
@@ -159,7 +161,7 @@ export default function YearRangeModal({ visible, onClose }) {
                 onPress={onClose}
               >
                 <Text style={[styles.cancelText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-                  Cancel
+                  {t('common.cancel')}
                 </Text>
               </Pressable>
               <Pressable
@@ -171,7 +173,7 @@ export default function YearRangeModal({ visible, onClose }) {
                 onPress={handleConfirm}
               >
                 <Text style={[styles.confirmText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-                  Confirm
+                  {t('common.confirm')}
                 </Text>
               </Pressable>
             </View>

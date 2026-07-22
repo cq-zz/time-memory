@@ -1,109 +1,92 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '../../utils/theme';
+import { useTranslation } from 'react-i18next';
+import { useTheme, hexToRgba } from '../../utils/theme';
+import { reminderModuleMeta, reminderStatusText } from '../../utils/reminders';
 
-const GROUPS = [
-  {
-    label: 'TODAY, 9:00 AM',
-    items: [
-      {
-        icon: 'calendar-outline',
-        iconColor: '#6B5CE7',
-        iconBg: 'rgba(107, 92, 231, 0.1)',
-        type: 'SCHEDULE',
-        typeIcon: 'time-outline',
-        status: '2 HOURS LEFT',
-        statusColor: '#E86B6B',
-        title: 'Quarterly Review Prep',
-      },
-      {
-        icon: 'leaf-outline',
-        iconColor: '#4AA868',
-        iconBg: 'rgba(74, 168, 104, 0.1)',
-        type: 'DURABLE',
-        typeIcon: 'cube-outline',
-        status: 'HEALTHY',
-        statusColor: '#4AA868',
-        title: 'Weekly Plant Care',
-      },
-    ],
-  },
-  {
-    label: 'UPCOMING',
-    items: [
-      {
-        icon: 'server-outline',
-        iconColor: '#1A1A1A',
-        iconBg: 'rgba(26, 26, 26, 0.1)',
-        type: 'ASSET',
-        typeIcon: 'wallet-outline',
-        status: '5 DAYS LEFT',
-        statusColor: '#F28B50',
-        title: 'Server Renewal',
-      },
-      {
-        icon: 'sync-outline',
-        iconColor: '#F28B50',
-        iconBg: 'rgba(242, 139, 80, 0.1)',
-        type: 'ASSET',
-        typeIcon: 'wallet-outline',
-        status: 'NEXT WEEK',
-        statusColor: '#747878',
-        title: 'Sync Desktop Assets',
-      },
-    ],
-  },
-];
-
-function ReminderCard({ item }) {
+/**
+ * Reminders tab list — groups the aggregated reminder items into
+ * OVERDUE / TODAY / UPCOMING sections. Tapping a card opens the
+ * source module's detail page.
+ */
+function ReminderCard({ item, onPress }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { t } = useTranslation();
+  const meta = reminderModuleMeta(item.module, Colors, t);
+
+  const statusColor = item.expired ? Colors.rose : item.daysLeft === 0 ? Colors.orange : Colors.green;
 
   return (
-    <View
+    <TouchableOpacity
       style={[
         styles.card,
         { backgroundColor: Colors.card, borderColor: Colors.avatarBg, borderRadius: Radius.md },
         Shadows.dark,
       ]}
+      activeOpacity={0.7}
+      onPress={onPress}
     >
-      <View style={[styles.iconBox, { backgroundColor: item.iconBg, borderRadius: Radius.sm }]}>
-        <Ionicons name={item.icon} size={26} color={item.iconColor} />
+      <View style={[styles.iconBox, { backgroundColor: hexToRgba(meta.color, 0.1), borderRadius: Radius.sm }]}>
+        <Ionicons name={meta.icon} size={26} color={meta.color} />
       </View>
 
       <View style={styles.cardContent}>
         <View style={styles.cardTop}>
           <View style={styles.typeRow}>
-            <Ionicons name={item.typeIcon} size={12} color={Colors.textSecondary} />
+            <Ionicons name="time-outline" size={12} color={Colors.textSecondary} />
             <Text style={[styles.typeText, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-              {item.type}
+              {meta.label}
             </Text>
           </View>
-          <Text style={[styles.status, { color: item.statusColor, fontFamily: Fonts.bold }]}>
-            {item.status}
+          <Text style={[styles.status, { color: statusColor, fontFamily: Fonts.bold }]}>
+            {reminderStatusText(item, t)}
           </Text>
         </View>
 
-        <Text style={[styles.cardTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
+        <Text style={[styles.cardTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]} numberOfLines={1}>
           {item.title}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 
-export default function ReminderList() {
+export default function ReminderList({ items = [], onPressItem }) {
   const { Colors, Fonts } = useTheme();
+  const { t } = useTranslation();
+
+  if (!items.length) {
+    return (
+      <View style={styles.empty}>
+        <View style={[styles.emptyIcon, { backgroundColor: Colors.iconBg }]}>
+          <Ionicons name="notifications-off-outline" size={28} color={Colors.textSecondary} />
+        </View>
+        <Text style={[styles.emptyTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
+          {t('reminder.noReminder')}
+        </Text>
+        <Text style={[styles.emptyDesc, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+          {t('reminder.noReminderDesc')}
+        </Text>
+      </View>
+    );
+  }
+
+  const groups = [
+    { label: t('reminder.groupOverdue'), items: items.filter((i) => i.expired) },
+    { label: t('reminder.groupToday'), items: items.filter((i) => !i.expired && i.daysLeft === 0) },
+    { label: t('reminder.groupUpcoming'), items: items.filter((i) => !i.expired && i.daysLeft > 0) },
+  ].filter((g) => g.items.length > 0);
 
   return (
     <View style={styles.container}>
-      {GROUPS.map((group) => (
+      {groups.map((group) => (
         <View key={group.label} style={styles.group}>
           <Text style={[styles.groupLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
             {group.label}
           </Text>
           <View style={styles.groupItems}>
             {group.items.map((item) => (
-              <ReminderCard key={item.title} item={item} />
+              <ReminderCard key={item.id} item={item} onPress={() => onPressItem?.(item)} />
             ))}
           </View>
         </View>
@@ -167,5 +150,27 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: 16,
     lineHeight: 28,
+  },
+  empty: {
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 48,
+  },
+  emptyIcon: {
+    width: 64,
+    height: 64,
+    borderRadius: 9999,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  emptyTitle: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
+  emptyDesc: {
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: 'center',
+    paddingHorizontal: 32,
   },
 });

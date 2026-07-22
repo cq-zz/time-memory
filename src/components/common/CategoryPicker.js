@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useCategoryStore, getMergedCategories, BUILTIN_NS } from '../../store/categories';
+import FieldLabel from './FieldLabel';
 
 /**
  * Category picker shared by module forms. Options come from category
@@ -20,7 +21,7 @@ export default function CategoryPicker({ selected, onSelect, type = 'item', labe
 
   return (
     <View style={styles.field}>
-      <Text style={[styles.label, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>{label}</Text>
+      <FieldLabel label={label} />
       <View style={styles.grid}>
         {options.map((cat) => {
           const isActive = cat.key === selected;
@@ -59,11 +60,6 @@ export default function CategoryPicker({ selected, onSelect, type = 'item', labe
 const styles = StyleSheet.create({
   field: {
     gap: 12,
-  },
-  label: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
   },
   grid: {
     flexDirection: 'row',

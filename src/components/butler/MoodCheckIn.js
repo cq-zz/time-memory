@@ -1,4 +1,5 @@
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { MOODS } from '../../utils/constant';
 import { useMoodStore } from '../../store/mood';
@@ -11,13 +12,20 @@ import { showToast } from '../common/Toast';
  */
 export default function MoodCheckIn() {
   const { Colors, Fonts, Radius } = useTheme();
+  const { t } = useTranslation();
   const todayMood = useMoodStore((s) => s.todayMood);
   const saveMood = useMoodStore((s) => s.saveMood);
 
   const handleSelect = async (mood) => {
     try {
       await saveMood(mood.key);
-      showToast(`${mood.emoji} ${mood.label} · Score ${mood.score}/5`);
+      showToast(
+        t('butler.moodRecorded', {
+          emoji: mood.emoji,
+          label: t(`checkIn.mood.${mood.key}`),
+          score: mood.score,
+        })
+      );
     } catch (e) {
       console.warn('[mood] save failed:', e);
     }
@@ -27,11 +35,11 @@ export default function MoodCheckIn() {
     <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.grayDot }]}>
       <View style={styles.headRow}>
         <Text style={[styles.heading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-          HOW ARE YOU FEELING TODAY?
+          {t('butler.moodQuestion')}
         </Text>
         {todayMood ? (
           <Text style={[styles.hint, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-            Tap to change
+            {t('butler.tapToChange')}
           </Text>
         ) : null}
       </View>
@@ -65,7 +73,7 @@ export default function MoodCheckIn() {
                 ]}
                 numberOfLines={1}
               >
-                {mood.label}
+                {t(`checkIn.mood.${mood.key}`)}
               </Text>
               <Text style={[styles.score, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>
                 {mood.score}
@@ -80,11 +88,11 @@ export default function MoodCheckIn() {
 
 const styles = StyleSheet.create({
   card: {
-    paddingVertical: 20,
-    paddingHorizontal: 20,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     borderWidth: 1,
     borderRadius: 32,
-    gap: 14,
+    gap: 12,
   },
   headRow: {
     flexDirection: 'row',

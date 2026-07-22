@@ -1,9 +1,11 @@
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 
 export default function PhotoUpload() {
   const { Colors, Fonts } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <TouchableOpacity style={styles.container} activeOpacity={0.7}>
@@ -16,7 +18,7 @@ export default function PhotoUpload() {
         </View>
       </View>
       <Text style={[styles.label, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-        TAP TO UPLOAD ITEM PHOTO
+        {t('durable.uploadImage')}
       </Text>
     </TouchableOpacity>
   );
@@ -54,5 +56,6 @@ const styles = StyleSheet.create({
     fontSize: 10,
     lineHeight: 14,
     letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
 });

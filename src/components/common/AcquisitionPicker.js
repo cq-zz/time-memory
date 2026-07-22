@@ -2,6 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { ACQUISITION_METHODS } from '../../utils/constant';
+import FieldLabel from './FieldLabel';
 
 const methodKey = (ns, key) => `${ns}.acquisition${key.charAt(0).toUpperCase()}${key.slice(1)}`;
 
@@ -15,9 +16,7 @@ export default function AcquisitionPicker({ selected, onSelect, ns = 'durable' }
 
   return (
     <View style={styles.field}>
-      <Text style={[styles.label, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-        {t(`${ns}.acquisitionLabel`)} *
-      </Text>
+      <FieldLabel label={`${t(`${ns}.acquisitionLabel`)} *`} />
       <View style={styles.row}>
         {ACQUISITION_METHODS.map((m) => {
           const isActive = m.key === selected;
@@ -54,11 +53,6 @@ export default function AcquisitionPicker({ selected, onSelect, ns = 'durable' }
 const styles = StyleSheet.create({
   field: {
     gap: 12,
-  },
-  label: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
   },
   row: {
     flexDirection: 'row',

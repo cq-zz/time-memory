@@ -10,7 +10,7 @@ import { IMPORTANT_DATE_TYPES, REMINDER_TYPES, SCHEDULE_PRIORITIES } from '../..
 import { showToast } from '../../src/components/common/Toast';
 import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
-import DatePickerField from '../../src/components/common/DatePickerField';
+import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
 
 const TYPE_LABEL = {
@@ -146,9 +146,9 @@ export default function ImportantDateFormScreen() {
           value={name}
           onChangeText={setName}
         />
-        <DatePickerField
+        <WheelPicker
           label={`${t('importantDate.date')} *`}
-          mode="date"
+          level="date"
           value={date}
           onChange={setDate}
         />

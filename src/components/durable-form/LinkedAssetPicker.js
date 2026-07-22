@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, Modal, Pressable, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../utils/theme';
+import { useTheme, hexToRgba } from '../../utils/theme';
 import { getAllRows } from '../../store/db';
 
 /**
@@ -31,7 +31,7 @@ export default function LinkedAssetPicker({ value, onChange }) {
         onPress={() => setOpen(true)}
       >
         <View style={styles.left}>
-          <View style={[styles.iconCircle, { backgroundColor: 'rgba(107, 92, 231, 0.15)' }]}>
+          <View style={[styles.iconCircle, { backgroundColor: hexToRgba(Colors.purple, 0.15) }]}>
             <Ionicons name="link-outline" size={18} color={Colors.purple} />
           </View>
           <View style={styles.textCol}>

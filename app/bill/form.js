@@ -12,19 +12,12 @@ import { getAsset } from '../../src/services/asset';
 import { showToast } from '../../src/components/common/Toast';
 import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
-import DatePickerField from '../../src/components/common/DatePickerField';
+import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
 import CategoryPicker from '../../src/components/common/CategoryPicker';
+import FieldLabel from '../../src/components/common/FieldLabel';
 import BillingObjectPicker from '../../src/components/bill/BillingObjectPicker';
-
-/** Keep only digits with a single decimal point and up to 2 decimals. */
-function sanitizeAmount(text) {
-  let v = text.replace(/[^0-9.]/g, '');
-  const parts = v.split('.');
-  if (parts.length > 2) v = parts[0] + '.' + parts.slice(1).join('');
-  const [int, dec] = v.split('.');
-  return dec !== undefined ? `${int}.${dec.slice(0, 2)}` : v;
-}
+import { sanitizeAmount } from '../../src/utils/money';
 
 export default function BillFormScreen() {
   const { Colors, Radius, Fonts } = useTheme();
@@ -155,9 +148,7 @@ export default function BillFormScreen() {
       >
         {/* Bill type toggle */}
         <View style={styles.field}>
-          <Text style={[styles.fieldLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-            {t('bills.billType')}
-          </Text>
+          <FieldLabel label={t('bills.billType')} />
           <View style={styles.typeRow}>
             <TypeButton typeKey="expense" icon="arrow-down-circle-outline" activeColor={Colors.rose} />
             <TypeButton typeKey="income" icon="arrow-up-circle-outline" activeColor={Colors.green} />
@@ -166,9 +157,9 @@ export default function BillFormScreen() {
 
         {/* Amount */}
         <View style={styles.field}>
-          <Text style={[styles.fieldLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-            {t('bills.amountLabel', { type: billType === 'income' ? t('bills.income') : t('bills.expense') })} *
-          </Text>
+          <FieldLabel
+            label={`${t('bills.amountLabel', { type: billType === 'income' ? t('bills.income') : t('bills.expense') })} *`}
+          />
           <View
             style={[
               styles.amountBox,
@@ -196,9 +187,9 @@ export default function BillFormScreen() {
           onChangeText={setName}
         />
 
-        <DatePickerField
+        <WheelPicker
           label={t('bills.time')}
-          mode="date"
+          level="date"
           value={consumptionDate}
           onChange={setConsumptionDate}
         />
@@ -266,11 +257,6 @@ const styles = StyleSheet.create({
   },
   field: {
     gap: 12,
-  },
-  fieldLabel: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
   },
   typeRow: {
     flexDirection: 'row',

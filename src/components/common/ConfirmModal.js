@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../utils/theme';
 
 /**
@@ -18,6 +19,7 @@ export default function ConfirmModal({
   icon = 'trash-outline',
 }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { t } = useTranslation();
   const [confirming, setConfirming] = useState(false);
 
   const handleConfirm = useCallback(async () => {
@@ -60,7 +62,7 @@ export default function ConfirmModal({
               onPress={onClose}
             >
               <Text style={[styles.cancelText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-                {cancelText || 'Cancel'}
+                {cancelText || t('common.cancel')}
               </Text>
             </Pressable>
             <Pressable
@@ -74,7 +76,7 @@ export default function ConfirmModal({
               disabled={confirming}
             >
               <Text style={[styles.confirmText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-                {confirming ? 'Saving...' : confirmText || 'Delete'}
+                {confirming ? t('common.saving') : confirmText || t('common.delete')}
               </Text>
             </Pressable>
           </View>

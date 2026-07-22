@@ -1,20 +1,34 @@
-import { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 
-const FILTERS = ['All', 'Schedule', 'Durable', 'Asset', 'Date'];
-
-export default function RemindersSearch() {
+/**
+ * Reminders tab header — title with live total, search input and module
+ * filter chips. Fully controlled by the reminders screen.
+ */
+export default function RemindersSearch({ total = 0, search, onSearchChange, filter, onFilterChange }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
-  const [active, setActive] = useState(0);
+  const { t } = useTranslation();
+
+  const FILTERS = [
+    { key: 'all', label: t('common.all') },
+    { key: 'schedule', label: t('nav.schedule') },
+    { key: 'durable', label: t('nav.durable') },
+    { key: 'asset', label: t('nav.asset') },
+    { key: 'important-date', label: t('nav.importantDate') },
+  ];
 
   return (
     <View style={styles.container}>
       {/* Title row */}
       <View style={styles.titleRow}>
-        <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>Reminders</Text>
-        <Text style={[styles.total, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>12 TOTAL</Text>
+        <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
+          {t('reminder.remindersTitle')}
+        </Text>
+        <Text style={[styles.total, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+          {t('reminder.totalCount', { count: total })}
+        </Text>
       </View>
 
       {/* Search input */}
@@ -22,20 +36,22 @@ export default function RemindersSearch() {
         <Ionicons name="search" size={18} color={Colors.textSecondary} />
         <TextInput
           style={[styles.searchInput, { color: Colors.textPrimary, fontFamily: Fonts.regular }]}
-          placeholder="Search tasks or assets..."
+          placeholder={t('reminder.searchPlaceholder')}
           placeholderTextColor="rgba(116, 120, 120, 0.6)"
+          value={search}
+          onChangeText={onSearchChange}
         />
       </View>
 
       {/* Filter chips */}
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsRow}>
-        {FILTERS.map((label, i) => {
-          const isActive = i === active;
+        {FILTERS.map((f) => {
+          const isActive = f.key === filter;
           return (
             <TouchableOpacity
-              key={label}
+              key={f.key}
               activeOpacity={0.7}
-              onPress={() => setActive(i)}
+              onPress={() => onFilterChange(f.key)}
               style={[
                 styles.chip,
                 { backgroundColor: isActive ? Colors.inkDeep : Colors.card, borderRadius: Radius.circle },
@@ -48,7 +64,7 @@ export default function RemindersSearch() {
                   { color: isActive ? Colors.white : Colors.textSecondary, fontFamily: Fonts.bold },
                 ]}
               >
-                {label}
+                {f.label}
               </Text>
             </TouchableOpacity>
           );

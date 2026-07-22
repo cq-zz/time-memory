@@ -119,11 +119,17 @@ function ItemCard({ item, currency, isLast }) {
   );
 }
 
-export default function ItemsList({ items, search, filter, currency, loading }) {
+const pad = (n) => String(n).padStart(2, '0');
+
+export default function ItemsList({ items, year, month, search, filter, currency, loading }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
+  // year=null → all; month=null → whole year; otherwise match YYYY-MM prefix.
+  const datePrefix = year != null ? (month != null ? `${year}-${pad(month)}` : `${year}`) : null;
+
   const filtered = items.filter((item) => {
+    if (datePrefix && !(item.purchase_date || '').startsWith(datePrefix)) return false;
     if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
     if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;

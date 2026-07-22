@@ -1,9 +1,28 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
+import { useSettingsStore, formatMoney } from '../../store/settings';
 
-export default function BudgetCard() {
+/**
+ * Annual budget progress — compares the current year's expense bills
+ * against the year's budget plan. Falls back to "--" without a budget.
+ */
+export default function BudgetCard({ budget, bills = [] }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
-  const progress = 0.72;
+  const { t } = useTranslation();
+  const currency = useSettingsStore((s) => s.settings.currency);
+
+  const year = String(new Date().getFullYear());
+  const budgetAmount = Number(budget?.expense_budget) || 0;
+  const spent = bills
+    .filter((b) => b.bill_type === 'expense' && (b.consumption_date || '').slice(0, 4) === year)
+    .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+
+  const hasBudget = !!budget && budgetAmount > 0;
+  const ratio = hasBudget ? spent / budgetAmount : 0;
+  const pct = hasBudget ? Math.round(ratio * 100) : null;
+  const remaining = budgetAmount - spent;
+  const over = hasBudget && spent > budgetAmount;
 
   return (
     <View
@@ -20,25 +39,35 @@ export default function BudgetCard() {
       {/* Header row */}
       <View style={styles.headerRow}>
         <Text style={[styles.title, { color: Colors.white, fontFamily: Fonts.semiBold }]}>
-          Annual Budget
+          {t('home.annualBudget')}
         </Text>
-        <Text style={[styles.badge, { color: Colors.green, fontFamily: Fonts.bold }]}>
-          ON TRACK
-        </Text>
+        {hasBudget ? (
+          <Text style={[styles.badge, { color: over ? Colors.rose : Colors.green, fontFamily: Fonts.bold }]}>
+            {over ? t('home.overBudgetBadge') : t('home.onTrack')}
+          </Text>
+        ) : null}
       </View>
 
       {/* Progress section */}
       <View style={styles.progressSection}>
         <View style={styles.progressLabelRow}>
           <Text style={[styles.progressLabel, { color: Colors.white60, fontFamily: Fonts.regular }]}>
-            Total Expense vs Budget
+            {hasBudget ? t('home.expenseVsBudget') : t('home.noBudgetSet')}
           </Text>
           <Text style={[styles.progressValue, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            72%
+            {pct != null ? `${pct}%` : '--'}
           </Text>
         </View>
         <View style={[styles.track, { backgroundColor: Colors.white10 }]}>
-          <View style={[styles.fill, { backgroundColor: Colors.purple, width: `${progress * 100}%` }]} />
+          <View
+            style={[
+              styles.fill,
+              {
+                backgroundColor: over ? Colors.rose : Colors.purple,
+                width: `${Math.min(ratio, 1) * 100}%`,
+              },
+            ]}
+          />
         </View>
       </View>
 
@@ -46,18 +75,23 @@ export default function BudgetCard() {
       <View style={styles.pillsRow}>
         <View style={[styles.pill, { backgroundColor: Colors.white05 }]}>
           <Text style={[styles.pillLabel, { color: Colors.white40, fontFamily: Fonts.bold }]}>
-            BUDGET
+            {t('home.budgetPill')}
           </Text>
           <Text style={[styles.pillValue, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            $45,000
+            {hasBudget ? formatMoney(budgetAmount, budget.currency || currency) : '--'}
           </Text>
         </View>
         <View style={[styles.pill, { backgroundColor: Colors.white05, borderColor: Colors.white10, borderWidth: 1 }]}>
           <Text style={[styles.pillLabel, { color: Colors.white40, fontFamily: Fonts.bold }]}>
-            REMAINING
+            {t('home.remainingPill')}
           </Text>
-          <Text style={[styles.pillValue, { color: Colors.green, fontFamily: Fonts.bold }]}>
-            $12,600
+          <Text
+            style={[
+              styles.pillValue,
+              { color: hasBudget && remaining < 0 ? Colors.rose : Colors.green, fontFamily: Fonts.bold },
+            ]}
+          >
+            {hasBudget ? formatMoney(remaining, budget.currency || currency) : '--'}
           </Text>
         </View>
       </View>

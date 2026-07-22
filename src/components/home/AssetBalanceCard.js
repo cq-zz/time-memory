@@ -1,9 +1,22 @@
 import { View, Text, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
+import { useSettingsStore, formatMoney } from '../../store/settings';
+import { effectiveStatus as durableStatus } from '../../services/durable';
+import { effectiveStatus as assetStatus, displayValue } from '../../services/asset';
 
-export default function AssetBalanceCard() {
+export default function AssetBalanceCard({ durables = [], assets = [] }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { t } = useTranslation();
+  const currency = useSettingsStore((s) => s.settings.currency);
+
+  const inUse = durables.filter((r) => durableStatus(r) === 'in_use');
+  const active = assets.filter((r) => assetStatus(r) === 'active');
+  const total =
+    inUse.reduce((sum, r) => sum + (Number(r.purchase_price) || 0), 0) +
+    active.reduce((sum, r) => sum + displayValue(r), 0);
+  const hasData = inUse.length > 0 || active.length > 0;
 
   return (
     <View style={[styles.card, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }, Shadows.dark]}>
@@ -16,14 +29,14 @@ export default function AssetBalanceCard() {
       />
 
       <Text style={[styles.label, { color: Colors.white60, fontFamily: Fonts.bold }]}>
-        TOTAL ASSET VALUE
+        {t('home.assetValue').toUpperCase()}
       </Text>
       <Text style={[styles.amount, { color: Colors.white, fontFamily: Fonts.bold }]}>
-        $124,509.32
+        {hasData ? formatMoney(total, currency) : '--'}
       </Text>
       <View style={styles.descWrap}>
         <Text style={[styles.desc, { color: Colors.white40, fontFamily: Fonts.regular }]}>
-          Total purchase price of all active items{'\n'}and assets.
+          {t('home.assetValueHint')}
         </Text>
       </View>
     </View>

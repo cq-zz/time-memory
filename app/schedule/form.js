@@ -10,7 +10,7 @@ import { SCHEDULE_PRIORITIES, SCHEDULE_STATUS_OPTIONS } from '../../src/utils/co
 import { showToast } from '../../src/components/common/Toast';
 import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
-import DatePickerField from '../../src/components/common/DatePickerField';
+import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
 
 const STATUS_LABEL = {
@@ -110,15 +110,15 @@ export default function ScheduleFormScreen() {
           value={planName}
           onChangeText={setPlanName}
         />
-        <DatePickerField
+        <WheelPicker
           label={`${t('schedule.startDate')} *`}
-          mode="date"
+          level="date"
           value={startDate}
           onChange={setStartDate}
         />
-        <DatePickerField
+        <WheelPicker
           label={t('schedule.endDate')}
-          mode="date"
+          level="date"
           value={endDate}
           onChange={setEndDate}
         />

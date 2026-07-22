@@ -77,7 +77,7 @@ function CategoryRow({ item, type, showBorder }) {
 }
 
 export default function CategoryListScreen({ type }) {
-  const { Colors, Shadows, Radius } = useTheme();
+  const { Colors, Shadows, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const categoryState = useCategoryStore();

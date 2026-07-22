@@ -1,23 +1,43 @@
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
+import { useCategoryStore, getMergedCategories, BUILTIN_NS } from '../../store/categories';
 
 const SIZE = 96;
 const STROKE = 12;
 const R = (SIZE - STROKE) / 2;
 const C = 2 * Math.PI * R;
 
-const INCOME_SEGMENTS = [
-  { name: 'Salary', pct: 70, color: '#6B5CE7' },
-  { name: 'Invest', pct: 20, color: '#FFB690' },
-  { name: 'Other', pct: 10, color: '#DADADA' },
-];
+const PALETTE = ['#A05C82', '#F28B50', '#4AA868', '#E86B6B', '#4A90D9'];
 
-const EXPENSE_SEGMENTS = [
-  { name: 'Rent', pct: 45, color: '#E86B6B' },
-  { name: 'Food', pct: 35, color: '#F28B50' },
-  { name: 'Transp', pct: 20, color: '#4AA868' },
-];
+/** Current-month bills of one type → top-3 category segments + "Other". */
+function buildSegments(bills, billType, labelOf) {
+  const now = new Date();
+  const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const totals = new Map();
+  let sum = 0;
+  (bills || [])
+    .filter((b) => b.bill_type === billType && (b.consumption_date || '').slice(0, 7) === key)
+    .forEach((b) => {
+      const amount = Number(b.amount) || 0;
+      const cat = b.category || 'other';
+      totals.set(cat, (totals.get(cat) || 0) + amount);
+      sum += amount;
+    });
+  if (!sum) return [];
+
+  const sorted = [...totals.entries()].sort((a, b) => b[1] - a[1]);
+  const top = sorted.slice(0, 3);
+  const rest = sorted.slice(3).reduce((s, [, v]) => s + v, 0);
+  const rows = rest > 0 ? [...top, ['__other__', rest]] : top;
+
+  return rows.map(([cat, amount], i) => ({
+    name: cat === '__other__' ? labelOf('__other__') : labelOf(cat),
+    pct: Math.round((amount / sum) * 100),
+    color: PALETTE[i % PALETTE.length],
+  }));
+}
 
 function DonutChart({ segments, centerLabel }) {
   const { Colors, Fonts } = useTheme();
@@ -64,7 +84,7 @@ function DonutChart({ segments, centerLabel }) {
   );
 }
 
-function BreakdownCard({ title, segments }) {
+function BreakdownCard({ title, segments, emptyText }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
 
   return (
@@ -77,35 +97,59 @@ function BreakdownCard({ title, segments }) {
     >
       <DonutChart segments={segments} centerLabel={title} />
       <View style={styles.legend}>
-        {segments.map((seg) => (
-          <View key={seg.name} style={styles.legendRow}>
-            <View style={styles.legendLeft}>
-              <View style={[styles.dot, { backgroundColor: seg.color }]} />
-              <Text style={[styles.legendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-                {seg.name}
+        {segments.length ? (
+          segments.map((seg) => (
+            <View key={seg.name} style={styles.legendRow}>
+              <View style={styles.legendLeft}>
+                <View style={[styles.dot, { backgroundColor: seg.color }]} />
+                <Text style={[styles.legendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+                  {seg.name}
+                </Text>
+              </View>
+              <Text style={[styles.legendPct, { color: Colors.textDark, fontFamily: Fonts.bold }]}>
+                {seg.pct}%
               </Text>
             </View>
-            <Text style={[styles.legendPct, { color: Colors.textDark, fontFamily: Fonts.bold }]}>
-              {seg.pct}%
-            </Text>
-          </View>
-        ))}
+          ))
+        ) : (
+          <Text style={[styles.legendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+            {emptyText}
+          </Text>
+        )}
       </View>
     </View>
   );
 }
 
-export default function CategoryBreakdown() {
+export default function CategoryBreakdown({ bills = [] }) {
   const { Colors, Fonts } = useTheme();
+  const { t } = useTranslation();
+  const categoryState = useCategoryStore();
+  const billCategories = getMergedCategories(categoryState, 'bill');
+
+  const labelOf = (key) => {
+    if (key === '__other__') return t('home.otherSegment');
+    const cat = billCategories.find((c) => c.key === key);
+    if (!cat) return key;
+    return cat.isBuiltin ? t(`${BUILTIN_NS.bill}.${key}`) : cat.name;
+  };
 
   return (
     <View style={styles.section}>
       <Text style={[styles.sectionTitle, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-        Category Breakdown
+        {t('home.categoryBreakdown')}
       </Text>
       <View style={styles.cards}>
-        <BreakdownCard title="INCOME" segments={INCOME_SEGMENTS} />
-        <BreakdownCard title="EXPENSE" segments={EXPENSE_SEGMENTS} />
+        <BreakdownCard
+          title={t('home.incomeDonut')}
+          segments={buildSegments(bills, 'income', labelOf)}
+          emptyText={t('home.noChartData')}
+        />
+        <BreakdownCard
+          title={t('home.expenseDonut')}
+          segments={buildSegments(bills, 'expense', labelOf)}
+          emptyText={t('home.noChartData')}
+        />
       </View>
     </View>
   );

@@ -63,7 +63,7 @@ export default function DiaryDetailScreen() {
       <View style={[styles.stateWrap, { backgroundColor: Colors.bg }]}>
         <Ionicons name="book-outline" size={48} color={Colors.textTertiary} />
         <Text style={[styles.stateText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-          {t('diary.loadFailed', { defaultValue: 'Entry not found' })}
+          {t('diary.loadFailed')}
         </Text>
         <Pressable
           onPress={() => router.replace('/diary')}

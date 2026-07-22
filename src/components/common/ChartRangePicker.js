@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
 import useAlert from '../../hooks/useAlert';
 
-const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
 const fmtYm = (y, m) => `${y}-${String(m).padStart(2, '0')}`;
 
@@ -23,6 +23,7 @@ export default function ChartRangePicker({
   onConfirm,
 }) {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
   const { alert } = useAlert();
   const [open, setOpen] = useState(false);
 
@@ -49,7 +50,7 @@ export default function ChartRangePicker({
     const sm = yearOnly ? null : locStartMonth;
     const em = yearOnly ? null : locEndMonth;
     if (ey < sy || (!yearOnly && ey === sy && (em || 0) < (sm || 1))) {
-      alert('Tip', 'End date cannot be earlier than start date');
+      alert(t('common.tip'), t('common.dateRangeInvalid'));
       return;
     }
     onConfirm({ startYear: sy, startMonth: sm, endYear: ey, endMonth: em });
@@ -80,15 +81,15 @@ export default function ChartRangePicker({
               <View style={[styles.panelHeader, { borderBottomColor: Colors.cardBorder }]}>
                 <Pressable onPress={() => setOpen(false)}>
                   <Text style={[styles.headerBtnCancel, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-                    Cancel
+                    {t('common.cancel')}
                   </Text>
                 </Pressable>
                 <Text style={[styles.panelTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-                  Select Period
+                  {t('common.selectPeriod')}
                 </Text>
                 <Pressable onPress={handleConfirm}>
                   <Text style={[styles.headerBtnConfirm, { color: Colors.purple, fontFamily: Fonts.bold }]}>
-                    Confirm
+                    {t('common.confirm')}
                   </Text>
                 </Pressable>
               </View>
@@ -105,7 +106,7 @@ export default function ChartRangePicker({
                   <View style={styles.dualCol}>
                     <View style={styles.colHalf}>
                       <MonthRangeColumn
-                        label="Start Date"
+                        label={t('common.startDate')}
                         year={locStartYear}
                         month={locStartMonth}
                         onYearChange={setLocStartYear}
@@ -120,7 +121,7 @@ export default function ChartRangePicker({
                     <View style={[styles.colDivider, { backgroundColor: Colors.cardBorder }]} />
                     <View style={styles.colHalf}>
                       <MonthRangeColumn
-                        label="End Date"
+                        label={t('common.endDate')}
                         year={locEndYear}
                         month={locEndMonth}
                         onYearChange={setLocEndYear}
@@ -145,6 +146,7 @@ export default function ChartRangePicker({
 
 function YearRangePicker({ startYear, endYear, onStartChange, onEndChange }) {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
   const yearStart = useSettingsStore((s) => s.settings.yearStart);
   const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
 
@@ -169,7 +171,7 @@ function YearRangePicker({ startYear, endYear, onStartChange, onEndChange }) {
       <View style={styles.dualCol}>
         <View style={styles.colHalf}>
           <Text style={[styles.colHalfLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-            Start Year
+            {t('common.startYear')}
           </Text>
           <ScrollView style={styles.yearColScroll} showsVerticalScrollIndicator={false} bounces={false}>
             {startYears.map((y) => (
@@ -200,7 +202,7 @@ function YearRangePicker({ startYear, endYear, onStartChange, onEndChange }) {
         <View style={[styles.colDivider, { backgroundColor: Colors.cardBorder }]} />
         <View style={styles.colHalf}>
           <Text style={[styles.colHalfLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-            End Year
+            {t('common.endYear')}
           </Text>
           <ScrollView style={styles.yearColScroll} showsVerticalScrollIndicator={false} bounces={false}>
             {endYears.map((y) => (
@@ -235,9 +237,12 @@ function YearRangePicker({ startYear, endYear, onStartChange, onEndChange }) {
 
 function MonthRangeColumn({ label, year, month, onYearChange, onMonthChange, clampMinYear, clampMaxYear, clampMinMonth, clampMaxMonth }) {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
   const yearStart = useSettingsStore((s) => s.settings.yearStart);
   const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
   const [viewYear, setViewYear] = useState(year);
+
+  const monthNames = t('calendar.monthsShort', { returnObjects: true });
 
   useEffect(() => {
     if (clampMaxYear !== undefined && viewYear > clampMaxYear) setViewYear(clampMaxYear);
@@ -313,7 +318,7 @@ function MonthRangeColumn({ label, year, month, onYearChange, onMonthChange, cla
                       { color: isActive ? Colors.white : Colors.textSecondary, fontFamily: Fonts.semiBold },
                     ]}
                   >
-                    {MONTH_NAMES[m - 1]}
+                    {monthNames[m - 1]}
                   </Text>
                 </Pressable>
               );

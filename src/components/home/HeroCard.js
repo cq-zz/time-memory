@@ -1,8 +1,10 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 
 export default function HeroCard() {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={[styles.card, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }, Shadows.dark]}>
@@ -11,7 +13,7 @@ export default function HeroCard() {
       <View style={[styles.circleInner, { borderColor: Colors.white10 }]} />
 
       <Text style={[styles.title, { color: Colors.white, fontFamily: Fonts.bold }]}>
-        Track your life's{'\n'}precious moments.
+        {t('home.heroSlogan')}
       </Text>
     </View>
   );

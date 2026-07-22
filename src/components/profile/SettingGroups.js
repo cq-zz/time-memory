@@ -1,33 +1,18 @@
+import { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore, languageMeta } from '../../store/settings';
-
-const GROUPS = [
-  {
-    heading: 'ACCOUNT',
-    rows: [
-      { icon: 'person-outline', label: 'Profile Settings' },
-      { icon: 'lock-closed-outline', label: 'Security' },
-    ],
-  },
-  {
-    heading: 'SYSTEM',
-    rows: [
-      { icon: 'moon-outline', label: 'Dark Mode', isToggle: true },
-      { icon: 'language-outline', label: 'Language', settingKey: 'language' },
-      { icon: 'key-outline', label: 'Security Log' },
-    ],
-  },
-  {
-    heading: 'SUPPORT',
-    rows: [
-      { icon: 'book-outline', label: 'User Guide' },
-      { icon: 'shield-checkmark-outline', label: 'Privacy Policy' },
-      { icon: 'information-circle-outline', label: 'About Timemory', value: 'v2.4.0' },
-    ],
-  },
-];
+import { useProfileStore } from '../../store/profile';
+import { hasPassword, clearPassword } from '../../utils/password';
+import { logPasswordAction } from '../../utils/passwordHistory';
+import { showToast } from '../common/Toast';
+import ProfileEditModal from '../common/ProfileEditModal';
+import SecurityModal from '../common/SecurityModal';
+import ConfirmModal from '../common/ConfirmModal';
+import LanguageModal from './LanguageModal';
 
 function Toggle({ value, onToggle }) {
   return (
@@ -41,11 +26,11 @@ function Toggle({ value, onToggle }) {
   );
 }
 
-function SettingRow({ icon, label, value, isToggle, toggleValue, onToggle }) {
+function SettingRow({ icon, label, value, isToggle, toggleValue, onToggle, onPress }) {
   const { Colors, Fonts } = useTheme();
 
   return (
-    <TouchableOpacity style={styles.row} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.row} activeOpacity={0.7} onPress={onPress} disabled={!onPress && !isToggle}>
       <View style={styles.rowLeft}>
         <View style={[styles.iconBox, { backgroundColor: Colors.iconBg }]}>
           <Ionicons name={icon} size={18} color={Colors.textPrimary} />
@@ -71,33 +56,116 @@ function SettingRow({ icon, label, value, isToggle, toggleValue, onToggle }) {
 
 export default function SettingGroups() {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
+  const router = useRouter();
   const darkMode = useSettingsStore((s) => s.settings.darkMode);
   const language = useSettingsStore((s) => s.settings.language);
   const updateSetting = useSettingsStore((s) => s.updateSetting);
+  const nickname = useProfileStore((s) => s.nickname);
+
+  const [pwdSet, setPwdSet] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [securityOpen, setSecurityOpen] = useState(false);
+  const [resetOpen, setResetOpen] = useState(false);
+  const [languageOpen, setLanguageOpen] = useState(false);
+
+  const refreshPwd = useCallback(() => {
+    hasPassword().then(setPwdSet);
+  }, []);
+
+  useEffect(() => {
+    refreshPwd();
+  }, [refreshPwd]);
+
+  const handleReset = async () => {
+    await clearPassword();
+    await logPasswordAction('reset');
+    setPwdSet(false);
+    setResetOpen(false);
+    showToast(t('settings.resetPasswordSuccess'));
+  };
 
   return (
     <View style={styles.container}>
-      {GROUPS.map((group) => (
-        <View
-          key={group.heading}
-          style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl }]}
-        >
-          <Text style={[styles.heading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-            {group.heading}
-          </Text>
-          <View style={styles.rows}>
-            {group.rows.map((row) => (
-              <SettingRow
-                key={row.label}
-                {...row}
-                value={row.settingKey === 'language' ? languageMeta(language).label : row.value}
-                toggleValue={darkMode}
-                onToggle={() => updateSetting('darkMode', !darkMode)}
-              />
-            ))}
-          </View>
+      {/* ACCOUNT */}
+      <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl }]}>
+        <Text style={[styles.heading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+          {t('settings.groupAccount')}
+        </Text>
+        <View style={styles.rows}>
+          <SettingRow
+            icon="person-outline"
+            label={t('settings.profileSettings')}
+            value={nickname || t('common.newUser')}
+            onPress={() => setProfileOpen(true)}
+          />
+          <SettingRow
+            icon="lock-closed-outline"
+            label={t('settings.security')}
+            value={pwdSet ? t('settings.changePassword') : t('settings.setPassword')}
+            onPress={() => setSecurityOpen(true)}
+          />
+          {pwdSet ? (
+            <SettingRow
+              icon="key-outline"
+              label={t('settings.resetPassword')}
+              onPress={() => setResetOpen(true)}
+            />
+          ) : null}
         </View>
-      ))}
+      </View>
+
+      {/* SYSTEM */}
+      <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl }]}>
+        <Text style={[styles.heading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+          {t('settings.groupSystem')}
+        </Text>
+        <View style={styles.rows}>
+          <SettingRow
+            icon="moon-outline"
+            label={t('settings.darkModeLabel')}
+            isToggle
+            toggleValue={darkMode}
+            onToggle={() => updateSetting('darkMode', !darkMode)}
+          />
+          <SettingRow
+            icon="language-outline"
+            label={t('settings.language')}
+            value={languageMeta(language).label}
+            onPress={() => setLanguageOpen(true)}
+          />
+          <SettingRow
+            icon="shield-checkmark-outline"
+            label={t('settings.securityLog')}
+            onPress={() => router.push('/settings/password-history')}
+          />
+        </View>
+      </View>
+
+      {/* SUPPORT */}
+      <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl }]}>
+        <Text style={[styles.heading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+          {t('settings.groupSupport')}
+        </Text>
+        <View style={styles.rows}>
+          <SettingRow icon="book-outline" label={t('profile.userGuide')} />
+          <SettingRow icon="shield-checkmark-outline" label={t('profile.privacyPolicy')} />
+          <SettingRow icon="information-circle-outline" label={t('profile.about')} value="v2.4.0" />
+        </View>
+      </View>
+
+      <ProfileEditModal visible={profileOpen} onClose={() => setProfileOpen(false)} />
+      <SecurityModal visible={securityOpen} onClose={() => setSecurityOpen(false)} onChanged={refreshPwd} />
+      <LanguageModal visible={languageOpen} onClose={() => setLanguageOpen(false)} />
+      <ConfirmModal
+        visible={resetOpen}
+        onClose={() => setResetOpen(false)}
+        onConfirm={handleReset}
+        title={t('settings.resetPasswordConfirmTitle')}
+        description={t('settings.resetPasswordConfirmDesc')}
+        confirmText={t('settings.resetPassword')}
+        icon="key-outline"
+      />
     </View>
   );
 }

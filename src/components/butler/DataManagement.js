@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
 import { getAllRows, insertRow, clearAllData, upsertCheckIn } from '../../store/db';
@@ -44,7 +45,7 @@ async function shareWorkbookNative(arrayBuf, fileName) {
   file.create();
   file.write(new Uint8Array(arrayBuf));
   const canShare = await Sharing.isAvailableAsync();
-  if (!canShare) throw new Error('Sharing is not available on this device');
+  if (!canShare) throw new Error('butler.sharingUnavailable');
   await Sharing.shareAsync(file.uri, { mimeType: XLSX_MIME, dialogTitle: 'Timemory Export' });
 }
 
@@ -123,8 +124,19 @@ function DataButton({ icon, label, danger, onPress }) {
   );
 }
 
+const MODULE_LABEL_KEYS = {
+  durable: 'butler.moduleDurable',
+  asset: 'butler.moduleAsset',
+  bills: 'butler.moduleBills',
+  schedule: 'butler.moduleSchedule',
+  diary: 'butler.moduleDiary',
+  'important-date': 'butler.moduleImportantDate',
+  mood: 'butler.moduleMood',
+};
+
 function ModuleChips({ selected, onSelect }) {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View style={styles.chipGrid}>
@@ -150,7 +162,7 @@ function ModuleChips({ selected, onSelect }) {
               ]}
               numberOfLines={1}
             >
-              {m.label}
+              {t(MODULE_LABEL_KEYS[m.id], { defaultValue: m.label })}
             </Text>
           </Pressable>
         );
@@ -161,6 +173,7 @@ function ModuleChips({ selected, onSelect }) {
 
 function SheetShell({ visible, title, onClose, children }) {
   const { Colors, Fonts } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -170,7 +183,7 @@ function SheetShell({ visible, title, onClose, children }) {
           <View style={[styles.panelHeader, { borderBottomColor: Colors.cardBorder }]}>
             <Pressable onPress={onClose}>
               <Text style={[styles.headerBtnCancel, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-                Cancel
+                {t('common.cancel')}
               </Text>
             </Pressable>
             <Text style={[styles.panelTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
@@ -212,6 +225,7 @@ function PrimaryButton({ label, onPress, busy, disabled }) {
 
 function ExportModal({ visible, onClose }) {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
   const { alert } = useAlert();
   const yearStart = useSettingsStore((s) => s.settings.yearStart);
   const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
@@ -239,30 +253,36 @@ function ExportModal({ visible, onClose }) {
         rows = rows.filter((r) => String(r[mod.dateField] || '').startsWith(String(year)));
       }
       if (rows.length === 0) {
-        alert('No Data', `There are no ${mod.label.toLowerCase()} records to export${range === 'year' ? ` in ${year}` : ''}.`);
+        const moduleName = t(MODULE_LABEL_KEYS[mod.id], { defaultValue: mod.label }).toLowerCase();
+        const period = range === 'year' ? t('butler.inYear', { year }) : '';
+        alert(t('settings.noDataTitle'), t('butler.noDataDesc', { module: moduleName, period }));
         return;
       }
       const fileName = `timemory_${mod.label.replace(/\s+/g, '_')}_${range === 'year' ? year : 'all'}.xlsx`;
       await deliverWorkbook(buildWorkbook(mod, rows), fileName);
-      showToast(`Exported ${rows.length} ${mod.label.toLowerCase()} rows`);
+      const moduleName = t(MODULE_LABEL_KEYS[mod.id], { defaultValue: mod.label }).toLowerCase();
+      showToast(t('butler.exportedRows', { count: rows.length, module: moduleName }));
       onClose();
     } catch (e) {
-      alert('Export Failed', e?.message || 'Something went wrong while exporting.');
+      alert(
+        t('butler.exportFailedTitle'),
+        e?.message ? t(e.message, { defaultValue: e.message }) : t('butler.exportFailedDesc')
+      );
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <SheetShell visible={visible} title="Export Data" onClose={onClose}>
+    <SheetShell visible={visible} title={t('butler.exportDataTitle')} onClose={onClose}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         <Text style={[styles.sectionLabel, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
-          MODULE
+          {t('butler.moduleSection')}
         </Text>
         <ModuleChips selected={moduleId} onSelect={setModuleId} />
 
         <Text style={[styles.sectionLabel, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
-          RANGE
+          {t('butler.rangeSection')}
         </Text>
         <View style={styles.rangeRow}>
           {['all', 'year'].map((r) => {
@@ -286,7 +306,7 @@ function ExportModal({ visible, onClose }) {
                     { color: isActive ? Colors.white : Colors.textSecondary, fontFamily: Fonts.semiBold },
                   ]}
                 >
-                  {r === 'all' ? 'All' : 'By Year'}
+                  {r === 'all' ? t('common.all') : t('butler.rangeByYear')}
                 </Text>
               </Pressable>
             );
@@ -315,7 +335,7 @@ function ExportModal({ visible, onClose }) {
       </ScrollView>
 
       <View style={styles.footer}>
-        <PrimaryButton label="Export" onPress={handleExport} busy={busy} />
+        <PrimaryButton label={t('butler.exportBtn')} onPress={handleExport} busy={busy} />
       </View>
     </SheetShell>
   );
@@ -325,6 +345,7 @@ function ExportModal({ visible, onClose }) {
 
 function ImportModal({ visible, onClose }) {
   const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
   const { alert } = useAlert();
 
   const [moduleId, setModuleId] = useState('durable');
@@ -343,9 +364,9 @@ function ImportModal({ visible, onClose }) {
     if (!mod) return;
     try {
       await deliverWorkbook(buildTemplateWorkbook(mod), `timemory_template_${mod.label.replace(/\s+/g, '_')}.xlsx`);
-      showToast('Template ready');
+      showToast(t('butler.templateReady'));
     } catch (e) {
-      alert('Template Failed', e?.message || 'Could not generate the template.');
+      alert(t('butler.templateFailedTitle'), e?.message || t('butler.templateFailedDesc'));
     }
   };
 
@@ -354,7 +375,7 @@ function ImportModal({ visible, onClose }) {
       const picked = Platform.OS === 'web' ? await pickXlsxFileWeb() : await pickXlsxFileNative();
       if (picked) setFile(picked);
     } catch (e) {
-      alert('Pick Failed', e?.message || 'Could not read the selected file.');
+      alert(t('butler.pickFailedTitle'), e?.message || t('butler.pickFailedDesc'));
     }
   };
 
@@ -366,7 +387,7 @@ function ImportModal({ visible, onClose }) {
       const sheetRows = readSheetRows(file.bytes);
       const [headerRow, ...dataRows] = sheetRows;
       if (!headerRow || dataRows.length === 0) {
-        alert('Empty File', 'The selected file has no data rows.');
+        alert(t('butler.emptyFileTitle'), t('butler.emptyFileDesc'));
         return;
       }
       const headers = headerRow.map((h) => String(h ?? '').trim());
@@ -378,7 +399,7 @@ function ImportModal({ visible, onClose }) {
         if (!row || row.every((c) => c === '' || c === null || c === undefined)) continue;
         const result = mod.fromRow(makeGetter(headers, row));
         if (result.error) {
-          errors.push(`Row ${i + 2}: ${result.error}`);
+          errors.push(t('butler.rowError', { row: i + 2, error: result.error }));
           continue;
         }
         try {
@@ -389,7 +410,7 @@ function ImportModal({ visible, onClose }) {
           }
           ok += 1;
         } catch (e) {
-          errors.push(`Row ${i + 2}: ${e?.message || 'insert failed'}`);
+          errors.push(t('butler.rowError', { row: i + 2, error: e?.message || 'insert failed' }));
         }
       }
 
@@ -397,27 +418,33 @@ function ImportModal({ visible, onClose }) {
         await useMoodStore.getState().loadMoods();
       }
 
-      if (ok > 0) showToast(`Imported ${ok} ${mod.label.toLowerCase()} rows`);
+      const moduleName = t(MODULE_LABEL_KEYS[mod.id], { defaultValue: mod.label }).toLowerCase();
       if (errors.length > 0) {
+        if (ok > 0) showToast(t('butler.importedRows', { count: ok, module: moduleName }));
         const shown = errors.slice(0, 5).join('\n');
-        const more = errors.length > 5 ? `\n…and ${errors.length - 5} more` : '';
-        alert('Import Finished with Errors', `${ok} rows imported, ${errors.length} skipped.\n\n${shown}${more}`);
+        const more = errors.length > 5 ? `\n${t('butler.moreErrors', { count: errors.length - 5 })}` : '';
+        alert(
+          t('butler.importErrorsTitle'),
+          t('butler.importErrorsDesc', { ok, failed: errors.length, details: `${shown}${more}` })
+        );
       } else if (ok === 0) {
-        alert('Nothing Imported', 'No valid rows were found in the file.');
+        alert(t('butler.nothingImportedTitle'), t('butler.nothingImportedDesc'));
+      } else {
+        showToast(t('butler.importedRows', { count: ok, module: moduleName }));
+        onClose();
       }
-      onClose();
     } catch (e) {
-      alert('Import Failed', e?.message || 'Could not parse the selected file.');
+      alert(t('butler.importFailedTitle'), e?.message || t('butler.importFailedDesc'));
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <SheetShell visible={visible} title="Import Data" onClose={onClose}>
+    <SheetShell visible={visible} title={t('butler.importDataTitle')} onClose={onClose}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
         <Text style={[styles.sectionLabel, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
-          MODULE
+          {t('butler.moduleSection')}
         </Text>
         <ModuleChips selected={moduleId} onSelect={setModuleId} />
 
@@ -431,7 +458,7 @@ function ImportModal({ visible, onClose }) {
         >
           <Ionicons name="document-text-outline" size={16} color={Colors.purple} />
           <Text style={[styles.outlineBtnText, { color: Colors.purple, fontFamily: Fonts.semiBold }]}>
-            Download Template
+            {t('butler.downloadTemplate')}
           </Text>
         </Pressable>
 
@@ -448,13 +475,13 @@ function ImportModal({ visible, onClose }) {
             style={[styles.outlineBtnText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}
             numberOfLines={1}
           >
-            {file ? file.name : 'Pick an .xlsx file'}
+            {file ? file.name : t('butler.pickXlsx')}
           </Text>
         </Pressable>
       </ScrollView>
 
       <View style={styles.footer}>
-        <PrimaryButton label="Import" onPress={handleImport} busy={busy} disabled={!file} />
+        <PrimaryButton label={t('butler.importBtn')} onPress={handleImport} busy={busy} disabled={!file} />
       </View>
     </SheetShell>
   );
@@ -464,26 +491,33 @@ function ImportModal({ visible, onClose }) {
 
 export default function DataManagement() {
   const { Colors, Fonts } = useTheme();
+  const { t } = useTranslation();
+  const { alert } = useAlert();
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
 
   const handleReset = async () => {
-    await clearAllData();
-    await useMoodStore.getState().loadMoods();
-    showToast('All data cleared');
+    try {
+      await clearAllData();
+      await useMoodStore.getState().loadMoods();
+      setResetOpen(false);
+      showToast(t('butler.allDataCleared'));
+    } catch (e) {
+      alert(t('butler.resetFailedTitle'), e?.message || t('butler.resetFailedDesc'));
+    }
   };
 
   return (
     <View style={styles.container}>
       <Text style={[styles.heading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-        DATA MANAGEMENT
+        {t('butler.dataManagementHeading')}
       </Text>
 
       <View style={styles.dataRow}>
-        <DataButton icon="download-outline" label="Import" onPress={() => setImportOpen(true)} />
-        <DataButton icon="cloud-upload-outline" label="Export" onPress={() => setExportOpen(true)} />
-        <DataButton icon="trash-outline" label="Reset" danger onPress={() => setResetOpen(true)} />
+        <DataButton icon="download-outline" label={t('butler.importBtn')} onPress={() => setImportOpen(true)} />
+        <DataButton icon="cloud-upload-outline" label={t('butler.exportBtn')} onPress={() => setExportOpen(true)} />
+        <DataButton icon="trash-outline" label={t('butler.resetBtn')} danger onPress={() => setResetOpen(true)} />
       </View>
 
       <ExportModal visible={exportOpen} onClose={() => setExportOpen(false)} />
@@ -493,9 +527,9 @@ export default function DataManagement() {
         onClose={() => setResetOpen(false)}
         onConfirm={handleReset}
         icon="alert-circle-outline"
-        title="Reset All Data"
-        description="This permanently deletes all durables, assets, bills, schedules, diaries, important dates and mood records. Settings are kept."
-        confirmText="Reset"
+        title={t('butler.resetAllTitle')}
+        description={t('butler.resetAllDesc')}
+        confirmText={t('butler.resetBtn')}
       />
     </View>
   );
@@ -517,7 +551,7 @@ const styles = StyleSheet.create({
   },
   dataBtn: {
     flex: 1,
-    paddingVertical: 16,
+    paddingVertical: 12,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,

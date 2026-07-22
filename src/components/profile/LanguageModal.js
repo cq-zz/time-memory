@@ -3,31 +3,30 @@ import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from '
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
-import { useSettingsStore } from '../../store/settings';
-import { CURRENCIES } from '../../utils/constant';
+import { useSettingsStore, LANGUAGES, languageMeta } from '../../store/settings';
 import { showToast } from '../common/Toast';
 
 /**
- * Currency picker (bottom sheet). The confirmed code is written to the
- * global settings store — every money display in the app reacts to it.
+ * Language picker (bottom sheet). The confirmed code is written to the
+ * global settings store — updateSetting('language') applies it to i18n
+ * immediately and persists it.
  */
-export default function CurrencyModal({ visible, onClose }) {
+export default function LanguageModal({ visible, onClose }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
-  const currency = useSettingsStore((s) => s.settings.currency);
+  const language = useSettingsStore((s) => s.settings.language);
   const updateSetting = useSettingsStore((s) => s.updateSetting);
 
-  const [selected, setSelected] = useState(currency);
+  const [selected, setSelected] = useState(language);
 
   // Sync the draft selection each time the sheet opens.
   useEffect(() => {
-    if (visible) setSelected(currency);
+    if (visible) setSelected(language);
   }, [visible]);
 
   const handleConfirm = async () => {
-    await updateSetting('currency', selected);
-    const meta = CURRENCIES.find((c) => c.code === selected);
-    showToast(t('butler.currencySet', { label: meta ? meta.label : selected }));
+    await updateSetting('language', selected);
+    showToast(t('settings.languageSet', { label: languageMeta(selected).label }));
     onClose();
   };
 
@@ -44,7 +43,7 @@ export default function CurrencyModal({ visible, onClose }) {
               </Text>
             </Pressable>
             <Text style={[styles.panelTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-              {t('butler.selectCurrencyTitle')}
+              {t('settings.selectLanguage')}
             </Text>
             <Pressable onPress={handleConfirm}>
               <Text style={[styles.headerBtnConfirm, { color: Colors.purple, fontFamily: Fonts.bold }]}>
@@ -54,11 +53,11 @@ export default function CurrencyModal({ visible, onClose }) {
           </View>
 
           <ScrollView style={styles.list} contentContainerStyle={styles.listContent} showsVerticalScrollIndicator={false}>
-            {CURRENCIES.map((c) => {
-              const isActive = selected === c.code;
+            {LANGUAGES.map((l) => {
+              const isActive = selected === l.code;
               return (
                 <Pressable
-                  key={c.code}
+                  key={l.code}
                   style={({ pressed }) => [
                     styles.row,
                     {
@@ -68,18 +67,13 @@ export default function CurrencyModal({ visible, onClose }) {
                     },
                     pressed && { opacity: 0.75 },
                   ]}
-                  onPress={() => setSelected(c.code)}
+                  onPress={() => setSelected(l.code)}
                 >
-                  <View
-                    style={[
-                      styles.radio,
-                      { borderColor: isActive ? Colors.purple : Colors.grayDot },
-                    ]}
-                  >
+                  <View style={[styles.radio, { borderColor: isActive ? Colors.purple : Colors.grayDot }]}>
                     {isActive && <View style={[styles.radioDot, { backgroundColor: Colors.purple }]} />}
                   </View>
                   <Text style={[styles.rowLabel, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-                    {c.label}
+                    {l.label}
                   </Text>
                   {isActive && <Ionicons name="checkmark" size={18} color={Colors.purple} />}
                 </Pressable>

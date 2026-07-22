@@ -1,6 +1,11 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
+import { reminderModuleMeta } from '../../utils/reminders';
+import { formatDisplay } from '../../utils/date';
+
+const MAX_ITEMS = 5;
 
 function TimelineDot({ color, glowing }) {
   const { Colors, Shadows } = useTheme();
@@ -24,106 +29,122 @@ function TimelineDot({ color, glowing }) {
   );
 }
 
-function ReminderCard({ time, timeColor, title, meta, icon, active, description }) {
+function ReminderCard({ item, time, timeColor, meta, active, onPress }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
 
   if (active) {
     return (
-      <View style={[styles.activeCard, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }, Shadows.dark]}>
+      <TouchableOpacity
+        style={[styles.activeCard, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }, Shadows.dark]}
+        activeOpacity={0.8}
+        onPress={onPress}
+      >
         <View style={styles.cardTopRow}>
           <Text style={[styles.timeText, { color: Colors.orange, fontFamily: Fonts.bold }]}>
-            CURRENTLY
+            {time}
           </Text>
           <Ionicons name="notifications" size={15} color={Colors.white40} />
         </View>
         <Text style={[styles.cardTitle, { color: Colors.white, fontFamily: Fonts.bold }]}>
-          {title}
+          {item.title}
         </Text>
         <View style={styles.metaRow}>
           <Text style={[styles.activeDesc, { color: Colors.white60, fontFamily: Fonts.regular }]}>
-            {description}
+            {meta}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
     );
   }
 
   return (
-    <View
+    <TouchableOpacity
       style={[
         styles.card,
         { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
         Shadows.card,
       ]}
+      activeOpacity={0.8}
+      onPress={onPress}
     >
       <View style={styles.cardTopRow}>
         <Text style={[styles.timeText, { color: timeColor, fontFamily: Fonts.bold }]}>{time}</Text>
-        <Ionicons name="ellipsis-horizontal" size={14} color={Colors.textSecondary} />
+        <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
       </View>
       <Text style={[styles.cardTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-        {title}
+        {item.title}
       </Text>
-      {meta && (
+      {meta ? (
         <View style={styles.metaRow}>
           <Ionicons name="location-outline" size={13} color={Colors.textSecondary} />
           <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
             {meta}
           </Text>
         </View>
-      )}
-    </View>
+      ) : null}
+    </TouchableOpacity>
   );
 }
 
-export default function RemindersTimeline() {
+export default function RemindersTimeline({ reminders = [], onPressItem, onViewAll }) {
   const { Colors, Fonts } = useTheme();
+  const { t } = useTranslation();
+  const items = reminders.slice(0, MAX_ITEMS);
 
   return (
     <View style={styles.section}>
       <View style={styles.headerRow}>
         <Text style={[styles.sectionTitle, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-          Today's Reminders
+          {t('home.todaysReminders')}
         </Text>
-        <Text style={[styles.viewAll, { color: Colors.orange, fontFamily: Fonts.bold }]}>
-          VIEW ALL
-        </Text>
+        <TouchableOpacity onPress={onViewAll} activeOpacity={0.7}>
+          <Text style={[styles.viewAll, { color: Colors.orange, fontFamily: Fonts.bold }]}>
+            {t('home.viewAll')}
+          </Text>
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.timeline}>
-        {/* Vertical line */}
-        <View style={[styles.verticalLine, { backgroundColor: Colors.cardBorder }]} />
-
-        {/* Item 1 */}
-        <View style={styles.itemWrap}>
-          <TimelineDot color={Colors.purple} />
-          <ReminderCard
-            time="09:00 AM"
-            timeColor={Colors.purple}
-            title="Team Sync: UI/UX Flow"
-            meta="Meeting Room 4"
-          />
+      {!items.length ? (
+        <View style={[styles.emptyCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder }]}>
+          <Text style={[styles.emptyText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+            {t('reminder.noReminder')} · {t('reminder.noReminderDesc')}
+          </Text>
         </View>
+      ) : (
+        <View style={styles.timeline}>
+          {/* Vertical line */}
+          <View style={[styles.verticalLine, { backgroundColor: Colors.cardBorder }]} />
 
-        {/* Item 2 — active */}
-        <View style={styles.itemWrap}>
-          <TimelineDot glowing />
-          <ReminderCard
-            active
-            title="Design Asset Review"
-            description="Finalizing icons for Timemory v2"
-          />
-        </View>
+          {items.map((item, i) => {
+            const meta = reminderModuleMeta(item.module, Colors, t);
+            const isLast = i === items.length - 1;
+            const time = item.expired
+              ? t('home.overdue')
+              : item.daysLeft === 0
+                ? t('home.todayDue')
+                : t('home.inDaysShort', { count: item.daysLeft });
+            const timeColor = item.expired
+              ? Colors.orange
+              : item.daysLeft === 0
+                ? Colors.orange
+                : Colors.purple;
 
-        {/* Item 3 */}
-        <View style={[styles.itemWrap, styles.itemWrapLast]}>
-          <TimelineDot color={Colors.grayDot} />
-          <ReminderCard
-            time="04:30 PM"
-            timeColor={Colors.textSecondary}
-            title="Gym Session"
-          />
+            return (
+              <View key={item.id} style={[styles.itemWrap, isLast && styles.itemWrapLast]}>
+                <TimelineDot glowing={item.expired} color={meta.color} />
+                <ReminderCard
+                  item={item}
+                  active={item.expired}
+                  time={time}
+                  timeColor={timeColor}
+                  meta={`${meta.label} · ${formatDisplay(item.date)}`}
+                  onPress={() => onPressItem?.(item)}
+                />
+              </View>
+            );
+          })}
         </View>
-      </View>
+      )}
     </View>
   );
 }
@@ -145,6 +166,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+  },
+  emptyCard: {
+    padding: 20,
+    borderWidth: 1,
+    borderRadius: 32,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: 'center',
   },
   timeline: {
     position: 'relative',

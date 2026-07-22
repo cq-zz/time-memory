@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
   card: {
     padding: 18,
     paddingBottom: 20,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     overflow: 'hidden',
   },
   glassEffect: {
@@ -61,21 +61,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   amount: {
     fontSize: 28,
     lineHeight: 34,
     letterSpacing: -0.32,
-    textAlign: 'center',
+    textAlign: 'left',
   },
   descWrap: {
     paddingTop: 4,
-    alignItems: 'center',
+    alignItems: 'flex-start',
   },
   desc: {
     fontSize: 13,
     lineHeight: 19,
-    textAlign: 'center',
+    textAlign: 'left',
   },
 });

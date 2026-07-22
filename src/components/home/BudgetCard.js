@@ -16,6 +16,7 @@ function BudgetSection({
   t,
   Colors,
   Fonts,
+  Shadows,
 }) {
   const ratio = hasTarget ? actual / target : 0;
   const percentage = hasTarget ? Math.round(ratio * 100) : null;
@@ -27,7 +28,13 @@ function BudgetSection({
   const accent = isOver && overColor ? overColor : color;
 
   return (
-    <View style={[styles.section, { backgroundColor: Colors.white05, borderColor: Colors.white10 }]}>
+    <View
+      style={[
+        styles.section,
+        { backgroundColor: Colors.inkDeep, borderColor: Colors.white05 },
+        Shadows.dark,
+      ]}
+    >
       <View style={styles.sectionHeader}>
         <Text style={[styles.sectionTitle, { color: Colors.white, fontFamily: Fonts.semiBold }]}>
           {title}
@@ -72,7 +79,7 @@ function BudgetSection({
 }
 
 export default function BudgetCard({ budget, bills = [] }) {
-  const { Colors, Radius, Shadows, Fonts } = useTheme();
+  const { Colors, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
   const currency = useSettingsStore((s) => s.settings.currency);
 
@@ -88,20 +95,7 @@ export default function BudgetCard({ budget, bills = [] }) {
   const displayCurrency = budget?.currency || currency;
 
   return (
-    <View
-      style={[
-        styles.card,
-        {
-          backgroundColor: Colors.inkDeep,
-          borderColor: Colors.white05,
-          borderRadius: Radius.xl,
-        },
-        Shadows.dark,
-      ]}
-    >
-      <Text style={[styles.title, { color: Colors.white, fontFamily: Fonts.semiBold }]}>
-        {t('home.annualBudget')}
-      </Text>
+    <View style={styles.card}>
       <BudgetSection
         title={t('home.annualExpenseBudget')}
         target={expenseTarget}
@@ -115,6 +109,7 @@ export default function BudgetCard({ budget, bills = [] }) {
         t={t}
         Colors={Colors}
         Fonts={Fonts}
+        Shadows={Shadows}
       />
       <BudgetSection
         title={t('home.annualIncomeTarget')}
@@ -128,6 +123,7 @@ export default function BudgetCard({ budget, bills = [] }) {
         t={t}
         Colors={Colors}
         Fonts={Fonts}
+        Shadows={Shadows}
       />
     </View>
   );
@@ -135,18 +131,12 @@ export default function BudgetCard({ budget, bills = [] }) {
 
 const styles = StyleSheet.create({
   card: {
-    padding: 16,
-    borderWidth: 1,
     gap: 12,
   },
-  title: {
-    fontSize: 18,
-    lineHeight: 24,
-  },
   section: {
-    padding: 12,
+    padding: 16,
     borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 24,
     gap: 8,
   },
   sectionHeader: {

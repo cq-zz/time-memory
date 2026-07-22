@@ -1,4 +1,4 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
@@ -11,7 +11,7 @@ const C = 2 * Math.PI * R;
 
 const PALETTE = ['#A05C82', '#F28B50', '#4AA868', '#E86B6B', '#4A90D9'];
 
-/** Current-month bills of one type → top-3 category segments + "Other". */
+/** Current-month bills of one type → category segments sorted by amount. */
 function buildSegments(bills, billType, labelOf) {
   const now = new Date();
   const key = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -27,13 +27,8 @@ function buildSegments(bills, billType, labelOf) {
     });
   if (!sum) return [];
 
-  const sorted = [...totals.entries()].sort((a, b) => b[1] - a[1]);
-  const top = sorted.slice(0, 3);
-  const rest = sorted.slice(3).reduce((s, [, v]) => s + v, 0);
-  const rows = rest > 0 ? [...top, ['__other__', rest]] : top;
-
-  return rows.map(([cat, amount], i) => ({
-    name: cat === '__other__' ? labelOf('__other__') : labelOf(cat),
+  return [...totals.entries()].sort((a, b) => b[1] - a[1]).map(([cat, amount], i) => ({
+    name: labelOf(cat),
     pct: Math.round((amount / sum) * 100),
     color: PALETTE[i % PALETTE.length],
   }));
@@ -96,7 +91,12 @@ function BreakdownCard({ title, segments, emptyText }) {
       ]}
     >
       <DonutChart segments={segments} centerLabel={title} />
-      <View style={styles.legend}>
+      <ScrollView
+        style={styles.legend}
+        contentContainerStyle={styles.legendContent}
+        nestedScrollEnabled
+        showsVerticalScrollIndicator={segments.length > 3}
+      >
         {segments.length ? (
           segments.map((seg) => (
             <View key={seg.name} style={styles.legendRow}>
@@ -122,7 +122,7 @@ function BreakdownCard({ title, segments, emptyText }) {
             {emptyText}
           </Text>
         )}
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -199,7 +199,11 @@ const styles = StyleSheet.create({
   },
   legend: {
     flex: 1,
+    maxHeight: SIZE,
+  },
+  legendContent: {
     gap: 8,
+    paddingRight: 4,
   },
   legendRow: {
     flexDirection: 'row',

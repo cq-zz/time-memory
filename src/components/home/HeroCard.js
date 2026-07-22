@@ -12,7 +12,12 @@ export default function HeroCard() {
       <View style={[styles.circleOuter, { borderColor: Colors.white05 }]} />
       <View style={[styles.circleInner, { borderColor: Colors.white10 }]} />
 
-      <Text style={[styles.title, { color: Colors.white, fontFamily: Fonts.bold }]}>
+      <Text
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+        style={[styles.title, { color: Colors.white, fontFamily: Fonts.bold }]}
+      >
         {t('home.heroSlogan')}
       </Text>
     </View>
@@ -44,7 +49,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
   },
   title: {
-    fontSize: 24,
-    lineHeight: 30,
+    fontSize: 20,
+    lineHeight: 26,
   },
 });

@@ -74,7 +74,7 @@ export default function MoodTrend() {
                 <Text style={[styles.axisDate, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
                   {d.label}
                 </Text>
-                <Text style={styles.axisMood}>
+                <Text style={[styles.axisMood, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
                   {d.score != null ? `${d.emoji} ${d.score}` : '–'}
                 </Text>
               </View>

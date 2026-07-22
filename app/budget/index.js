@@ -69,6 +69,7 @@ export default function BudgetScreen() {
   const { Colors, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
+  const currency = useSettingsStore((s) => s.settings.currency);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);

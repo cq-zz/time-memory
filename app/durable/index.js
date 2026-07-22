@@ -41,7 +41,7 @@ export default function DurablesScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currency]);
 
   // Reload every time the screen gains focus (after add/edit/delete).
   useFocusEffect(
@@ -71,6 +71,7 @@ export default function DurablesScreen() {
             year={year}
             month={month}
             showAllOption
+            style={styles.dateFilter}
             onChange={({ year: y, month: m }) => {
               setYear(y);
               setMonth(m);
@@ -124,19 +125,19 @@ const styles = StyleSheet.create({
   },
   statsSection: {
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 20,
+  },
+  dateFilter: {
+    marginBottom: 12,
   },
   stickyBar: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 16,
     paddingBottom: 16,
-    gap: 12,
     borderBottomWidth: 1,
   },
   listSection: {
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 16,
   },
   fab: {
     position: 'absolute',

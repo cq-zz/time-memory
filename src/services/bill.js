@@ -7,13 +7,13 @@
  */
 import { getAllRows, getRowById, insertRow, updateRow, deleteRow } from '../store/db';
 import { genId } from '../utils/id';
-import { useSettingsStore } from '../store/settings';
+import { useSettingsStore, inCurrentCurrency } from '../store/settings';
 
 const TABLE = 'bills';
 
-/** All bills, newest first (consumption_date desc, then created_at desc). */
+/** All bills of the current currency, newest first (consumption_date desc, then created_at desc). */
 export async function listBills() {
-  const rows = await getAllRows(TABLE);
+  const rows = (await getAllRows(TABLE)).filter(inCurrentCurrency);
   return rows.sort(
     (a, b) =>
       (b.consumption_date || '').localeCompare(a.consumption_date || '') ||
@@ -77,11 +77,11 @@ export function billSummary(bills) {
   return summary;
 }
 
-/** All bills linked to a given durable/asset via source_id, newest first. */
+/** All bills of the current currency linked to a given durable/asset via source_id, newest first. */
 export async function listBillsBySource(sourceId) {
   if (!sourceId) return [];
   const rows = await getAllRows(TABLE);
   return rows
-    .filter((b) => b.source_id === sourceId)
+    .filter((b) => b.source_id === sourceId && inCurrentCurrency(b))
     .sort((a, b) => (b.consumption_date || '').localeCompare(a.consumption_date || ''));
 }

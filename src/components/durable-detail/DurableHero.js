@@ -1,70 +1,99 @@
-import { useState } from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
+import { useRef, useState } from 'react';
+import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../utils/theme';
+import { useTheme, hexToRgba } from '../../utils/theme';
+import ImagePreviewModal from '../common/ImagePreviewModal';
 
+/**
+ * Durable detail hero: a 3:4 image area (tap to preview, contain-fit with
+ * letterbox sides) with the status pill and value pinned to the image's
+ * bottom-left corner. The item name sits in its own block below the image
+ * so long names never cover the photo.
+ */
 export default function DurableHero({ image, fallbackIcon, title, statusText, statusColor, totalCostText }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
   const [imageError, setImageError] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const lastCloseRef = useRef(0);
   const showImage = Boolean(image) && !imageError;
+
+  // When the preview closes, the tap that dismissed it can be re-dispatched
+  // to the image button underneath (synthesized click after the modal is
+  // unmounted), instantly reopening the preview. Ignore opens for a short
+  // window after each close.
+  const openPreview = () => {
+    if (Date.now() - lastCloseRef.current < 400) return;
+    setPreviewOpen(true);
+  };
+  const closePreview = () => {
+    lastCloseRef.current = Date.now();
+    setPreviewOpen(false);
+  };
 
   return (
     <View style={styles.container}>
-      {showImage ? (
-        <Image
-          source={{ uri: image }}
-          style={styles.image}
-          resizeMode="cover"
-          onError={() => setImageError(true)}
-        />
-      ) : (
-        <View style={[styles.image, styles.imageFallback, { backgroundColor: Colors.avatarBg }]}>
-          <Ionicons name={fallbackIcon || 'cube-outline'} size={72} color={Colors.textTertiary} />
-        </View>
-      )}
+      {/* Image area */}
+      <View style={styles.imageWrap}>
+        {showImage ? (
+          <TouchableOpacity activeOpacity={0.9} style={styles.imageFill} onPress={openPreview}>
+            <Image
+              source={{ uri: image }}
+              style={[styles.imageFit, { backgroundColor: Colors.avatarBg }]}
+              resizeMode="contain"
+              onError={() => setImageError(true)}
+            />
+          </TouchableOpacity>
+        ) : (
+          <View style={[styles.imageFill, styles.imageFallback, { backgroundColor: Colors.avatarBg }]}>
+            <Ionicons name={fallbackIcon || 'cube-outline'} size={72} color={Colors.textTertiary} />
+          </View>
+        )}
 
-      {/* Scrim for text readability */}
-      <LinearGradient
-        colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.55)']}
-        locations={[0.35, 1]}
-        style={styles.scrim}
-      />
-
-      {/* Floating header over image */}
-      <View style={styles.overlay}>
-        {/* Status pill */}
-        <View style={[styles.statusPill, { backgroundColor: statusColor }]}>
-          <View style={[styles.statusDot, { backgroundColor: Colors.white }]} />
-          <Text style={[styles.statusText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {statusText}
-          </Text>
-        </View>
-
-        <Text style={[styles.title, { color: Colors.white, fontFamily: Fonts.bold }]}>{title}</Text>
-
-        <View style={styles.costRow}>
-          <Text style={[styles.costLabel, { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.bold }]}>
-            {t('detail.totalCost')}
-          </Text>
-          <Text style={[styles.costValue, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {totalCostText}
-          </Text>
+        {/* Value + status over the image bottom-left (display only — touches pass through) */}
+        <View style={styles.imageTag} pointerEvents="none">
+          <View style={[styles.valueChip, { backgroundColor: hexToRgba(Colors.inkDeep, 0.55) }]}>
+            <Text style={[styles.valueLabel, { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.bold }]}>
+              {t('detail.totalCost')}
+            </Text>
+            <Text style={[styles.valueText, { color: Colors.white, fontFamily: Fonts.bold }]}>
+              {totalCostText}
+            </Text>
+          </View>
+          <View style={[styles.statusPill, { backgroundColor: statusColor }]}>
+            <View style={[styles.statusDot, { backgroundColor: Colors.white }]} />
+            <Text style={[styles.statusText, { color: Colors.white, fontFamily: Fonts.bold }]}>
+              {statusText}
+            </Text>
+          </View>
         </View>
       </View>
+
+      {/* Name block below the image */}
+      <View style={styles.infoBlock}>
+        <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>{title}</Text>
+      </View>
+
+      {previewOpen && showImage && (
+        <ImagePreviewModal imageUri={image} onClose={closePreview} />
+      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: 480,
     width: '100%',
   },
-  image: {
+  imageWrap: {
+    aspectRatio: 3 / 4,
+    width: '100%',
+  },
+  imageFill: {
     ...StyleSheet.absoluteFillObject,
+  },
+  imageFit: {
     width: '100%',
     height: '100%',
   },
@@ -72,23 +101,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  scrim: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  overlay: {
+  imageTag: {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    paddingHorizontal: 16,
-    paddingTop: 27,
-    paddingBottom: 24,
+    left: 16,
+    bottom: 16,
+    alignItems: 'flex-start',
     gap: 8,
   },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     gap: 8,
     paddingHorizontal: 12,
     paddingVertical: 4,
@@ -104,23 +126,30 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     letterSpacing: 0.6,
   },
-  title: {
-    fontSize: 28,
-    lineHeight: 32,
-  },
-  costRow: {
+  valueChip: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 8,
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 9999,
   },
-  costLabel: {
-    fontSize: 12,
-    lineHeight: 16,
+  valueLabel: {
+    fontSize: 10,
+    lineHeight: 14,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
   },
-  costValue: {
-    fontSize: 28,
-    lineHeight: 34,
+  valueText: {
+    fontSize: 32,
+    lineHeight: 40,
+  },
+  infoBlock: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  title: {
+    fontSize: 24,
+    lineHeight: 30,
   },
 });

@@ -17,7 +17,7 @@ export default function DetailFooter({ editPath, deleteConfirmText, onDelete }) 
   const [showDelete, setShowDelete] = useState(false);
 
   return (
-    <View style={[styles.container, { backgroundColor: 'rgba(255,255,255,0.92)', borderTopColor: Colors.grayDot }]}>
+    <View style={[styles.container, { backgroundColor: Colors.card, borderTopColor: Colors.cardBorder }]}>
       {/* Delete button */}
       <TouchableOpacity
         activeOpacity={0.8}
@@ -55,29 +55,29 @@ export default function DetailFooter({ editPath, deleteConfirmText, onDelete }) 
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
     paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 16,
+    paddingTop: 12,
+    paddingBottom: 12,
     borderTopWidth: 1,
   },
   deleteBtn: {
-    width: 56,
-    height: 56,
+    width: 48,
+    height: 48,
     borderWidth: 2,
     alignItems: 'center',
     justifyContent: 'center',
   },
   editBtn: {
     flex: 1,
-    height: 56,
+    height: 48,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
   editText: {
-    fontSize: 16,
-    lineHeight: 28,
+    fontSize: 14,
+    lineHeight: 20,
   },
 });

@@ -41,14 +41,13 @@ export function isPast(dateStr) {
   return d !== null && d < 0;
 }
 
-const MONTHS_SHORT = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
-
-/** Format `YYYY-MM-DD` as `Mar 08, 2014`; returns '--' when empty/invalid. */
+/**
+ * Format `YYYY-MM-DD` for display. The whole system shows ISO dates
+ * (`YYYY-MM-DD`), so the stored string is returned as-is after validation;
+ * returns '--' when empty/invalid.
+ */
 export function formatDisplay(dateStr) {
   const d = parseDate(dateStr);
   if (!d) return '--';
-  return `${MONTHS_SHORT[d.getMonth()]} ${pad2(d.getDate())}, ${d.getFullYear()}`;
+  return dateStr.slice(0, 10);
 }

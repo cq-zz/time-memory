@@ -52,7 +52,7 @@ export default function FinancialSummary() {
       return () => {
         active = false;
       };
-    }, [])
+    }, [currency])
   );
 
   return (

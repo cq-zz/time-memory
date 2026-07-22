@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     gap: 16,
   },
   statCard: {
-    padding: 24,
+    padding: 16,
     borderRadius: 32,
   },
   statContent: {
@@ -61,12 +61,12 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
   statValue: {
-    fontSize: 48,
-    lineHeight: 56,
-    letterSpacing: -0.96,
+    fontSize: 32,
+    lineHeight: 40,
+    letterSpacing: -0.64,
   },
   pillsWrap: {
-    paddingTop: 16,
+    paddingTop: 12,
   },
   pillsRow: {
     flexDirection: 'row',

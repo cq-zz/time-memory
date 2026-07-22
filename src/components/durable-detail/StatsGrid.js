@@ -18,7 +18,7 @@ function StatCard({ label, value, icon, iconColor }) {
         {label}
       </Text>
       <View style={styles.statValueRow}>
-        {icon ? <Ionicons name={icon} size={18} color={iconColor} /> : null}
+        {icon ? <Ionicons name={icon} size={16} color={iconColor} /> : null}
         <Text
           style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
           numberOfLines={1}
@@ -31,29 +31,15 @@ function StatCard({ label, value, icon, iconColor }) {
   );
 }
 
-function DarkStatCard({ label, value }) {
-  const { Colors, Radius, Shadows, Fonts } = useTheme();
-
-  return (
-    <View style={[styles.statCard, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }, Shadows.dark]}>
-      <Text style={[styles.statLabel, { color: Colors.textTertiary, fontFamily: Fonts.bold }]}>{label}</Text>
-      <Text
-        style={[styles.statValue, { color: Colors.white, fontFamily: Fonts.semiBold }]}
-        numberOfLines={1}
-        adjustsFontSizeToFit
-      >
-        {value}
-      </Text>
-    </View>
-  );
-}
-
 export default function StatsGrid({
   categoryLabel,
   categoryIcon,
+  acquisitionText,
   purchaseDateText,
+  expiryDateText,
   dailyCostText,
   companionText,
+  expectedLifespanText,
   expectedDailyText,
   percent,
   lifespanNoteText,
@@ -64,15 +50,19 @@ export default function StatsGrid({
 
   return (
     <View style={styles.container}>
-      {/* 2x2 stats grid */}
+      {/* Stats grid */}
       <View style={styles.gridBlock}>
         <View style={styles.row}>
           <StatCard label={t('detail.category')} value={categoryLabel} icon={categoryIcon} iconColor={Colors.purple} />
+          <StatCard label={t('durable.acquisitionLabel')} value={acquisitionText} />
+        </View>
+        <View style={styles.row}>
           <StatCard label={t('detail.purchaseDate')} value={purchaseDateText} />
+          <StatCard label={t('durable.expiryDate')} value={expiryDateText} />
         </View>
         <View style={styles.row}>
           <StatCard label={t('detail.dailyCost')} value={dailyCostText} />
-          <DarkStatCard label={t('detail.companionTime')} value={companionText} />
+          <StatCard label={t('detail.companionTime')} value={companionText} />
         </View>
       </View>
 
@@ -99,7 +89,7 @@ export default function StatsGrid({
             </View>
           </View>
           <View style={[styles.dailyIconBox, { backgroundColor: Colors.iconBg, borderRadius: Radius.circle }]}>
-            <Ionicons name="trending-down" size={24} color={Colors.textPrimary} />
+            <Ionicons name="trending-down" size={20} color={Colors.textPrimary} />
           </View>
         </View>
 
@@ -116,9 +106,14 @@ export default function StatsGrid({
           />
         </View>
 
-        <Text style={[styles.dailyNote, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-          {lifespanNoteText}
-        </Text>
+        <View style={styles.dailyNoteRow}>
+          <Text style={[styles.dailyNote, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+            {`${t('durable.expectedLifespan')} ${expectedLifespanText}`}
+          </Text>
+          <Text style={[styles.dailyNote, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+            {lifespanNoteText}
+          </Text>
+        </View>
       </View>
     </View>
   );
@@ -127,19 +122,18 @@ export default function StatsGrid({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    gap: 20,
+    gap: 16,
   },
   gridBlock: {
-    gap: 20,
+    gap: 12,
   },
   row: {
     flexDirection: 'row',
-    gap: 20,
+    gap: 12,
   },
   statCard: {
     flex: 1,
-    height: 90,
-    padding: 20,
+    padding: 14,
     gap: 4,
     borderWidth: 1,
     justifyContent: 'center',
@@ -156,20 +150,20 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   statValue: {
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 16,
+    lineHeight: 22,
     flexShrink: 1,
   },
   dailyCard: {
-    padding: 24,
-    gap: 8,
+    padding: 16,
+    gap: 6,
     borderWidth: 1,
   },
   dailyTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingBottom: 8,
+    paddingBottom: 6,
   },
   dailyLeft: {
     flex: 1,
@@ -187,16 +181,16 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   dailyValue: {
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 20,
+    lineHeight: 26,
   },
   dailyUnit: {
-    fontSize: 14,
-    lineHeight: 22,
+    fontSize: 12,
+    lineHeight: 18,
   },
   dailyIconBox: {
-    width: 64,
-    height: 64,
+    width: 44,
+    height: 44,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -206,6 +200,12 @@ const styles = StyleSheet.create({
   },
   dailyFill: {
     height: 4,
+  },
+  dailyNoteRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 8,
   },
   dailyNote: {
     fontSize: 12,

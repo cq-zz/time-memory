@@ -1,12 +1,12 @@
 import { getAllRows, getRowById, insertRow, updateRow, deleteRow } from '../store/db';
 import { genId } from '../utils/id';
-import { useSettingsStore } from '../store/settings';
+import { useSettingsStore, inCurrentCurrency } from '../store/settings';
 
 const TABLE = 'budgets';
 
-/** All budgets, newest year first. */
+/** All budgets of the current currency, newest year first. */
 export async function listBudgets() {
-  const rows = await getAllRows(TABLE);
+  const rows = (await getAllRows(TABLE)).filter(inCurrentCurrency);
   return rows.sort((a, b) => (b.year || '').localeCompare(a.year || ''));
 }
 
@@ -14,9 +14,9 @@ export async function getBudget(id) {
   return getRowById(TABLE, id);
 }
 
-/** The budget for a given year (one record per year), or null. */
+/** The current-currency budget for a given year (one record per year), or null. */
 export async function getBudgetByYear(year) {
-  const rows = await getAllRows(TABLE);
+  const rows = (await getAllRows(TABLE)).filter(inCurrentCurrency);
   return rows.find((r) => String(r.year) === String(year)) || null;
 }
 

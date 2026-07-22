@@ -8,6 +8,7 @@
 import { getAllRows, getRowById, insertRow, updateRow, deleteRow } from '../store/db';
 import { genId } from '../utils/id';
 import { todayStr, daysBetween, daysUntil, isPast } from '../utils/date';
+import { inCurrentCurrency } from '../store/settings';
 
 const TABLE = 'durables';
 
@@ -107,9 +108,9 @@ export function lifespanPercent(row) {
 
 // ── CRUD ──────────────────────────────────────────
 
-/** All durables, newest purchase_date first. */
+/** All durables of the current currency, newest purchase_date first. */
 export async function listDurables() {
-  const rows = await getAllRows(TABLE);
+  const rows = (await getAllRows(TABLE)).filter(inCurrentCurrency);
   return rows.sort((a, b) => (b.purchase_date || '').localeCompare(a.purchase_date || ''));
 }
 
@@ -117,11 +118,12 @@ export async function getDurable(id) {
   return getRowById(TABLE, id);
 }
 
-/** Resolve the linked asset row for a durable (null when unlinked/missing). */
+/** Resolve the linked asset row for a durable (null when unlinked/missing/other currency). */
 export async function getLinkedAsset(row) {
   const linkedId = row?.linked_asset_id;
   if (!linkedId) return null;
-  return getRowById('assets', linkedId);
+  const asset = await getRowById('assets', linkedId);
+  return asset && inCurrentCurrency(asset) ? asset : null;
 }
 
 /**
@@ -143,9 +145,9 @@ export async function removeDurable(id) {
   return deleteRow(TABLE, id);
 }
 
-/** Aggregate for the list stats card: in-use value, in-use count, total count. */
+/** Aggregate for the list stats card: in-use value, in-use count, total count (current currency only). */
 export async function durableStats(currency) {
-  const rows = await getAllRows(TABLE);
+  const rows = (await getAllRows(TABLE)).filter(inCurrentCurrency);
   let inUseValue = 0;
   let inUseCount = 0;
   rows.forEach((r) => {

@@ -9,6 +9,7 @@
 import { getAllRows, getRowById, insertRow, updateRow, deleteRow } from '../store/db';
 import { genId } from '../utils/id';
 import { todayStr, daysBetween, isPast } from '../utils/date';
+import { inCurrentCurrency } from '../store/settings';
 
 const TABLE = 'assets';
 
@@ -42,9 +43,9 @@ export function displayValue(row) {
 
 // ── CRUD ──────────────────────────────────────────
 
-/** All assets, newest purchase_date first. */
+/** All assets of the current currency, newest purchase_date first. */
 export async function listAssets() {
-  const rows = await getAllRows(TABLE);
+  const rows = (await getAllRows(TABLE)).filter(inCurrentCurrency);
   return rows.sort((a, b) => (b.purchase_date || '').localeCompare(a.purchase_date || ''));
 }
 
@@ -71,9 +72,9 @@ export async function removeAsset(id) {
   return deleteRow(TABLE, id);
 }
 
-/** Aggregate for the list stats card: total current value of active assets + counts. */
+/** Aggregate for the list stats card: total current value of active assets + counts (current currency only). */
 export async function assetStats() {
-  const rows = await getAllRows(TABLE);
+  const rows = (await getAllRows(TABLE)).filter(inCurrentCurrency);
   let totalValue = 0;
   let activeCount = 0;
   rows.forEach((r) => {

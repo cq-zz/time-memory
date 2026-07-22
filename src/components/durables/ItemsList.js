@@ -137,12 +137,6 @@ export default function ItemsList({ items, year, month, search, filter, currency
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-          {t('common.count', { count: filtered.length })}
-        </Text>
-      </View>
-
       {filtered.length === 0 ? (
         <View style={styles.empty}>
           <Text style={[styles.emptyText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
@@ -161,16 +155,6 @@ export default function ItemsList({ items, year, month, search, filter, currency
 const styles = StyleSheet.create({
   container: {
     gap: 0,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  title: {
-    fontSize: 14,
-    lineHeight: 20,
   },
   card: {
     padding: 16,

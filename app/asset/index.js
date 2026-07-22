@@ -38,7 +38,7 @@ export default function AssetsScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currency]);
 
   // Reload every time the screen gains focus (after add/edit/delete).
   useFocusEffect(

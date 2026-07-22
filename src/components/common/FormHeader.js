@@ -10,7 +10,7 @@ export default function FormHeader({ title }) {
   return (
     <View style={styles.container}>
       <TouchableOpacity
-        style={[styles.backBtn, { backgroundColor: '#E2E2E2', borderColor: Colors.grayDot }]}
+        style={styles.backBtn}
         onPress={() => router.back()}
         activeOpacity={0.7}
       >
@@ -29,14 +29,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 8,
     paddingBottom: 10,
   },
   backBtn: {
     width: 40,
     height: 40,
     borderRadius: 9999,
-    borderWidth: 1,
     alignItems: 'center',
     justifyContent: 'center',
   },

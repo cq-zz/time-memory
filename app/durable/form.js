@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, ScrollView, Text, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/utils/theme';
-import { useSettingsStore } from '../../src/store/settings';
+import { useSettingsStore, currencyMeta } from '../../src/store/settings';
 import { getDurable, saveDurable } from '../../src/services/durable';
 import { DURABLE_STATUS_OPTIONS } from '../../src/utils/constant';
 import { showToast } from '../../src/components/common/Toast';
@@ -12,6 +12,7 @@ import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
 import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
+import FieldLabel from '../../src/components/common/FieldLabel';
 import CategoryPicker from '../../src/components/common/CategoryPicker';
 import AcquisitionPicker from '../../src/components/common/AcquisitionPicker';
 import LinkedAssetPicker from '../../src/components/durable-form/LinkedAssetPicker';
@@ -128,13 +129,32 @@ export default function DurableFormScreen() {
           value={purchaseDate}
           onChange={setPurchaseDate}
         />
-        <FormInput
-          label={t('durable.purchasePriceLabel')}
-          placeholder={`${currency} 0.00`}
-          value={price}
-          onChangeText={(v) => setPrice(sanitizeAmount(v))}
-          keyboardType="decimal-pad"
-        />
+        {/* Purchase price — currency symbol block + amount input block */}
+        <View style={styles.field}>
+          <FieldLabel label={`${t('durable.purchasePriceLabel')} *`} />
+          <View style={styles.priceRow}>
+            <View style={[styles.currencyBlock, { backgroundColor: Colors.avatarBg, borderRadius: Radius.sm }]}>
+              <Text style={[styles.currencySymbol, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+                {currencyMeta(currency).symbol}
+              </Text>
+            </View>
+            <View
+              style={[
+                styles.priceInputBlock,
+                { backgroundColor: Colors.card, borderColor: Colors.grayDot, borderRadius: Radius.sm },
+              ]}
+            >
+              <TextInput
+                style={[styles.priceInput, { color: Colors.textPrimary, fontFamily: Fonts.regular }]}
+                placeholder="0.00"
+                placeholderTextColor={Colors.textSecondary}
+                value={price}
+                onChangeText={(v) => setPrice(sanitizeAmount(v))}
+                keyboardType="decimal-pad"
+              />
+            </View>
+          </View>
+        </View>
         <WheelPicker
           label={t('durable.expectedLifespan')}
           level="date"
@@ -187,7 +207,7 @@ export default function DurableFormScreen() {
         <LinkedAssetPicker value={linkedAssetId} onChange={setLinkedAssetId} />
 
         <FormInput
-          label={t('durable.notesLabel', { defaultValue: 'Notes' })}
+          label={t('durable.notesLabel')}
           placeholder={t('durable.notesPlaceholder')}
           value={notes}
           onChangeText={setNotes}
@@ -220,9 +240,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 24,
-    gap: 24,
+    gap: 16,
   },
   field: {
     gap: 12,
@@ -231,6 +250,34 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+  },
+  priceRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: 12,
+  },
+  currencyBlock: {
+    height: 56,
+    minWidth: 56,
+    paddingHorizontal: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  currencySymbol: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  priceInputBlock: {
+    flex: 1,
+    height: 56,
+    borderWidth: 1,
+    paddingHorizontal: 16,
+    justifyContent: 'center',
+  },
+  priceInput: {
+    fontSize: 15,
+    lineHeight: 20,
+    padding: 0,
   },
   statusRow: {
     flexDirection: 'row',

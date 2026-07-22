@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useTheme } from '../../src/utils/theme';
+import { useSettingsStore } from '../../src/store/settings';
 import { listDurables } from '../../src/services/durable';
 import { listAssets } from '../../src/services/asset';
 import { listSchedules } from '../../src/services/schedule';
@@ -25,10 +26,12 @@ const EMPTY = { durables: [], assets: [], schedules: [], bills: [], budget: null
 export default function HomeScreen() {
   const { Colors } = useTheme();
   const router = useRouter();
+  const currency = useSettingsStore((s) => s.settings.currency);
   const [data, setData] = useState(EMPTY);
 
   // Refresh every time the tab gains focus — module CRUD, reminder lead
-  // days and data resets all happen on other tabs.
+  // days and data resets all happen on other tabs. Also refresh when the
+  // currency changes, since money lists are filtered by current currency.
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -47,7 +50,7 @@ export default function HomeScreen() {
       return () => {
         active = false;
       };
-    }, [])
+    }, [currency])
   );
 
   return (

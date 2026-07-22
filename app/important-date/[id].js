@@ -5,7 +5,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../src/utils/theme';
+import { useTheme, hexToRgba } from '../../src/utils/theme';
 import {
   getImportantDate,
   removeImportantDate,
@@ -135,7 +135,7 @@ export default function ImportantDateDetailScreen() {
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => router.back()}
-        style={[styles.backBtn, { top: insets.top + 8, backgroundColor: 'rgba(255,255,255,0.25)' }]}
+        style={[styles.backBtn, { top: insets.top + 8, backgroundColor: hexToRgba(Colors.inkDeep, 0.45) }]}
       >
         <Ionicons name="chevron-back" size={22} color={Colors.white} />
       </TouchableOpacity>
@@ -191,8 +191,8 @@ const styles = StyleSheet.create({
   backBtn: {
     position: 'absolute',
     left: 16,
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',

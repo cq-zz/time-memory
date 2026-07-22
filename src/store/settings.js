@@ -46,6 +46,16 @@ export function formatMoney(amount, currencyCode) {
   return `${meta.symbol}${Number(amount || 0).toLocaleString('en-US')}`;
 }
 
+/** The active currency code (usable outside React components). */
+export const currentCurrency = () => useSettingsStore.getState().settings.currency;
+
+/**
+ * Currency isolation rule for money rows: a row belongs to the current
+ * currency's dataset when it was saved with the current currency. Legacy
+ * rows with no currency recorded are treated as compatible and still show.
+ */
+export const inCurrentCurrency = (row) => !row?.currency || row.currency === currentCurrency();
+
 export const useSettingsStore = create((set) => ({
   settings: DEFAULT_SETTINGS,
   loaded: false,

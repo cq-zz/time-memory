@@ -62,7 +62,7 @@ export default function BillsScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currency]);
 
   useFocusEffect(
     useCallback(() => {
@@ -117,6 +117,7 @@ export default function BillsScreen() {
           <YearMonthPicker
             year={year}
             month={month}
+            style={styles.dateFilter}
             onChange={({ year: y, month: m }) => {
               setYear(y);
               setMonth(m);
@@ -163,18 +164,19 @@ const styles = StyleSheet.create({
   summarySection: {
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 20,
+  },
+  dateFilter: {
+    marginBottom: 12,
   },
   stickyBar: {
     paddingHorizontal: 16,
-    paddingTop: 8,
+    paddingTop: 16,
     paddingBottom: 16,
-    gap: 12,
     borderBottomWidth: 1,
   },
   listSection: {
     paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingTop: 16,
   },
   summaryRow: {
     flexDirection: 'row',

@@ -5,7 +5,7 @@ import { useFocusEffect, useLocalSearchParams, useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../src/utils/theme';
+import { useTheme, hexToRgba } from '../../src/utils/theme';
 import { useSettingsStore, formatMoney } from '../../src/store/settings';
 import { useCategoryStore, resolveCategoryMeta } from '../../src/store/categories';
 import {
@@ -29,12 +29,13 @@ import RelatedBills from '../../src/components/common/RelatedBills';
 import DetailFooter from '../../src/components/common/DetailFooter';
 
 export default function DurableDetailScreen() {
-  const { Colors, Fonts } = useTheme();
+  const { Colors, Radius, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const currency = useSettingsStore((s) => s.settings.currency);
+  const darkMode = useSettingsStore((s) => s.settings.darkMode);
   const categoryState = useCategoryStore();
 
   const [row, setRow] = useState(null);
@@ -57,7 +58,7 @@ export default function DurableDetailScreen() {
       return () => {
         active = false;
       };
-    }, [id]),
+    }, [id, currency]),
   );
 
   // ── Loading / not-found states ──────────────────
@@ -101,6 +102,13 @@ export default function DurableDetailScreen() {
   const expDaily = expectedDailyAvg(row, relatedBills);
   const percent = lifespanPercent(row);
   const lifespanDays = expectedLifespanDays(row);
+  const acquisitionText = row.acquisition_method
+    ? t(`durable.acquisition${row.acquisition_method.charAt(0).toUpperCase()}${row.acquisition_method.slice(1)}`)
+    : '--';
+  const expectedLifespanText = /^\d{4}-\d{2}-\d{2}/.test(row.expected_lifespan || '')
+    ? formatDisplay(row.expected_lifespan)
+    : row.expected_lifespan || '--';
+  const expiryDateText = formatDisplay(row.expiry_date);
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.card }]}>
@@ -117,9 +125,12 @@ export default function DurableDetailScreen() {
           <StatsGrid
             categoryLabel={cat.label}
             categoryIcon={cat.icon}
+            acquisitionText={acquisitionText}
             purchaseDateText={formatDisplay(row.purchase_date)}
+            expiryDateText={expiryDateText}
             dailyCostText={daily != null ? formatMoney(daily, currency) : '--'}
             companionText={days != null ? `${days} ${t('common.days')}` : '--'}
+            expectedLifespanText={expectedLifespanText}
             expectedDailyText={expDaily != null ? formatMoney(expDaily, currency) : '--'}
             percent={percent}
             lifespanNoteText={
@@ -134,6 +145,26 @@ export default function DurableDetailScreen() {
             incomeTitle={t('durable.otherIncomes')}
             subtotalLabel={t('durable.subtotal')}
           />
+
+          {/* Notes */}
+          {row.notes ? (
+            <View style={styles.notesWrap}>
+              <Text style={[styles.notesLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+                {t('durable.notesLabel')}
+              </Text>
+              <View
+                style={[
+                  styles.notesCard,
+                  { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
+                  Shadows.card,
+                ]}
+              >
+                <Text style={[styles.notesText, { color: Colors.textPrimary, fontFamily: Fonts.regular }]}>
+                  {row.notes}
+                </Text>
+              </View>
+            </View>
+          ) : null}
         </View>
       </ScrollView>
 
@@ -141,7 +172,7 @@ export default function DurableDetailScreen() {
       <TouchableOpacity
         activeOpacity={0.8}
         onPress={() => router.back()}
-        style={[styles.backBtn, { top: insets.top + 8, backgroundColor: 'rgba(255,255,255,0.25)' }]}
+        style={[styles.backBtn, { top: insets.top + 8, backgroundColor: hexToRgba(Colors.inkDeep, 0.45) }]}
       >
         <Ionicons name="chevron-back" size={22} color={Colors.white} />
       </TouchableOpacity>
@@ -158,7 +189,7 @@ export default function DurableDetailScreen() {
         />
       </View>
 
-      <StatusBar style="light" />
+      <StatusBar style={darkMode ? 'light' : 'dark'} />
     </View>
   );
 }
@@ -171,17 +202,34 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingBottom: 24,
+    paddingBottom: 16,
   },
   sections: {
-    paddingTop: 20,
-    gap: 24,
+    paddingTop: 16,
+    gap: 16,
+  },
+  notesWrap: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  notesLabel: {
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.6,
+  },
+  notesCard: {
+    padding: 16,
+    borderWidth: 1,
+  },
+  notesText: {
+    fontSize: 14,
+    lineHeight: 22,
   },
   backBtn: {
     position: 'absolute',
     left: 16,
-    width: 48,
-    height: 48,
+    width: 40,
+    height: 40,
     borderRadius: 9999,
     alignItems: 'center',
     justifyContent: 'center',

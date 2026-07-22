@@ -80,7 +80,7 @@ export default function BudgetScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currency]);
 
   useFocusEffect(
     useCallback(() => {

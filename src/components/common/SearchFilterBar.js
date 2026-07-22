@@ -78,9 +78,7 @@ export default function SearchFilterBar({ search, onSearchChange, filter, onFilt
 }
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 12,
-  },
+  container: {},
   searchBox: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -88,6 +86,7 @@ const styles = StyleSheet.create({
     height: 56,
     paddingHorizontal: 20,
     borderWidth: 1,
+    marginBottom: 12,
   },
   searchInput: {
     flex: 1,

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -14,7 +14,7 @@ import FormSaveFooter from '../../src/components/common/FormSaveFooter';
 import ScreenState from '../../src/components/common/ScreenState';
 
 export default function BudgetFormScreen() {
-  const { Colors } = useTheme();
+  const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
   const { id } = useLocalSearchParams();
   const router = useRouter();
@@ -60,7 +60,17 @@ export default function BudgetFormScreen() {
   const handleSave = async () => {
     if (savingRef.current) return;
     if (!year) {
-      showToast(t('budget.year') + ' *');
+      showToast(t('budget.yearRequired'));
+      return;
+    }
+    const expense = Number(expenseBudget);
+    const income = Number(incomeTarget);
+    if (!Number.isFinite(expense) || expense < 0 || !Number.isFinite(income) || income < 0) {
+      showToast(t('budget.amountInvalid'));
+      return;
+    }
+    if (expense <= 0 && income <= 0) {
+      showToast(t('budget.amountRequired'));
       return;
     }
     const values = {
@@ -77,12 +87,12 @@ export default function BudgetFormScreen() {
         showToast(t('budget.yearDuplicate'));
         return;
       }
-      if (e?.message === 'expenseRequired') {
-        showToast(t('budget.expenseRequired'));
+      if (e?.message === 'amountRequired') {
+        showToast(t('budget.amountRequired'));
         return;
       }
-      if (e?.message === 'incomeRequired') {
-        showToast(t('budget.incomeRequired'));
+      if (e?.message === 'amountInvalid') {
+        showToast(t('budget.amountInvalid'));
         return;
       }
       showToast(t('common.saveFailed'));
@@ -131,6 +141,7 @@ export default function BudgetFormScreen() {
           value={expenseBudget}
           onChangeText={setExpenseBudget}
           symbol={symbol}
+          required={false}
         />
 
         <AmountField
@@ -138,7 +149,12 @@ export default function BudgetFormScreen() {
           value={incomeTarget}
           onChangeText={setIncomeTarget}
           symbol={symbol}
+          required={false}
         />
+
+        <Text style={[styles.formHint, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+          {t('budget.amountHint')}
+        </Text>
       </ScrollView>
 
       <FormSaveFooter
@@ -162,5 +178,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 24,
     gap: 16,
+  },
+  formHint: {
+    fontSize: 12,
+    lineHeight: 18,
   },
 });

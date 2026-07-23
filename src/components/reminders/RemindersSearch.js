@@ -3,11 +3,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 
-/**
- * Reminders tab header — title with live total, search input and module
- * filter chips. Fully controlled by the reminders screen.
- */
-export default function RemindersSearch({ total = 0, search, onSearchChange, filter, onFilterChange }) {
+/** Search input and module filter chips for the reminders screen. */
+export default function RemindersSearch({ search, onSearchChange, filter, onFilterChange }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
 
@@ -21,16 +18,6 @@ export default function RemindersSearch({ total = 0, search, onSearchChange, fil
 
   return (
     <View style={styles.container}>
-      {/* Title row */}
-      <View style={styles.titleRow}>
-        <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-          {t('reminder.remindersTitle')}
-        </Text>
-        <Text style={[styles.total, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-          {t('reminder.totalCount', { count: total })}
-        </Text>
-      </View>
-
       {/* Search input */}
       <View style={[styles.searchBox, { backgroundColor: Colors.card, borderRadius: Radius.xl }, Shadows.dark]}>
         <Ionicons name="search" size={18} color={Colors.textSecondary} />
@@ -77,20 +64,6 @@ export default function RemindersSearch({ total = 0, search, onSearchChange, fil
 const styles = StyleSheet.create({
   container: {
     gap: 24,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontSize: 28,
-    lineHeight: 34,
-  },
-  total: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
   },
   searchBox: {
     flexDirection: 'row',

@@ -6,9 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../src/utils/theme';
 import { useSettingsStore, formatMoney } from '../../src/store/settings';
-import { budgetStats, listBudgets, removeBudget } from '../../src/services/budget';
+import { listBudgets, removeBudget } from '../../src/services/budget';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
-import ModuleStatsCard from '../../src/components/common/ModuleStatsCard';
 import ConfirmModal from '../../src/components/common/ConfirmModal';
 
 function BudgetCard({ item, isLast, onDelete }) {
@@ -76,15 +75,13 @@ export default function BudgetScreen() {
   const currency = useSettingsStore((s) => s.settings.currency);
 
   const [items, setItems] = useState([]);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [deleteTarget, setDeleteTarget] = useState(null);
 
   const load = useCallback(async () => {
     try {
-      const [rows, summary] = await Promise.all([listBudgets(), budgetStats()]);
+      const rows = await listBudgets();
       setItems(rows);
-      setStats(summary);
     } finally {
       setLoading(false);
     }
@@ -96,18 +93,6 @@ export default function BudgetScreen() {
     }, [load])
   );
 
-  const safeStats = stats && typeof stats === 'object' ? stats : null;
-  const expenseTotal =
-    safeStats && Number.isFinite(Number(safeStats.expenseBudget))
-      ? formatMoney(Number(safeStats.expenseBudget), currency)
-      : '--';
-  const incomeTotal =
-    safeStats && Number.isFinite(Number(safeStats.incomeTarget))
-      ? formatMoney(Number(safeStats.incomeTarget), currency)
-      : '--';
-  const planCount =
-    safeStats && Number.isFinite(Number(safeStats.totalCount)) ? Number(safeStats.totalCount) : '--';
-
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
       <ModuleHeader title={t('nav.budget')} />
@@ -117,22 +102,6 @@ export default function BudgetScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.statsSection}>
-          <ModuleStatsCard
-            label={t('budget.totalExpenseBudget')}
-            value={expenseTotal}
-            pills={[
-              {
-                key: 'income',
-                label: t('budget.totalIncomePill', { amount: incomeTotal }),
-                backgroundColor: 'rgba(74,168,104,0.2)',
-                color: Colors.green,
-              },
-              { key: 'count', label: t('budget.planCountPill', { count: planCount }) },
-            ]}
-          />
-        </View>
-
         <View style={styles.listSection}>
           {items.length === 0 ? (
             <View style={styles.empty}>
@@ -184,9 +153,6 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: 112,
-  },
-  statsSection: {
-    paddingHorizontal: 16,
   },
   listSection: {
     paddingHorizontal: 16,

@@ -47,7 +47,6 @@ export default function RemindersScreen() {
         showsVerticalScrollIndicator={false}
       >
         <RemindersSearch
-          total={items.length}
           search={search}
           onSearchChange={setSearch}
           filter={filter}
@@ -68,7 +67,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 0,
     paddingBottom: 32,
     gap: 32,
   },

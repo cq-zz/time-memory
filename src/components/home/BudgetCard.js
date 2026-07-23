@@ -7,8 +7,10 @@ function BudgetSection({
   title,
   target,
   actual,
-  hasTarget,
+  count,
+  elapsedMonths,
   currency,
+  targetLabel,
   color,
   overColor,
   remainingKey,
@@ -18,6 +20,7 @@ function BudgetSection({
   Fonts,
   Shadows,
 }) {
+  const hasTarget = target > 0;
   const ratio = hasTarget ? actual / target : 0;
   const percentage = hasTarget ? Math.round(ratio * 100) : null;
   const targetMinor = Math.round(target * 100);
@@ -36,44 +39,49 @@ function BudgetSection({
       ]}
     >
       <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: Colors.white, fontFamily: Fonts.semiBold }]}>
+        <Text style={[styles.sectionTitle, { color: Colors.white40, fontFamily: Fonts.bold }]}>
           {title}
         </Text>
-        <View style={styles.targetWrap}>
-          <Text style={[styles.targetLabel, { color: Colors.white40, fontFamily: Fonts.regular }]}>
-            {t('home.targetTotal')}
-          </Text>
-          <Text style={[styles.targetValue, { color: Colors.white, fontFamily: Fonts.bold }]}>
-            {hasTarget ? formatMoney(target, currency) : '--'}
+        <Text style={[styles.count, { color: Colors.white60, fontFamily: Fonts.regular }]}>
+          {t('home.transactions', { count })}
+        </Text>
+      </View>
+
+      <Text numberOfLines={1} style={[styles.actualValue, { color, fontFamily: Fonts.bold }]}>
+        {count ? formatMoney(actual, currency) : '--'}
+      </Text>
+      {count > 0 && (
+        <Text style={[styles.average, { color: Colors.white40, fontFamily: Fonts.regular }]}>
+          {t('home.monthlyAvg', { amount: formatMoney(actual / elapsedMonths, currency) })}
+        </Text>
+      )}
+
+      {hasTarget && (
+        <View style={styles.targetSection}>
+          <View style={styles.progressMeta}>
+            <Text style={[styles.progressLabel, { color: Colors.white60, fontFamily: Fonts.regular }]}>
+              {t(targetLabel)} · {formatMoney(target, currency)}
+            </Text>
+            <Text style={[styles.progressValue, { color: accent, fontFamily: Fonts.bold }]}>
+              {percentage}%
+            </Text>
+          </View>
+          <View style={[styles.track, { backgroundColor: Colors.white10 }]}>
+            <View
+              style={[
+                styles.fill,
+                {
+                  backgroundColor: accent,
+                  width: `${Math.min(Math.max(ratio, 0), 1) * 100}%`,
+                },
+              ]}
+            />
+          </View>
+          <Text style={[styles.remaining, { color: accent, fontFamily: Fonts.semiBold }]}>
+            {t(isOver ? overKey : remainingKey, { amount: formatMoney(Math.abs(difference), currency) })}
           </Text>
         </View>
-      </View>
-
-      <View style={styles.progressMeta}>
-        <Text style={[styles.progressLabel, { color: Colors.white60, fontFamily: Fonts.regular }]}>
-          {t('home.completionProgress')}
-        </Text>
-        <Text style={[styles.progressValue, { color: accent, fontFamily: Fonts.bold }]}>
-          {percentage == null ? '--' : `${percentage}%`}
-        </Text>
-      </View>
-      <View style={[styles.track, { backgroundColor: Colors.white10 }]}>
-        <View
-          style={[
-            styles.fill,
-            {
-              backgroundColor: accent,
-              width: `${Math.min(Math.max(ratio, 0), 1) * 100}%`,
-            },
-          ]}
-        />
-      </View>
-
-      <Text style={[styles.remaining, { color: hasTarget ? accent : Colors.white40, fontFamily: Fonts.semiBold }]}>
-        {hasTarget
-          ? t(isOver ? overKey : remainingKey, { amount: formatMoney(Math.abs(difference), currency) })
-          : t('home.noBudgetSet')}
-      </Text>
+      )}
     </View>
   );
 }
@@ -84,52 +92,68 @@ export default function BudgetCard({ budget, bills = [] }) {
   const currency = useSettingsStore((s) => s.settings.currency);
 
   const year = String(new Date().getFullYear());
+  const annualBills = bills.filter((b) => (b.consumption_date || '').slice(0, 4) === year);
+  const expenses = annualBills.filter((b) => b.bill_type === 'expense');
+  const income = annualBills.filter((b) => b.bill_type === 'income');
   const expenseTarget = Number(budget?.expense_budget) || 0;
   const incomeTarget = Number(budget?.income_target) || 0;
-  const spent = bills
-    .filter((b) => b.bill_type === 'expense' && (b.consumption_date || '').slice(0, 4) === year)
-    .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
-  const earned = bills
-    .filter((b) => b.bill_type === 'income' && (b.consumption_date || '').slice(0, 4) === year)
-    .reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const spent = expenses.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
+  const earned = income.reduce((sum, b) => sum + (Number(b.amount) || 0), 0);
   const displayCurrency = budget?.currency || currency;
+  const elapsedMonths = new Date().getMonth() + 1;
 
   return (
-    <View style={styles.card}>
-      <BudgetSection
-        title={t('home.annualExpenseBudget')}
-        target={expenseTarget}
-        actual={spent}
-        hasTarget={expenseTarget > 0}
-        currency={displayCurrency}
-        color={Colors.orange}
-        overColor={Colors.rose}
-        remainingKey="home.expenseRemaining"
-        overKey="home.expenseOver"
-        t={t}
-        Colors={Colors}
-        Fonts={Fonts}
-        Shadows={Shadows}
-      />
-      <BudgetSection
-        title={t('home.annualIncomeTarget')}
-        target={incomeTarget}
-        actual={earned}
-        hasTarget={incomeTarget > 0}
-        currency={displayCurrency}
-        color={Colors.green}
-        remainingKey="home.incomeRemaining"
-        overKey="home.incomeOver"
-        t={t}
-        Colors={Colors}
-        Fonts={Fonts}
-        Shadows={Shadows}
-      />
+    <View style={styles.wrapper}>
+      <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
+        {t('home.annualRecords')}
+      </Text>
+      <View style={styles.card}>
+        <BudgetSection
+          title={t('home.annualExpense')}
+          target={expenseTarget}
+          actual={spent}
+          count={expenses.length}
+          elapsedMonths={elapsedMonths}
+          currency={displayCurrency}
+          targetLabel="home.budgetTotal"
+          color={Colors.orange}
+          overColor={Colors.rose}
+          remainingKey="home.expenseRemaining"
+          overKey="home.expenseOver"
+          t={t}
+          Colors={Colors}
+          Fonts={Fonts}
+          Shadows={Shadows}
+        />
+        <BudgetSection
+          title={t('home.annualIncome')}
+          target={incomeTarget}
+          actual={earned}
+          count={income.length}
+          elapsedMonths={elapsedMonths}
+          currency={displayCurrency}
+          targetLabel="home.targetTotal"
+          color={Colors.green}
+          remainingKey="home.incomeRemaining"
+          overKey="home.incomeOver"
+          t={t}
+          Colors={Colors}
+          Fonts={Fonts}
+          Shadows={Shadows}
+        />
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  wrapper: {
+    gap: 12,
+  },
+  title: {
+    fontSize: 18,
+    lineHeight: 24,
+  },
   card: {
     gap: 12,
   },
@@ -147,19 +171,26 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     flex: 1,
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.6,
+  },
+  count: {
     fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 22,
   },
-  targetWrap: {
-    alignItems: 'flex-end',
+  actualValue: {
+    fontSize: 24,
+    lineHeight: 30,
   },
-  targetLabel: {
-    fontSize: 11,
-    lineHeight: 14,
+  average: {
+    marginTop: -4,
+    fontSize: 14,
+    lineHeight: 22,
   },
-  targetValue: {
-    fontSize: 16,
-    lineHeight: 20,
+  targetSection: {
+    marginTop: 4,
+    gap: 8,
   },
   progressMeta: {
     flexDirection: 'row',

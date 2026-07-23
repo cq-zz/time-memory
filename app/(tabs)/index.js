@@ -16,7 +16,6 @@ import StatsGrid from '../../src/components/home/StatsGrid';
 import AssetBalanceCard from '../../src/components/home/AssetBalanceCard';
 import BudgetCard from '../../src/components/home/BudgetCard';
 import TrendsCard from '../../src/components/home/TrendsCard';
-import MonthlyRecordsCard from '../../src/components/home/MonthlyRecordsCard';
 import CategoryBreakdown from '../../src/components/home/CategoryBreakdown';
 import RemindersTimeline from '../../src/components/home/RemindersTimeline';
 import MoodTrend from '../../src/components/home/MoodTrend';
@@ -66,7 +65,6 @@ export default function HomeScreen() {
         <AssetBalanceCard durables={data.durables} assets={data.assets} />
         <BudgetCard budget={data.budget} bills={data.bills} />
         <TrendsCard bills={data.bills} />
-        <MonthlyRecordsCard bills={data.bills} />
         <CategoryBreakdown bills={data.bills} />
         <RemindersTimeline
           reminders={data.reminders}
@@ -88,7 +86,7 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 16,
-    paddingTop: 12,
+    paddingTop: 0,
     paddingBottom: 32,
     gap: 12,
   },

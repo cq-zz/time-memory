@@ -36,7 +36,7 @@ export async function getBudgetByYear(year) {
 /**
  * Create or update a budget (one record per year).
  * - year is required; creating a duplicate year throws 'yearDuplicate'
- * - expense_budget and income_target must both be > 0
+ * - expense_budget and income_target are optional, but at least one must be > 0
  * Throws an Error with a message key on validation failure.
  */
 export async function saveBudget(values, id) {
@@ -45,10 +45,12 @@ export async function saveBudget(values, id) {
   if (!fields.year) throw new Error('yearRequired');
   const expense = Number(fields.expense_budget);
   const income = Number(fields.income_target);
-  if (!Number.isFinite(expense) || expense <= 0) throw new Error('expenseRequired');
-  if (!Number.isFinite(income) || income <= 0) throw new Error('incomeRequired');
-  fields.expense_budget = expense;
-  fields.income_target = income;
+  if (!Number.isFinite(expense) || expense < 0 || !Number.isFinite(income) || income < 0) {
+    throw new Error('amountInvalid');
+  }
+  if (expense <= 0 && income <= 0) throw new Error('amountRequired');
+  fields.expense_budget = expense || 0;
+  fields.income_target = income || 0;
   fields.year = String(fields.year);
   fields.currency = useSettingsStore.getState().settings.currency;
 

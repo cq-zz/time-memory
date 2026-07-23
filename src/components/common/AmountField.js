@@ -11,13 +11,21 @@ export default function AmountField({
   required = true,
   placeholder = '0.00',
   hint,
+  labelHint,
 }) {
   const { Colors, Radius, Fonts } = useTheme();
   const fieldLabel = required ? `${label} *` : label;
 
   return (
     <View style={styles.field}>
-      <FieldLabel label={fieldLabel} />
+      <View style={styles.labelRow}>
+        <FieldLabel label={fieldLabel} />
+        {labelHint ? (
+          <Text style={[styles.labelHint, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
+            ({labelHint})
+          </Text>
+        ) : null}
+      </View>
       <View style={styles.amountRow}>
         <View
           style={[
@@ -57,6 +65,15 @@ export default function AmountField({
 const styles = StyleSheet.create({
   field: {
     gap: 12,
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  labelHint: {
+    fontSize: 10,
+    lineHeight: 14,
   },
   amountRow: {
     flexDirection: 'row',

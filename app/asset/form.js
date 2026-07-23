@@ -187,7 +187,7 @@ export default function AssetFormScreen() {
           value={currentPrice}
           onChangeText={setCurrentPrice}
           symbol={currencyMeta(currency).symbol}
-          hint={t('asset.currentPriceHint')}
+          labelHint={t('asset.currentPriceHint')}
         />
         <WheelPicker
           label={t('asset.expiryDate')}

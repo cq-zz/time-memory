@@ -52,13 +52,17 @@ export default function BillHero({
 
         <View style={styles.tags} pointerEvents="none">
           <View style={[styles.valueChip, { backgroundColor: hexToRgba(Colors.inkDeep, 0.55) }]}>
-            <Text style={[styles.valueLabel, { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.bold }]}>
+            <Text
+              style={[styles.valueLabel, { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.bold }]}
+              numberOfLines={1}
+            >
               {amountLabel}
             </Text>
             <Text
               style={[styles.value, { color: Colors.white, fontFamily: Fonts.bold }]}
               numberOfLines={1}
               adjustsFontSizeToFit
+              minimumFontScale={0.45}
             >
               {amountText}
             </Text>
@@ -85,13 +89,14 @@ const styles = StyleSheet.create({
   imageFill: { ...StyleSheet.absoluteFillObject },
   image: { width: '100%', height: '100%' },
   fallback: { alignItems: 'center', justifyContent: 'center' },
-  tags: { position: 'absolute', left: 16, bottom: 16, alignItems: 'flex-start', gap: 8 },
+  tags: { position: 'absolute', left: 16, right: 16, bottom: 16, alignItems: 'flex-start', gap: 8 },
   valueChip: {
     flexDirection: 'row',
     alignItems: 'baseline',
     gap: 6,
-    maxWidth: '92%',
+    maxWidth: '100%',
     paddingHorizontal: 12,
+    paddingLeft: 0,
     paddingVertical: 6,
     borderRadius: 9999,
   },
@@ -100,13 +105,15 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     letterSpacing: 0.6,
     textTransform: 'uppercase',
+    flexShrink: 0,
   },
-  value: { fontSize: 32, lineHeight: 40, flexShrink: 1 },
+  value: { fontSize: 32, lineHeight: 40, flexShrink: 1, minWidth: 0 },
   typePill: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 12,
+    paddingLeft: 12,
     paddingVertical: 4,
     borderRadius: 9999,
   },

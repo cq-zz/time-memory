@@ -75,7 +75,7 @@ export const EXPORT_MODULES = [
     table: 'durables',
     dateField: 'purchase_date',
     headers: [
-      'Name', 'Category', 'Acquisition Method', 'Purchase Date', 'Purchase Price',
+      'Name', 'Category', 'Acquisition Method', 'Purchase Date', 'Value',
       'Status', 'Expected Lifespan', 'Expiry Date', 'Currency', 'Image URL', 'Notes', 'Created At',
     ],
     example: [
@@ -109,7 +109,7 @@ export const EXPORT_MODULES = [
           category: String(get('Category') ?? '').trim(),
           acquisition_method: acquisition,
           purchase_date: purchaseDate || null,
-          purchase_price: parseFloat(get('Purchase Price')) || 0,
+          purchase_price: parseFloat(get('Value') ?? get('Purchase Price')) || 0,
           status,
           expected_lifespan: String(get('Expected Lifespan') ?? '').trim() || null,
           expiry_date: expiryDate || null,
@@ -128,7 +128,7 @@ export const EXPORT_MODULES = [
     table: 'assets',
     dateField: 'purchase_date',
     headers: [
-      'Name', 'Category', 'Acquisition Method', 'Status', 'Purchase Date', 'Purchase Price',
+      'Name', 'Category', 'Acquisition Method', 'Status', 'Purchase Date', 'Value',
       'Current Price', 'Expiry Date', 'Currency', 'Image URL', 'Notes', 'Created At', 'Updated At',
     ],
     example: [
@@ -163,7 +163,7 @@ export const EXPORT_MODULES = [
           acquisition_method: acquisition,
           status,
           purchase_date: purchaseDate || null,
-          purchase_price: parseFloat(get('Purchase Price')) || 0,
+          purchase_price: parseFloat(get('Value') ?? get('Purchase Price')) || 0,
           current_price: parseFloat(get('Current Price')) || 0,
           expiry_date: expiryDate || null,
           currency: String(get('Currency') ?? '').trim() || DEFAULT_CURRENCY,
@@ -230,11 +230,11 @@ export const EXPORT_MODULES = [
     dateField: 'end_date',
     headers: [
       'Title', 'Priority', 'Status', 'Start Date', 'End Date',
-      'Reminder', 'Checklist', 'Notes', 'Created At',
+      'Reminder', 'Days Before', 'Checklist', 'Notes', 'Created At',
     ],
     example: [
       'Quarterly review', 'High', 'Not Started', '2025-07-10', '2025-07-15',
-      'Yes', '1. [☐] Prepare slides', '', nowIso(),
+      'Yes', '1', '1. [☐] Prepare slides', '', nowIso(),
     ],
     toRow: (item) => {
       const checklist = parseChecklist(item.checklist)
@@ -243,7 +243,8 @@ export const EXPORT_MODULES = [
       return [
         safe(item.title), labelOf(SCHEDULE_PRIORITIES, item.priority),
         labelOf(SCHEDULE_STATUS_OPTIONS, item.status), safe(item.start_date), safe(item.end_date),
-        item.reminder_enabled ? 'Yes' : 'No', checklist, safe(item.notes), safe(item.created_at),
+        item.reminder_enabled ? 'Yes' : 'No', safe(item.reminder_days_before),
+        checklist, safe(item.notes), safe(item.created_at),
       ];
     },
     fromRow: (get) => {
@@ -259,6 +260,11 @@ export const EXPORT_MODULES = [
       if (!validDate(startDate)) return { error: 'Start Date must be YYYY-MM-DD' };
       const endDate = normalizeDate(get('End Date'));
       if (!validDate(endDate)) return { error: 'End Date must be YYYY-MM-DD' };
+      const daysRaw = String(get('Days Before') ?? '').trim();
+      const reminderDaysBefore = daysRaw === '' ? 1 : Number(daysRaw);
+      if (!Number.isInteger(reminderDaysBefore) || reminderDaysBefore < 0 || reminderDaysBefore > 365) {
+        return { error: 'Days Before must be an integer from 0 to 365' };
+      }
       return {
         data: {
           title,
@@ -267,6 +273,7 @@ export const EXPORT_MODULES = [
           start_date: startDate || null,
           end_date: endDate || null,
           reminder_enabled: String(get('Reminder') ?? '').trim().toLowerCase() === 'yes' ? 1 : 0,
+          reminder_days_before: reminderDaysBefore,
           checklist: '[]',
           notes: String(get('Notes') ?? '').trim(),
           created_at: nowIso(),

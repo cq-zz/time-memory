@@ -24,7 +24,6 @@ export const DEFAULT_SETTINGS = {
   annualBudget: 0, // 0 = not set yet
   yearStart: MIN_YEAR_DEFAULT,
   yearEnd: MAX_YEAR_DEFAULT,
-  scheduleRemindDays: 1, // plan start reminder lead (0–7)
   durableRemindDays: 2, // item expiry reminder lead (0–7)
   assetRemindDays: 30, // asset expiry reminder lead (0–365)
 };

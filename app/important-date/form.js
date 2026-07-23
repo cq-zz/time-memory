@@ -262,7 +262,7 @@ export default function ImportantDateFormScreen() {
             label={t('importantDate.reminderDaysBefore')}
             placeholder="1"
             value={reminderDaysBefore}
-            onChangeText={setReminderDaysBefore}
+            onChangeText={(text) => setReminderDaysBefore(text.replace(/\D/g, ''))}
             keyboardType="number-pad"
           />
         ) : null}

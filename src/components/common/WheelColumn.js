@@ -16,7 +16,6 @@ export const WHEEL_COL_HEIGHT = WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ITEMS;
 export default function WheelColumn({ items, selected, onChange, width = 72 }) {
   const { Colors, Radius, Fonts } = useTheme();
   const ref = useRef(null);
-  const timerRef = useRef(null);
 
   const normalized = useMemo(
     () =>
@@ -36,19 +35,12 @@ export default function WheelColumn({ items, selected, onChange, width = 72 }) {
     return () => clearTimeout(t);
   }, []);
 
-  const handleScroll = useCallback(
+  const handleScrollEnd = useCallback(
     (e) => {
-      if (timerRef.current) clearTimeout(timerRef.current);
       const currentOffset = e.nativeEvent.contentOffset.y;
-      const index = Math.round(currentOffset / WHEEL_ITEM_HEIGHT);
-      timerRef.current = setTimeout(() => {
-        const it = normalized[index];
-        if (it && it.value !== selected) onChange(it.value);
-        const targetY = index * WHEEL_ITEM_HEIGHT;
-        if (Math.abs(currentOffset - targetY) > 2) {
-          ref.current?.scrollTo({ y: targetY, animated: true });
-        }
-      }, 120);
+      const index = Math.max(0, Math.min(normalized.length - 1, Math.round(currentOffset / WHEEL_ITEM_HEIGHT)));
+      const item = normalized[index];
+      if (item && item.value !== selected) onChange(item.value);
     },
     [normalized, selected, onChange],
   );
@@ -65,8 +57,8 @@ export default function WheelColumn({ items, selected, onChange, width = 72 }) {
         snapToInterval={WHEEL_ITEM_HEIGHT}
         decelerationRate="fast"
         showsVerticalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={80}
+        onMomentumScrollEnd={handleScrollEnd}
+        onScrollEndDrag={handleScrollEnd}
       >
         {normalized.map((it) => (
           <View key={String(it.value)} style={styles.colItem}>

@@ -342,7 +342,7 @@ export default {
     importantDate: "Events",
     importantDateDesc: "Important Dates",
     assetValue: "Total Value",
-    assetValueHint: "In-use items + active assets",
+    assetValueHint: "In-use item value + active asset value",
     assetCount: "assets",
     scheduleRate: "Progress",
     itemLabel: "Item",
@@ -413,7 +413,7 @@ export default {
     usageGuideModules: "Feature Modules",
     usageGuideGeneral: "General Usage",
     usageGuideGeneralContent:
-      "From the home screen, view asset overview (Total Asset Value = In-use items purchase price + All assets current value), monthly income/expense, annual plan, and today's reminders. Tap any module card to enter its list page.\n\nIn each module's list page:\n• Tap + to add a new record\n• Tap a record card to view details\n• Detail pages support edit and delete\n• Use filters and search to quickly find data\n\nOn the Profile tab, manage your avatar, nickname, switch themes (Light/Dark/Candy), and access Settings for more options.\n\nIn Settings, you can manage home module visibility, currency & language, reminder settings, year range, category management, private password, data import/export, and more.",
+      "From the home screen, view asset overview (Total Asset Value = In-use item value + All assets current value), monthly income/expense, annual plan, and today's reminders. Tap any module card to enter its list page.\n\nIn each module's list page:\n• Tap + to add a new record\n• Tap a record card to view details\n• Detail pages support edit and delete\n• Use filters and search to quickly find data\n\nOn the Profile tab, manage your avatar, nickname, switch themes (Light/Dark/Candy), and access Settings for more options.\n\nIn Settings, you can manage home module visibility, currency & language, reminder settings, year range, category management, private password, data import/export, and more.",
     usageGuideDataNote:
       "All data is stored locally on your device. Export regularly via Settings > Data Management to prevent data loss.",
     usageGuideExpand: "Expand",
@@ -422,12 +422,12 @@ export default {
     usageGuideDurableOps:
       "• Record item details (name, category, purchase date, price)\n• Upload item image\n• Set usage status (In Use / Archived)\n• Auto-calculate total assets, time owned, daily average value\n• Link bills to items via 'Billing Object' in the Bills module\n• Filter by status, year/month, search by name",
     usageGuideDurableData:
-      "Item data is stored locally. Purchase price auto-generates a corresponding bill. When creating a bill with a 'Billing Object', the bill links to the item's 'Related Expenses' or 'Related Income'. Deleting an item removes its auto-generated purchase bill; manually linked bills get their billing object reset.",
+      "Item data is stored locally. The entered value auto-generates a corresponding bill. When creating a bill with a 'Billing Object', the bill links to the item's 'Related Expenses' or 'Related Income'. Deleting an item removes its auto-generated purchase bill; manually linked bills get their billing object reset.",
 
     usageGuideAssetOps:
-      "• Record asset details (name, type, purchase date, price, current value)\n• Upload asset image\n• Customizable asset types (House, Vehicle, Gold, Jewelry, etc.)\n• Current value used for total asset calculation; use purchase price if unsure\n• Link bills to assets via 'Billing Object' in the Bills module\n• Filter by category, search by name",
+      "• Record asset details (name, type, purchase date, value, current value)\n• Upload asset image\n• Customizable asset types (House, Vehicle, Gold, Jewelry, etc.)\n• Current value used for total asset calculation; use value if unsure\n• Link bills to assets via 'Billing Object' in the Bills module\n• Filter by category, search by name",
     usageGuideAssetData:
-      "Asset data is stored locally. Asset types support custom management. When creating a bill with 'Billing Object' set to an asset, it links to the asset's 'Related Expenses' or 'Related Income'. Deleting an asset resets linked bills' billing object. Home total asset value = In-use items purchase price + All assets current value.",
+      "Asset data is stored locally. Asset types support custom management. When creating a bill with 'Billing Object' set to an asset, it links to the asset's 'Related Expenses' or 'Related Income'. Deleting an asset resets linked bills' billing object. Home total asset value = In-use item value + All assets current value.",
 
     usageGuideScheduleOps:
       "• Create plans with start/end dates and priority (High/Medium/Low)\n• Upload attachment images\n• Enable reminder notifications with configurable lead days\n• Tap status badge to cycle status\n• Quick action buttons on detail page for status changes\n• Real-time countdown display",
@@ -467,7 +467,7 @@ export default {
     usageGuideDataInteractionStorage:
       "All module data is stored locally on your device. The web version uses AsyncStorage; the native mobile version uses SQLite. No data is uploaded to any cloud or third-party server.",
     usageGuideDataInteractionCross:
-      "Cross-module data linkage: The purchase price from the Items module auto-generates a corresponding bill. Both Assets and Items can link to bills via 'Billing Object' — when creating a bill and selecting an item or asset, the expense or income links to that module's 'Related Expenses' or 'Related Income'. Deleting an item removes its auto-generated purchase bill; deleting an item or asset resets linked bills' billing object.",
+      "Cross-module data linkage: The value from the Items module auto-generates a corresponding bill. Both Assets and Items can link to bills via 'Billing Object' — when creating a bill and selecting an item or asset, the expense or income links to that module's 'Related Expenses' or 'Related Income'. Deleting an item removes its auto-generated purchase bill; deleting an item or asset resets linked bills' billing object.",
     usageGuideDataInteractionRealtime:
       "The app uses an event bus for real-time cross-module updates. When data changes, related modules refresh automatically. For example, logging a new mood instantly updates the home screen trend chart; resetting data restores all modules to initial state.",
 
@@ -480,7 +480,7 @@ export default {
   butler: {
     goodMorning: "GOOD MORNING",
     totalAssetValue: "TOTAL ASSET VALUE",
-    totalAssetValueHint: "Total purchase price of all active items and assets",
+    totalAssetValueHint: "Total value of in-use items and active assets",
     moodQuestion: "HOW ARE YOU FEELING TODAY?",
     tapToChange: "Tap to change",
     moodRecorded: "{{emoji}} {{label}} · Score {{score}}/5",
@@ -506,6 +506,7 @@ export default {
     categoryTypeBill: "Bill Categories",
     categoryTypeAsset: "Asset Categories",
     remindSettingsHeading: "REMIND SETTINGS",
+    remindSettingsHint: "Choose how long before item and asset expiry to remind you.",
     functionModules: "FUNCTION MODULES",
     comingSoon: "Coming soon",
     dataManagementHeading: "DATA MANAGEMENT",
@@ -779,7 +780,7 @@ export default {
       "Category",
       "Acquisition Method (purchase/gift/other)",
       "Purchase Date (YYYY-MM-DD)",
-      "Purchase Price",
+      "Value",
       "Status (in_use/disposed)",
       "Expected Lifespan (months)",
       "Expiry Date",
@@ -793,7 +794,7 @@ export default {
       "Category",
       "Acquisition Method (purchase/gift/other)",
       "Purchase Date (YYYY-MM-DD)",
-      "Purchase Price",
+      "Value",
       "Current Value",
       "Status (active/disposed)",
       "Expiry Date",
@@ -961,8 +962,8 @@ export default {
     category: "Category",
     purchaseDate: "Purchase Date",
     purchaseDateRequired: "Pick a date",
-    purchasePrice: "Price",
-    purchasePriceRequired: "Enter price",
+    purchasePrice: "Value",
+    purchasePriceRequired: "Enter a value",
     currentPrice: "Current Value",
     acquisitionMethod: "Source",
     acquisitionPurchase: "Bought",
@@ -975,7 +976,7 @@ export default {
     acquisitionLabel: "Source",
     acquisitionDate: "Date",
     acquisitionPrice: "Cost",
-    currentPriceHint: "Use purchase price if unsure",
+    currentPriceHint: "Use value if unsure",
     currentPriceRequired: "Enter current value",
     expiryDate: "Expiry",
     expiryDateHint: "Used to calculate time owned & expiry reminders",
@@ -1025,15 +1026,15 @@ export default {
   durable: {
     totalAssets: "Total",
     itemCount: "{{count}} total",
-    statsHint: "* Only counts in-use items at purchase price",
-    inUseTotalValue: "In-Use Total Value",
+    statsHint: "* Only counts the value of in-use items",
+    inUseTotalValue: "In-Use Items Total Value",
     inUsePill: "{{count}} In-Use",
     totalPill: "{{count}} Total",
     searchPlaceholder: "Search items…",
     inUse: "In Use",
     disposed: "Archived",
     status: "Status",
-    purchasePrice: "Purchase Price",
+    purchasePrice: "Value",
     companionDuration: "Owned",
     totalCompanionDuration: "Total",
     dailyAvgValue: "Daily Avg",
@@ -1045,8 +1046,8 @@ export default {
     category: "Category",
     purchaseDate: "Date Bought",
     purchaseDateRequired: "Pick a date",
-    purchasePriceLabel: "Purchase Price",
-    purchasePriceRequired: "Enter a purchase price",
+    purchasePriceLabel: "Value",
+    purchasePriceRequired: "Enter a value",
     expectedEndDate: "Expected End",
     expiryDate: "Expiry",
     expiryDateHint: "Used to calculate time owned & expiry reminders",
@@ -1126,6 +1127,8 @@ export default {
     attachmentHint: "Common image formats supported",
     enableReminder: "Remind me",
     reminderSubtitle: "Notify before start",
+    reminderDaysBefore: "Days before reminder",
+    reminderDaysInvalid: "Reminder days must be an integer from 0 to 365",
     notes: "Notes",
     notesPlaceholder: "Add details…",
     remainingTime: "Time Left",

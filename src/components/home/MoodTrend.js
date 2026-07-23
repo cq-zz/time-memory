@@ -38,6 +38,18 @@ export default function MoodTrend() {
   const avg = checked.length
     ? checked.reduce((s, d) => s + d.score, 0) / checked.length
     : null;
+  const analysisTipKey =
+    avg == null
+      ? null
+      : avg >= 4.5
+        ? 'moodTrend.excellent'
+        : avg >= 3.5
+          ? 'moodTrend.good'
+          : avg >= 2.5
+            ? 'moodTrend.neutral'
+            : avg >= 1.5
+              ? 'moodTrend.low'
+              : 'moodTrend.veryLow';
 
   return (
     <View style={styles.section}>
@@ -119,6 +131,15 @@ export default function MoodTrend() {
             </View>
           </View>
         </View>
+
+        {analysisTipKey ? (
+          <View style={styles.moodAnalysis}>
+            <View style={[styles.moodAnalysisDot, { backgroundColor: Colors.green }]} />
+            <Text style={[styles.moodAnalysisText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+              {t(analysisTipKey)}
+            </Text>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -229,5 +250,22 @@ const styles = StyleSheet.create({
   insightDesc: {
     fontSize: 14,
     lineHeight: 22,
+  },
+  moodAnalysis: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 8,
+  },
+  moodAnalysisDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    flexShrink: 0,
+  },
+  moodAnalysisText: {
+    flex: 1,
+    fontSize: 13,
+    lineHeight: 20,
   },
 });

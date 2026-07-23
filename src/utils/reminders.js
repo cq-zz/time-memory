@@ -4,8 +4,8 @@
  * in-app computation (no system notifications), matching the old project.
  *
  * Rules per source:
- * - schedules: reminder_enabled, not done, target = end_date; shows when
- *   daysLeft <= scheduleRemindDays (expired always shows)
+ * - schedules: reminder_enabled, not done, target = start_date; shows when
+ *   daysLeft <= the plan's reminder_days_before (expired always shows)
  * - durables: raw status in_use with expiry_date; daysLeft <=
  *   durableRemindDays (expired always shows)
  * - assets: active with expiry_date; daysLeft <= assetRemindDays
@@ -29,7 +29,6 @@ const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
 export function buildReminders({ schedules, durables, assets, importantDates, settings }) {
   const items = [];
   const lead = {
-    schedule: Number(settings?.scheduleRemindDays) || 0,
     durable: Number(settings?.durableRemindDays) || 0,
     asset: Number(settings?.assetRemindDays) || 0,
   };
@@ -37,15 +36,19 @@ export function buildReminders({ schedules, durables, assets, importantDates, se
   (schedules || []).forEach((row) => {
     if (!Number(row.reminder_enabled)) return;
     if (scheduleStatus(row) === 'done') return;
-    if (!row.end_date) return;
-    const daysLeft = daysUntil(row.end_date);
+    if (!row.start_date) return;
+    const daysLeft = daysUntil(row.start_date);
     if (daysLeft === null) return;
-    if (daysLeft >= 0 && daysLeft > lead.schedule) return;
+    const before =
+      row.reminder_days_before != null
+        ? Number(row.reminder_days_before)
+        : Number(settings?.scheduleRemindDays) || 1;
+    if (daysLeft >= 0 && daysLeft > before) return;
     items.push({
       id: `schedule:${row.id}`,
       module: 'schedule',
-      title: row.name || '',
-      date: row.end_date,
+      title: row.title || '',
+      date: row.start_date,
       daysLeft,
       expired: daysLeft < 0,
       priority: row.priority || 'medium',

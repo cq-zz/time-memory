@@ -156,19 +156,17 @@ export default function ManagementSections() {
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.heading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-          {t('butler.remindSettingsHeading')}
-        </Text>
+        <View style={styles.reminderHeading}>
+          <Text style={[styles.heading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+            {t('butler.remindSettingsHeading')}
+          </Text>
+          <Text style={[styles.reminderHint, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+            {t('butler.remindSettingsHint')}
+          </Text>
+        </View>
 
         {/* Remind settings card */}
         <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.grayDot }]}>
-          <StepperRow
-            label={t('settings.scheduleRemind')}
-            value={settings.scheduleRemindDays}
-            min={0}
-            max={7}
-            onChange={(v) => updateSetting('scheduleRemindDays', v)}
-          />
           <StepperRow
             label={t('settings.durableRemind')}
             value={settings.durableRemindDays}
@@ -208,6 +206,14 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+    paddingHorizontal: 4,
+  },
+  reminderHeading: {
+    gap: 4,
+  },
+  reminderHint: {
+    fontSize: 12,
+    lineHeight: 18,
     paddingHorizontal: 4,
   },
   card: {

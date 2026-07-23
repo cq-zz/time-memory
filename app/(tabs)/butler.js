@@ -11,7 +11,7 @@ export default function ButlerScreen() {
   const { Colors } = useTheme();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: Colors.card }]} edges={['top']}>
+    <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top']}>
       <HomeHeader />
       <ScrollView
         style={styles.scroll}

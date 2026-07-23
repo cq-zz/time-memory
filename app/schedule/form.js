@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../src/utils/theme';
 import { getSchedule, saveSchedule, parseChecklist } from '../../src/services/schedule';
+import { useSettingsStore } from '../../src/store/settings';
 import { SCHEDULE_PRIORITIES, SCHEDULE_STATUS_OPTIONS } from '../../src/utils/constant';
 import { showToast } from '../../src/components/common/Toast';
 import FormHeader from '../../src/components/common/FormHeader';
@@ -33,6 +34,8 @@ export default function ScheduleFormScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const isEdit = Boolean(id);
+  const legacyReminderDays = useSettingsStore((s) => s.settings.scheduleRemindDays);
+  const defaultReminderDays = Number.isInteger(Number(legacyReminderDays)) ? String(legacyReminderDays) : '1';
 
   const [image, setImage] = useState('');
   const [planName, setPlanName] = useState('');
@@ -41,6 +44,7 @@ export default function ScheduleFormScreen() {
   const [status, setStatus] = useState('not_started');
   const [priority, setPriority] = useState('medium');
   const [reminderEnabled, setReminderEnabled] = useState(true);
+  const [reminderDaysBefore, setReminderDaysBefore] = useState(defaultReminderDays);
   const [notes, setNotes] = useState('');
   const [checklist, setChecklist] = useState([]);
   const [loaded, setLoaded] = useState(!isEdit);
@@ -67,6 +71,9 @@ export default function ScheduleFormScreen() {
         setStatus(row.status || 'not_started');
         setPriority(row.priority || 'medium');
         setReminderEnabled(Number(row.reminder_enabled) !== 0);
+        setReminderDaysBefore(
+          row.reminder_days_before != null ? String(row.reminder_days_before) : defaultReminderDays,
+        );
         setNotes(row.notes || '');
         setChecklist(parseChecklist(row));
       } catch {
@@ -81,7 +88,7 @@ export default function ScheduleFormScreen() {
     return () => {
       active = false;
     };
-  }, [isEdit, id, t]);
+  }, [isEdit, id, t, defaultReminderDays]);
 
   const handleSave = async () => {
     if (saveLockRef.current) return;
@@ -94,6 +101,15 @@ export default function ScheduleFormScreen() {
       showToast(t('schedule.startDate') + ' *');
       return;
     }
+    const daysText = reminderDaysBefore.trim();
+    const daysNum = Number(daysText);
+    if (
+      reminderEnabled &&
+      (!/^\d+$/.test(daysText) || !Number.isInteger(daysNum) || daysNum < 0 || daysNum > 365)
+    ) {
+      showToast(t('schedule.reminderDaysInvalid'));
+      return;
+    }
     const values = {
       image,
       title: trimmedName,
@@ -102,6 +118,7 @@ export default function ScheduleFormScreen() {
       status,
       priority,
       reminder_enabled: reminderEnabled,
+      reminder_days_before: reminderEnabled ? daysNum : 0,
       notes,
       checklist,
     };
@@ -268,6 +285,16 @@ export default function ScheduleFormScreen() {
             thumbColor={reminderEnabled ? Colors.purple : Colors.card}
           />
         </View>
+
+        {reminderEnabled ? (
+          <FormInput
+            label={t('schedule.reminderDaysBefore')}
+            placeholder="1"
+            value={reminderDaysBefore}
+            onChangeText={(text) => setReminderDaysBefore(text.replace(/\D/g, ''))}
+            keyboardType="number-pad"
+          />
+        ) : null}
 
         <FormInput
           label={t('schedule.notes')}

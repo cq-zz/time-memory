@@ -92,6 +92,7 @@ const SCHEMA_SQL = `
     start_date TEXT,
     end_date TEXT,
     reminder_enabled INTEGER DEFAULT 0,
+    reminder_days_before INTEGER DEFAULT 1,
     checklist TEXT,
     notes TEXT,
     image TEXT,
@@ -154,7 +155,7 @@ let dbPromise = null;
 const MIGRATION_COLUMNS = {
   durables: ['updated_at TEXT'],
   bills: ['updated_at TEXT'],
-  schedules: ['updated_at TEXT'],
+  schedules: ['reminder_days_before INTEGER', 'updated_at TEXT'],
   diaries: ['is_private INTEGER DEFAULT 0', 'updated_at TEXT'],
   important_dates: [
     'priority TEXT',

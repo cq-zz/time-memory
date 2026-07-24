@@ -126,7 +126,6 @@ export default function ScheduleFormScreen() {
     setSaving(true);
     try {
       await saveSchedule(values, isEdit ? id : undefined);
-      showToast(t('common.saved'));
       router.back();
     } catch {
       showToast(t('common.saveFailed'));

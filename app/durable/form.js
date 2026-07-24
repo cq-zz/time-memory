@@ -110,7 +110,6 @@ export default function DurableFormScreen() {
     setSaving(true);
     try {
       await saveDurable(values, isEdit ? id : undefined);
-      showToast(t('common.saved'));
       router.back();
     } catch {
       showToast(t('common.saveFailed'));

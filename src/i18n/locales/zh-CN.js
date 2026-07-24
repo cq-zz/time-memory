@@ -79,6 +79,7 @@ export default {
     takePhoto: "拍照",
     chooseFromLibrary: "从相册选择",
     fromNetwork: "网络链接",
+    imageSourceExportHint: "推荐使用网络链接，便于数据迁移。导出仅保留网络链接；拍照和相册图片不会导出。",
     imageUrlPlaceholder: "请输入图片链接",
     imageUrlHint: "请确保图片链接长期有效，链接失效后将无法显示",
     imageUrlTitle: "图片链接",
@@ -109,16 +110,19 @@ export default {
     appSettings: "系统设置",
     appSettingsDesc: "币种、语言、密码与外观设置",
     other: "其他",
-    otherDesc: "隐私政策、应用介绍、版本信息与使用说明",
+    otherDesc: "隐私政策、应用介绍与版本信息",
     privacyPolicy: "隐私政策",
     hello: "你好，{{name}}！",
-    userGuide: "使用指南",
     about: "关于 Timemory",
     noAvatarHint: "暂未设置头像",
   },
   privacyPolicy: {
     coreCommitment:
       "核心承诺：时光收藏夹（Timemory）是一款完全离线运行的本地应用。我们不会收集、上传、存储或分享您的任何个人数据到任何远程服务器。您的一切数据都保存在您自己的设备中，由您完全掌控",
+    localOnlyTitle: "完全本地运行",
+    noCollectionTitle: "不收集任何数据",
+    storageTitle: "数据仅存于设备",
+    controlTitle: "数据由你掌控",
     section1Title: "1. 我们是谁",
     section1:
       "时光收藏夹（Timemory）是一款完全离线运行的个人生活管理工具。开发者不运营任何后端服务器，不提供云同步服务，也不使用任何第三方分析或追踪工具",
@@ -408,19 +412,19 @@ export default {
     usageGuideModules: "功能模块",
     usageGuideGeneral: "通用操作",
     usageGuideGeneralContent:
-      "从首页顶部可查看资产总览（资产总额 = 在用物品价值 + 全部资产现值）、本月收支、年度收支计划、今日提醒等概览信息。点击功能模块卡片可进入对应模块的列表页。\n\n在模块列表页中：\n点击右下角 + 按钮添加新记录\n点击已有记录卡片查看详情\n详情页支持编辑和删除操作\n使用顶部筛选器和搜索栏快速定位数据\n\n在「我的」页面可以管理个人资料（头像、昵称）、切换主题（浅色/深色/糖果）、进入设置页面进行更多配置。\n\n在「设置」页面可以管理首页模块显示、货币与语言、提醒设置、年份范围、类别管理、私密密码、数据导入导出等。",
+      "首页汇总展示使用中物品价值、持有中资产估值、本月收支、年度预算和提醒。点击功能卡片进入相应模块。\n\n在列表页中可使用右下角 + 新建记录，点击记录查看详情，并通过筛选与搜索快速定位内容。详情页支持编辑和删除。\n\n在「我的」页面可管理头像、昵称、浅色/深色主题、语言与私密日记密码；管家页可管理币种、提醒、年份范围、类别以及数据导入导出。",
     usageGuideDataNote:
       "所有数据均存储在本地设备上，建议定期在「设置 > 数据管理」中导出备份，以防数据丢失",
     usageGuideExpand: "展开详情",
     usageGuideCollapse: "收起",
 
     usageGuideDurableOps:
-      "• 记录物品基本信息（名称、类别、购买日期、价格）\n• 上传物品图片\n设置使用状态（使用中/已归档）\n自动计算总资产值、已陪伴时长、日均价值\n在「记账」中通过「记账对象」绑定物品，关联收支自动汇总到物品详情\n按使用状态筛选，按年月份筛选，搜索物品名称",
+      "• 记录物品名称、类别、获取方式、获取日期与价值\n• 上传物品图片并设置使用状态（使用中/已归档）\n• 自动计算持有时长与日均价值\n• 在记账中通过「记账对象」关联物品，并在详情查看相关收支\n• 支持状态、年月筛选和名称搜索",
     usageGuideDurableData:
       "物品数据存储在本地设备。填写的价值会在「记账」模块自动生成对应账单。在记账时选择「记账对象」为某物品后，该笔账单将关联到物品的「相关支出」或「相关收入」中，可在物品详情页查看。删除物品时，关联的购买账单同步删除，手动关联的记账数据的记账对象重置为空",
 
     usageGuideAssetOps:
-      "• 记录资产信息（名称、类别、购买日期、价值、当前估值）\n• 上传资产图片\n支持自定义资产类型（房产、车辆、黄金、首饰等）\n当前估值用于计算资产总值，不确定时可填价值\n在「记账」中通过「记账对象」绑定资产，关联收支自动汇总到资产详情\n按类别筛选、搜索资产名",
+      "• 记录资产名称、类别、获取方式、获取日期、价值与当前估值\n• 上传资产图片，支持自定义资产类别\n• 当前估值用于计算资产总值；不确定时可填价值\n• 在记账中通过「记账对象」关联资产，并在详情查看相关收支\n• 支持类别筛选和名称搜索",
     usageGuideAssetData:
       "资产数据存储在本地设备。资产类型支持自定义管理。在记账时选择「记账对象」为某资产后，该笔账单将关联到资产的「相关支出」或「相关收入」中，可在资产详情页查看。删除资产时，手动关联的记账数据记账对象重置为空。首页资产总额 = 在用物品价值 + 所有资产现值",
 
@@ -430,14 +434,14 @@ export default {
       "计划数据存储在本地设备。开启提醒后，系统会在指定时间推送本地通知",
 
     usageGuideBillsOps:
-      "• 记录每笔支出或收入，包含金额、类别、时间\n• 上传收据或凭证图片\n通过「记账对象」将账单关联到物品或资产，自动汇总到对应模块的相关支出/收入\n自动同步来自「物品」模块的购买账单\n汇总卡片显示总收支、日月均、环比同比趋势\n图表分析：饼图（分类占比）、折线图（月度趋势）\n按类别筛选、按名称搜索",
+      "• 记录每笔支出或收入，包含金额、类别与日期\n• 上传收据或凭证图片\n• 通过「记账对象」关联物品或资产，收支会显示在对应详情中\n• 汇总卡片与图表展示收支、分类占比和月度趋势\n• 支持类别筛选和名称搜索",
     usageGuideBillsData:
       "账单数据存储在本地设备。来自「物品」模块的购买账单在物品更新时自动同步。通过「记账对象」手动关联的账单，修改或删除时物品或资产中的相关收支也会同步更新",
 
     usageGuideDiaryOps:
       "• 撰写日记，支持标题、正文、日期、天气标签\n• 上传配图\n设置私密密码保护（需先在设置中开启密码）\n私密日记在列表中需输入密码才能查看详情\n按年月份筛",
     usageGuideDiaryData:
-      "日记数据存储在本地设备。私密日记使用 SHA-256 加密存储，仅在输入正确密码后解密展示",
+      "日记数据仅存储在本地设备。私密日记受本地密码保护，查看时需输入正确密码。",
     usageGuideImportantDateOps:
       "• 记录重要日期（生日、纪念日、纪念、其他）\n• 设置提醒类型（每年重复 / 一次性）\n设置优先级（/​低）\n开启倒计时提醒，可设置提前天数\n自动计算倒计时天数和已过周年数\n按类型筛选、搜索名",
     usageGuideImportantDateData:
@@ -467,9 +471,9 @@ export default {
 
     usageGuideSettingsTitle: "设置与数据管理",
     usageGuideSettingsContent:
-      "在「设置」页面可以配置以下选项：\n• 首页模块显隐 → 自定义首页显示的模块\n• 模块快捷导航 → 快速跳转到任意模块的列表页面\n• 币种与语言 → 选择货币单位和应用语言\n• 提醒设置 → 配置计划和物品的提醒提前天数\n• 年份范围 → 设置日期选择器的起止年份\n• 类别管理 → 新增、编辑、排序自定义分类（支持物品、记账、资产三类独立管理）\n• 年度收支计划 → 设置年度支出预算和收入目标，首页实时展示进度\n• 私密密码 → 设置日记加密密码，保护私密内容，支持密码历史记录\n• 外观主题 → 切换浅色/深色/糖果三种主题\n• 数据管理 → 导入、导出或重置所有本地数据",
+      "你可以管理：\n• 头像、昵称、浅色/深色主题与应用语言\n• 币种、提醒提前天数和年份范围\n• 物品、记账和资产的自定义类别\n• 年度收支预算与收入目标\n• 私密日记密码与密码记录\n• 本地数据的导入、导出和重置",
     usageGuideDataManagementContent:
-      "在「设置 > 数据管理」中：\n• 导入数据 → 选择模块（物品/资产/记账/计划/日记/重要日子/心情），上传 Excel 文件导入数据。支持从模板下载、自动识别类别（系统中不存在的类别会自动创建）\n• 导出数据 → 按模块（物品/资产/记账/计划/日记/重要日子/心情）导出为 Excel 文件，可选择按年或全部导出\n• 重置数据 → 清除全部数据（包括所有模块记录和设置），恢复应用至初始状态\n\n建议定期导出备份，以防数据丢失",
+      "在管家页的「数据管理」中：\n• 导入数据：下载对应模板或上传 Excel；类别会按名称匹配，缺失时自动创建\n• 导出数据：按模块导出 Excel，可选择按年或全部数据\n• 图片：仅网络图片链接可随 Excel 导入导出，本地拍照或相册图片不会导出\n• 重置数据：清除全部数据，仅保留头像、昵称、主题和语言\n\n建议定期导出备份，以防数据丢失。",
   },
   butler: {
     goodMorning: "早上好",
@@ -519,6 +523,7 @@ export default {
     exportFailedDesc: "导出时出现问题",
     sharingUnavailable: "当前设备不支持分享",
     templateReady: "模板已生成",
+    templateFileSuffix: "模板",
     templateFailedTitle: "模板生成失败",
     templateFailedDesc: "无法生成模板",
     pickFailedTitle: "选择失败",
@@ -527,6 +532,10 @@ export default {
     emptyFileDesc: "所选文件没有数据行",
     rowError: "第 {{row}} 行：{{error}}",
     importedRows: "已导入 {{count}} 条{{module}}记录",
+    importSkippedDuplicates: "跳过 {{count}} 条重复记录",
+    missingRelationTitle: "未找到关联数据",
+    missingRelationDesc: "未找到“{{name}}”。建议先导入关联的物品或资产数据。是否忽略该关联并继续导入？",
+    importWithoutRelation: "忽略关联并导入",
     moreErrors: "…还有 {{count}} 条",
     importErrorsTitle: "导入完成（存在错误）",
     importErrorsDesc: "成功导入 {{ok}} 条，跳过 {{failed}} 条。\n\n{{details}}",
@@ -539,7 +548,7 @@ export default {
     allDataCleared: "已清空全部数据",
     resetAllTitle: "重置全部数据",
     resetAllDesc:
-      "此操作将重置整个应用，清除全部数据，仅保留「我的」页面中的个人设置。",
+      "此操作将清除全部数据，仅保留头像、昵称、主题和语言。",
     resetFailedTitle: "重置失败",
     resetFailedDesc: "数据重置过程中出现错误，请稍后重试",
     moduleDurable: "物品",
@@ -548,6 +557,7 @@ export default {
     moduleSchedule: "计划",
     moduleDiary: "日记",
     moduleImportantDate: "重要日子",
+    moduleBudget: "预算",
     moduleMood: "心情",
   },
   settings: {
@@ -558,6 +568,7 @@ export default {
     profileSettings: "个人设置",
     security: "安全",
     darkModeLabel: "深色模式",
+    lightModeLabel: "浅色模式",
     securityLog: "密码操作记录",
     avatar: "头像",
     nickname: "昵称",
@@ -911,7 +922,7 @@ export default {
     amountLabel: "本次{{type}}金额",
     name: "名称",
     namePlaceholder: "例如：星巴克午后咖啡",
-    time: "时间",
+    time: "日期",
     category: "类别",
     selectCategory: "类别",
     attachment: "附件",
@@ -945,12 +956,12 @@ export default {
     assetName: "资产名称",
     assetNamePlaceholder: "例如：XX小区三居室",
     category: "类别",
-    purchaseDate: "购买日期",
-    purchaseDateRequired: "请选择购买日期",
+    purchaseDate: "获取日期",
+    purchaseDateRequired: "请选择获取日期",
     purchasePrice: "价值",
     purchasePriceRequired: "请输入价值",
     currentPrice: "当前估值",
-    acquisitionMethod: "取得方式",
+    acquisitionMethod: "获取方式",
     acquisitionPurchase: "购买",
     acquisitionGift: "赠送",
     acquisitionReward: "奖励",
@@ -958,8 +969,8 @@ export default {
     acquisitionHomemade: "自制",
     acquisitionOther: "其他",
     acquisitionHint: "如无取得成本，可填写 0",
-    acquisitionLabel: "取得",
-    acquisitionDate: "取得日期",
+    acquisitionLabel: "获取方式",
+    acquisitionDate: "获取日期",
     acquisitionPrice: "取得成本",
     currentPriceHint: "不确定时可填入价值",
     currentPriceRequired: "请输入当前估值",
@@ -1029,8 +1040,8 @@ export default {
     itemNamePlaceholder: "例如：iPhone 16 Pro",
     nameRequired: "请输入物品名称",
     category: "类别",
-    purchaseDate: "购买日期",
-    purchaseDateRequired: "请选择购买日期",
+    purchaseDate: "获取日期",
+    purchaseDateRequired: "请选择获取日期",
     purchasePriceLabel: "价值",
     purchasePriceRequired: "请输入价值",
     expectedEndDate: "期望使用截止日期",
@@ -1069,7 +1080,7 @@ export default {
     unitBillion: "百万",
     unitTenThousand: "和",
     loadingDetail: "正在加载物品详情...",
-    acquisitionMethod: "取得方式",
+    acquisitionMethod: "获取方式",
     acquisitionPurchase: "购买",
     acquisitionGift: "赠送",
     acquisitionReward: "奖励",
@@ -1078,7 +1089,7 @@ export default {
     acquisitionOther: "其他",
     acquisitionHint: "如无取得成本，可填写 0",
     acquisitionLabel: "获取方式",
-    acquisitionDate: "取得日期",
+    acquisitionDate: "获取日期",
     acquisitionPrice: "取得成本",
     linkedAsset: "关联资产",
     linkedAssetPlaceholder: "请选择",
@@ -1236,7 +1247,7 @@ export default {
     countdown: "倒计时",
     timeLeft: "剩余时间",
     category: "类别",
-    purchaseDate: "购买日期",
+    purchaseDate: "获取日期",
     dailyCost: "日均价值",
     companionTime: "已陪伴",
     expectedDailyCost: "期望日均价值（使用寿命）",

@@ -119,7 +119,6 @@ export default function ImportantDateFormScreen() {
     setSaving(true);
     try {
       await saveImportantDate(values, isEdit ? id : undefined);
-      showToast(t('common.saved'));
       router.back();
     } catch (error) {
       showToast(

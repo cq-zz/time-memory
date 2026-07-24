@@ -31,9 +31,12 @@ export default function ProfileEditModal({ visible, onClose }) {
   }, [visible, avatar, nickname]);
 
   const handleSave = async () => {
-    await updateProfile({ avatar: draftAvatar, nickname: draftNickname.trim() });
-    showToast(t('common.saved'));
-    onClose();
+    try {
+      await updateProfile({ avatar: draftAvatar, nickname: draftNickname.trim() });
+      onClose();
+    } catch {
+      showToast(t('common.saveFailed'));
+    }
   };
 
   return (

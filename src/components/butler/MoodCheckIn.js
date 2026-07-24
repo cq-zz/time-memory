@@ -15,19 +15,19 @@ export default function MoodCheckIn() {
   const { t } = useTranslation();
   const todayMood = useMoodStore((s) => s.todayMood);
   const saveMood = useMoodStore((s) => s.saveMood);
+  const removeMood = useMoodStore((s) => s.removeMood);
 
   const handleSelect = async (mood) => {
     try {
+      if (todayMood === mood.key) {
+        await removeMood();
+        return;
+      }
       await saveMood(mood.key);
-      showToast(
-        t('butler.moodRecorded', {
-          emoji: mood.emoji,
-          label: t(`checkIn.mood.${mood.key}`),
-          score: mood.score,
-        })
-      );
+      showToast(t(`checkIn.moodSuccess.${mood.key}`));
     } catch (e) {
       console.warn('[mood] save failed:', e);
+      showToast(t('common.saveFailed'));
     }
   };
 

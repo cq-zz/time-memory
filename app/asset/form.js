@@ -115,7 +115,6 @@ export default function AssetFormScreen() {
     setSaving(true);
     try {
       await saveAsset(values, isEdit ? id : undefined);
-      showToast(t('common.saved'));
       router.back();
     } catch {
       showToast(t('common.saveFailed'));

@@ -293,6 +293,9 @@ export default function ImageUploadField({
             <Text style={[styles.sheetTitle, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
               {t('common.selectImageSource')}
             </Text>
+            <Text style={[styles.sheetHint, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+              {t('common.imageSourceExportHint')}
+            </Text>
             <View style={styles.sheetActions}>
               <Pressable
                 style={({ pressed }) => [
@@ -427,6 +430,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+    textAlign: 'center',
+    marginBottom: 16,
+  },
+  sheetHint: {
+    fontSize: 12,
+    lineHeight: 18,
     textAlign: 'center',
     marginBottom: 16,
   },

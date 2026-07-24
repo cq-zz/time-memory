@@ -108,7 +108,6 @@ export default function DiaryFormScreen() {
       savingRef.current = false;
       setSaving(false);
     }
-    showToast(t('common.saved'));
     router.back();
   };
 

@@ -75,15 +75,12 @@ export default function MoodCalendarModal({ visible, onClose }) {
   };
 
   const handlePickMood = async (mood) => {
-    await saveMood(mood.key, pickingDate);
-    showToast(
-      t('butler.moodSaved', {
-        emoji: mood.emoji,
-        label: t(`checkIn.mood.${mood.key}`),
-        date: pickingDate,
-      })
-    );
-    setPickingDate(null);
+    try {
+      await saveMood(mood.key, pickingDate);
+      setPickingDate(null);
+    } catch {
+      showToast(t('common.saveFailed'));
+    }
   };
 
   const cells = [];

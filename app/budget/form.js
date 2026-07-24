@@ -101,7 +101,6 @@ export default function BudgetFormScreen() {
       savingRef.current = false;
       setSaving(false);
     }
-    showToast(t('common.saved'));
     router.back();
   };
 

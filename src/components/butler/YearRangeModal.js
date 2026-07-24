@@ -64,10 +64,13 @@ export default function YearRangeModal({ visible, onClose }) {
       return;
     }
 
-    await updateSetting('yearStart', minVal);
-    await updateSetting('yearEnd', maxVal);
-    showToast(t('butler.yearRangeSet', { min: minVal, max: maxVal }));
-    onClose();
+    try {
+      await updateSetting('yearStart', minVal);
+      await updateSetting('yearEnd', maxVal);
+      onClose();
+    } catch {
+      showToast(t('common.saveFailed'));
+    }
   };
 
   const inputStyle = (hasError) => [

@@ -4,8 +4,8 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
 import { CURRENCIES } from '../../utils/constant';
-import { showToast } from '../common/Toast';
 import WheelColumn from '../common/WheelColumn';
+import { showToast } from '../common/Toast';
 
 const CURRENCY_ITEMS = CURRENCIES.map((c) => ({ value: c.code, label: c.label }));
 
@@ -29,10 +29,12 @@ export default function CurrencyModal({ visible, onClose }) {
   }, [visible]);
 
   const handleConfirm = async () => {
-    await updateSetting('currency', selected);
-    const meta = CURRENCIES.find((c) => c.code === selected);
-    showToast(t('butler.currencySet', { label: meta ? meta.label : selected }));
-    onClose();
+    try {
+      await updateSetting('currency', selected);
+      onClose();
+    } catch {
+      showToast(t('common.saveFailed'));
+    }
   };
 
   if (!visible) return null;

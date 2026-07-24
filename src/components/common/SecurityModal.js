@@ -69,9 +69,10 @@ export default function SecurityModal({ visible, onClose, onChanged }) {
       const action = pwdSet ? 'change' : 'set';
       await setPassword(newPwd);
       await logPasswordAction(action);
-      showToast(t('common.saved'));
       onChanged?.();
       onClose();
+    } catch {
+      showToast(t('common.saveFailed'));
     } finally {
       setSaving(false);
     }

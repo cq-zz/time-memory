@@ -78,11 +78,15 @@ export default function SettingGroups() {
   }, [refreshPwd]);
 
   const handleReset = async () => {
-    await clearPassword();
-    await logPasswordAction('reset');
-    setPwdSet(false);
-    setResetOpen(false);
-    showToast(t('settings.resetPasswordSuccess'));
+    try {
+      await clearPassword();
+      await logPasswordAction('reset');
+      setPwdSet(false);
+      setResetOpen(false);
+      showToast(t('settings.resetPasswordSuccess'));
+    } catch {
+      showToast(t('common.saveFailed'));
+    }
   };
 
   return (
@@ -122,8 +126,8 @@ export default function SettingGroups() {
         </Text>
         <View style={styles.rows}>
           <SettingRow
-            icon="moon-outline"
-            label={t('settings.darkModeLabel')}
+            icon={darkMode ? 'moon-outline' : 'sunny-outline'}
+            label={darkMode ? t('settings.darkModeLabel') : t('settings.lightModeLabel')}
             isToggle
             toggleValue={darkMode}
             onToggle={() => updateSetting('darkMode', !darkMode)}
@@ -148,8 +152,7 @@ export default function SettingGroups() {
           {t('settings.groupSupport')}
         </Text>
         <View style={styles.rows}>
-          <SettingRow icon="book-outline" label={t('profile.userGuide')} />
-          <SettingRow icon="shield-checkmark-outline" label={t('profile.privacyPolicy')} />
+          <SettingRow icon="shield-checkmark-outline" label={t('profile.privacyPolicy')} onPress={() => router.push('/settings/privacy')} />
           <SettingRow icon="information-circle-outline" label={t('profile.about')} value="v2.4.0" />
         </View>
       </View>

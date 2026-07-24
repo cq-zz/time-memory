@@ -5,9 +5,11 @@
  * (fromRow). DataManagement.js drives the file I/O around these.
  */
 import * as XLSX from 'xlsx';
+import i18n from '../i18n';
 import {
   MOODS,
   DEFAULT_CURRENCY,
+  CURRENCIES,
   ACQUISITION_METHODS,
   DURABLE_STATUS_OPTIONS,
   ASSET_STATUS_OPTIONS,
@@ -26,21 +28,122 @@ const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 const nowIso = () => new Date().toISOString();
 
 const safe = (v) => (v === null || v === undefined ? '' : v);
+const formatExcelDateTime = (value) => {
+  if (!value) return '';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+};
+
+const ENUM_TEXT_ZH = {
+  Purchase: '购买', Gift: '赠予', Reward: '奖励', Inherit: '继承', Homemade: '自制', Other: '其他',
+  'In Use': '使用中', Disposed: '已处置', Active: '持有中',
+  Expense: '支出', Income: '收入', High: '高', Medium: '中', Low: '低',
+  'Not Started': '未开始', 'In Progress': '进行中', Completed: '已完成', Postponed: '已延期', Cancelled: '已取消',
+  Sunny: '晴', Cloudy: '多云', Rainy: '雨', Snowy: '雪', Windy: '风', Foggy: '雾',
+  Birthday: '生日', Anniversary: '纪念日', Memorial: '纪念日', Annual: '每年', 'One-Time': '一次性',
+  Yes: '是', No: '否', Item: '物品', Asset: '资产',
+};
+
+const localizedEnumText = (text) =>
+  i18n.language === 'zh-CN' ? ENUM_TEXT_ZH[text] || text : text;
 
 const labelOf = (options, key) => {
   const o = options.find((x) => x.key === key);
-  return o ? o.label : key || '';
+  return o ? localizedEnumText(o.label) : key || '';
 };
 
 /** Case-insensitive label-or-key lookup. Returns fallback when empty, null when invalid. */
 const keyOf = (options, raw, fallback) => {
   const t = String(raw ?? '').trim().toLowerCase();
   if (!t) return fallback;
-  const o = options.find((x) => x.label.toLowerCase() === t || x.key.toLowerCase() === t);
+  const o = options.find(
+    (x) =>
+      x.label.toLowerCase() === t ||
+      localizedEnumText(x.label).toLowerCase() === t ||
+      x.key.toLowerCase() === t,
+  );
   return o ? o.key : null;
 };
 
 const optionLabels = (options) => options.map((o) => o.label).join(' / ');
+const enumHeader = (title, values) => `${title} (${values.join('/')})`;
+const optionHeader = (title, options) => enumHeader(title, options.map((option) => option.label));
+const CURRENCY_HEADER = enumHeader('Currency', CURRENCIES.map((currency) => currency.code));
+const YES_NO_HEADER = enumHeader('Reminder', ['Yes', 'No']);
+
+const HEADER_LABELS = {
+  Name: { en: 'Name', 'zh-CN': '名称' }, Title: { en: 'Title', 'zh-CN': '标题' },
+  Category: { en: 'Category', 'zh-CN': '类别' }, 'Acquisition Method': { en: 'Acquisition Method', 'zh-CN': '获取方式' },
+  'Purchase Date': { en: 'Acquisition Date', 'zh-CN': '获取日期' }, Value: { en: 'Value', 'zh-CN': '价值' },
+  Status: { en: 'Status', 'zh-CN': '状态' }, 'Expected Lifespan': { en: 'Expected Lifespan', 'zh-CN': '预计使用寿命' },
+  'Expiry Date': { en: 'Expiry Date', 'zh-CN': '到期日期' }, Currency: { en: 'Currency', 'zh-CN': '币种' },
+  'Linked Asset': { en: 'Linked Asset', 'zh-CN': '关联资产' }, 'Image URL': { en: 'Image URL', 'zh-CN': '图片链接' },
+  Notes: { en: 'Notes', 'zh-CN': '备注' }, 'Created At': { en: 'Created At', 'zh-CN': '创建时间' },
+  'Current Price': { en: 'Current Price', 'zh-CN': '当前价值' }, 'Updated At': { en: 'Updated At', 'zh-CN': '更新时间' },
+  Type: { en: 'Type', 'zh-CN': '类型' }, Amount: { en: 'Amount', 'zh-CN': '金额' },
+  'Consumption Date': { en: 'Consumption Date', 'zh-CN': '日期' }, 'Billing Object Type': { en: 'Billing Object Type', 'zh-CN': '记账对象类型' },
+  'Billing Object': { en: 'Billing Object', 'zh-CN': '记账对象' }, 'Receipt Image URL': { en: 'Receipt Image URL', 'zh-CN': '凭证图片链接' },
+  Priority: { en: 'Priority', 'zh-CN': '优先级' }, 'Start Date': { en: 'Start Date', 'zh-CN': '开始日期' },
+  'End Date': { en: 'End Date', 'zh-CN': '结束日期' }, Reminder: { en: 'Reminder', 'zh-CN': '提醒' },
+  'Days Before': { en: 'Days Before', 'zh-CN': '提前天数' }, Checklist: { en: 'Checklist', 'zh-CN': '清单' },
+  Date: { en: 'Date', 'zh-CN': '日期' }, Weather: { en: 'Weather', 'zh-CN': '天气' },
+  Content: { en: 'Content', 'zh-CN': '内容' }, 'Reminder Type': { en: 'Reminder Type', 'zh-CN': '提醒类型' },
+  Year: { en: 'Year', 'zh-CN': '年份' }, 'Expense Budget': { en: 'Expense Budget', 'zh-CN': '支出预算' },
+  'Income Target': { en: 'Income Target', 'zh-CN': '收入目标' }, Mood: { en: 'Mood', 'zh-CN': '心情' },
+  Score: { en: 'Score', 'zh-CN': '分值' },
+};
+const LEGACY_HEADER_LABELS = { 'Purchase Date': ['Purchase Date', '购买日期'] };
+
+function splitHeader(header) {
+  const match = String(header).match(/^(.*?)\s*(\(.*\))?$/);
+  return { base: match?.[1]?.trim() || String(header), suffix: match?.[2] || '' };
+}
+
+function localizedHeader(header) {
+  const { base, suffix } = splitHeader(header);
+  const language = i18n.language === 'zh-CN' ? 'zh-CN' : 'en';
+  const localizedSuffix =
+    language === 'zh-CN' && suffix
+      ? `(${suffix.slice(1, -1).split('/').map(localizedEnumText).join('/')})`
+      : suffix;
+  return `${HEADER_LABELS[base]?.[language] || base}${localizedSuffix}`;
+}
+
+const yesNo = (value) => localizedEnumText(value ? 'Yes' : 'No');
+const isAffirmative = (value) => ['yes', '是', 'true', '1'].includes(String(value ?? '').trim().toLowerCase());
+const EXAMPLE_TEXT_ZH = {
+  electronics: '电子产品',
+  gold: '黄金',
+  food: '餐饮',
+  family: '家庭',
+  'Sony WH-1000XM5': '索尼 WH-1000XM5 耳机',
+  Headphones: '头戴式耳机',
+  'Gold Bar 100g': '100 克金条',
+  Groceries: '日常采购',
+  'Weekly shopping': '每周采购',
+  'Quarterly review': '季度复盘',
+  '1. [☐] Prepare slides': '1. [☐] 准备演示文稿',
+  'A good start': '美好的一天',
+  'Feeling productive today.': '今天效率很高。',
+  Birthday: '生日',
+  'Happy (😊)': '开心 (😊)',
+};
+
+function localizedExample(example) {
+  if (i18n.language !== 'zh-CN') return example;
+  return example.map((value) => {
+    if (typeof value !== 'string') return value;
+    return EXAMPLE_TEXT_ZH[value] || localizedEnumText(value);
+  });
+}
+
+function formatTimestampColumns(headers, row) {
+  return row.map((value, index) => {
+    const { base } = splitHeader(headers[index]);
+    return base === 'Created At' || base === 'Updated At' ? formatExcelDateTime(value) : value;
+  });
+}
 
 /** Coerce a cell to YYYY-MM-DD (handles Excel serial-date numbers). */
 function normalizeDate(v) {
@@ -56,6 +159,7 @@ function normalizeDate(v) {
 const validDate = (v) => v === '' || DATE_RE.test(v);
 
 const validUrl = (v) => v === '' || /^https?:\/\//i.test(v);
+const exportImageUrl = (v) => (/^https?:\/\//i.test(String(v || '').trim()) ? String(v).trim() : '');
 
 function parseChecklist(raw) {
   try {
@@ -75,18 +179,18 @@ export const EXPORT_MODULES = [
     table: 'durables',
     dateField: 'purchase_date',
     headers: [
-      'Name', 'Category', 'Acquisition Method', 'Purchase Date', 'Value',
-      'Status', 'Expected Lifespan', 'Expiry Date', 'Currency', 'Image URL', 'Notes', 'Created At',
+      'Name', 'Category', optionHeader('Acquisition Method', ACQUISITION_METHODS), 'Purchase Date', 'Value',
+      optionHeader('Status', DURABLE_STATUS_OPTIONS), 'Expected Lifespan', 'Expiry Date', CURRENCY_HEADER, 'Linked Asset', 'Image URL', 'Notes', 'Created At',
     ],
     example: [
       'Sony WH-1000XM5', 'electronics', 'Purchase', '2025-06-01', 349,
-      'In Use', '60', '', 'USD', '', 'Headphones', nowIso(),
+      'In Use', '60', '', 'USD', '', '', 'Headphones', nowIso(),
     ],
     toRow: (item) => [
       safe(item.name), safe(item.category), labelOf(ACQUISITION_METHODS, item.acquisition_method),
       safe(item.purchase_date), safe(item.purchase_price ?? 0),
       labelOf(DURABLE_STATUS_OPTIONS, item.status), safe(item.expected_lifespan),
-      safe(item.expiry_date), safe(item.currency), safe(item.image), safe(item.notes), safe(item.created_at),
+      safe(item.expiry_date), safe(item.currency), safe(item.linked_asset_name), exportImageUrl(item.image), safe(item.notes), safe(item.created_at),
     ],
     fromRow: (get) => {
       const name = String(get('Name') ?? '').trim();
@@ -114,6 +218,7 @@ export const EXPORT_MODULES = [
           expected_lifespan: String(get('Expected Lifespan') ?? '').trim() || null,
           expiry_date: expiryDate || null,
           currency: String(get('Currency') ?? '').trim() || DEFAULT_CURRENCY,
+          _linked_asset_name: String(get('Linked Asset') ?? '').trim(),
           image: image || null,
           notes: String(get('Notes') ?? '').trim(),
           repair_record: '{}',
@@ -128,8 +233,8 @@ export const EXPORT_MODULES = [
     table: 'assets',
     dateField: 'purchase_date',
     headers: [
-      'Name', 'Category', 'Acquisition Method', 'Status', 'Purchase Date', 'Value',
-      'Current Price', 'Expiry Date', 'Currency', 'Image URL', 'Notes', 'Created At', 'Updated At',
+      'Name', 'Category', optionHeader('Acquisition Method', ACQUISITION_METHODS), optionHeader('Status', ASSET_STATUS_OPTIONS), 'Purchase Date', 'Value',
+      'Current Price', 'Expiry Date', CURRENCY_HEADER, 'Image URL', 'Notes', 'Created At', 'Updated At',
     ],
     example: [
       'Gold Bar 100g', 'gold', 'Purchase', 'Active', '2024-03-15', 6800,
@@ -139,7 +244,7 @@ export const EXPORT_MODULES = [
       safe(item.name), safe(item.category), labelOf(ACQUISITION_METHODS, item.acquisition_method),
       labelOf(ASSET_STATUS_OPTIONS, item.status), safe(item.purchase_date), safe(item.purchase_price ?? 0),
       safe(item.current_price ?? 0), safe(item.expiry_date), safe(item.currency),
-      safe(item.image), safe(item.notes), safe(item.created_at), safe(item.updated_at),
+      exportImageUrl(item.image), safe(item.notes), safe(item.created_at), safe(item.updated_at),
     ],
     fromRow: (get) => {
       const name = String(get('Name') ?? '').trim();
@@ -182,17 +287,18 @@ export const EXPORT_MODULES = [
     table: 'bills',
     dateField: 'consumption_date',
     headers: [
-      'Name', 'Type', 'Amount', 'Category', 'Consumption Date',
-      'Currency', 'Receipt Image URL', 'Notes', 'Created At',
+      'Name', optionHeader('Type', BILL_TYPE_OPTIONS), 'Amount', 'Category', 'Consumption Date',
+      CURRENCY_HEADER, enumHeader('Billing Object Type', ['Item', 'Asset']), 'Billing Object', 'Receipt Image URL', 'Notes', 'Created At',
     ],
     example: [
       'Groceries', 'Expense', 86.5, 'food', '2025-07-01',
-      'USD', '', 'Weekly shopping', nowIso(),
+      'USD', '', '', '', 'Weekly shopping', nowIso(),
     ],
     toRow: (item) => [
       safe(item.name), labelOf(BILL_TYPE_OPTIONS, item.bill_type), safe(item.amount ?? 0),
       safe(item.category), safe(item.consumption_date), safe(item.currency),
-      safe(item.receipt_image), safe(item.notes), safe(item.created_at),
+      safe(item.source === 'durable' ? 'Item' : item.source === 'asset' ? 'Asset' : ''),
+      safe(item.source_name), exportImageUrl(item.receipt_image), safe(item.notes), safe(item.created_at),
     ],
     fromRow: (get) => {
       const name = String(get('Name') ?? '').trim();
@@ -204,6 +310,13 @@ export const EXPORT_MODULES = [
       if (billType === null) return { error: `Invalid Type "${typeRaw}" (use ${optionLabels(BILL_TYPE_OPTIONS)})` };
       const consumptionDate = normalizeDate(get('Consumption Date'));
       if (!validDate(consumptionDate)) return { error: 'Consumption Date must be YYYY-MM-DD' };
+      const sourceType = String(get('Billing Object Type') ?? '').trim();
+      if (sourceType && !['item', 'asset'].includes(sourceType.toLowerCase())) {
+        return { error: 'Billing Object Type must be Item or Asset' };
+      }
+      if (String(get('Billing Object') ?? '').trim() && !sourceType) {
+        return { error: 'Billing Object Type is required when Billing Object is set' };
+      }
       const image = String(get('Receipt Image URL') ?? '').trim();
       if (!validUrl(image)) return { error: 'Receipt Image URL must start with http:// or https://' };
       return {
@@ -214,6 +327,8 @@ export const EXPORT_MODULES = [
           category: String(get('Category') ?? '').trim(),
           consumption_date: consumptionDate || null,
           currency: String(get('Currency') ?? '').trim() || DEFAULT_CURRENCY,
+          _source_type: sourceType,
+          _source_name: String(get('Billing Object') ?? '').trim(),
           receipt_image: image || null,
           notes: String(get('Notes') ?? '').trim(),
           source: '',
@@ -229,12 +344,12 @@ export const EXPORT_MODULES = [
     table: 'schedules',
     dateField: 'end_date',
     headers: [
-      'Title', 'Priority', 'Status', 'Start Date', 'End Date',
-      'Reminder', 'Days Before', 'Checklist', 'Notes', 'Created At',
+      'Title', optionHeader('Priority', SCHEDULE_PRIORITIES), optionHeader('Status', SCHEDULE_STATUS_OPTIONS), 'Start Date', 'End Date',
+      YES_NO_HEADER, 'Days Before', 'Checklist', 'Image URL', 'Notes', 'Created At',
     ],
     example: [
       'Quarterly review', 'High', 'Not Started', '2025-07-10', '2025-07-15',
-      'Yes', '1', '1. [☐] Prepare slides', '', nowIso(),
+      'Yes', '1', '1. [☐] Prepare slides', '', '', nowIso(),
     ],
     toRow: (item) => {
       const checklist = parseChecklist(item.checklist)
@@ -243,8 +358,8 @@ export const EXPORT_MODULES = [
       return [
         safe(item.title), labelOf(SCHEDULE_PRIORITIES, item.priority),
         labelOf(SCHEDULE_STATUS_OPTIONS, item.status), safe(item.start_date), safe(item.end_date),
-        item.reminder_enabled ? 'Yes' : 'No', safe(item.reminder_days_before),
-        checklist, safe(item.notes), safe(item.created_at),
+        yesNo(item.reminder_enabled), safe(item.reminder_days_before),
+        checklist, exportImageUrl(item.image), safe(item.notes), safe(item.created_at),
       ];
     },
     fromRow: (get) => {
@@ -265,6 +380,8 @@ export const EXPORT_MODULES = [
       if (!Number.isInteger(reminderDaysBefore) || reminderDaysBefore < 0 || reminderDaysBefore > 365) {
         return { error: 'Days Before must be an integer from 0 to 365' };
       }
+      const image = String(get('Image URL') ?? '').trim();
+      if (!validUrl(image)) return { error: 'Image URL must start with http:// or https://' };
       return {
         data: {
           title,
@@ -272,9 +389,10 @@ export const EXPORT_MODULES = [
           status,
           start_date: startDate || null,
           end_date: endDate || null,
-          reminder_enabled: String(get('Reminder') ?? '').trim().toLowerCase() === 'yes' ? 1 : 0,
+          reminder_enabled: isAffirmative(get('Reminder')) ? 1 : 0,
           reminder_days_before: reminderDaysBefore,
           checklist: '[]',
+          image: image || null,
           notes: String(get('Notes') ?? '').trim(),
           created_at: nowIso(),
         },
@@ -286,7 +404,7 @@ export const EXPORT_MODULES = [
     label: 'Diary',
     table: 'diaries',
     dateField: 'date',
-    headers: ['Title', 'Date', 'Weather', 'Content', 'Image URL', 'Created At'],
+    headers: ['Title', 'Date', optionHeader('Weather', WEATHER_OPTIONS), 'Content', 'Image URL', 'Created At'],
     example: [
       'A good start', '2025-07-01', 'Sunny', 'Feeling productive today.', '', nowIso(),
     ],
@@ -294,7 +412,7 @@ export const EXPORT_MODULES = [
       const weather = WEATHER_OPTIONS.find((w) => w.key === item.weather);
       return [
         safe(item.title), safe(item.date), weather ? weather.label : safe(item.weather),
-        safe(item.content), safe(item.image), safe(item.created_at),
+        safe(item.content), exportImageUrl(item.image), safe(item.created_at),
       ];
     },
     fromRow: (get) => {
@@ -321,13 +439,17 @@ export const EXPORT_MODULES = [
     label: 'Important Dates',
     table: 'important_dates',
     dateField: 'date',
-    headers: ['Name', 'Date', 'Type', 'Category', 'Priority', 'Reminder', 'Reminder Type', 'Days Before', 'Notes', 'Created At'],
-    example: ['Birthday', '2025-09-12', 'Birthday', 'family', 'High', 'Yes', 'Annual', '1', '', nowIso()],
+    headers: [
+      'Name', 'Date', optionHeader('Type', IMPORTANT_DATE_TYPES), 'Category',
+      optionHeader('Priority', SCHEDULE_PRIORITIES), YES_NO_HEADER,
+      optionHeader('Reminder Type', REMINDER_TYPES), 'Days Before', 'Image URL', 'Notes', 'Created At',
+    ],
+    example: ['Birthday', '2025-09-12', 'Birthday', 'family', 'High', 'Yes', 'Annual', '1', '', '', nowIso()],
     toRow: (item) => [
       safe(item.name), safe(item.date), labelOf(IMPORTANT_DATE_TYPES, item.type),
       safe(item.category), labelOf(SCHEDULE_PRIORITIES, item.priority),
-      item.reminder_enabled ? 'Yes' : 'No', labelOf(REMINDER_TYPES, item.reminder_type),
-      safe(item.reminder_days_before), safe(item.notes), safe(item.created_at),
+      yesNo(item.reminder_enabled), labelOf(REMINDER_TYPES, item.reminder_type),
+      safe(item.reminder_days_before), exportImageUrl(item.image), safe(item.notes), safe(item.created_at),
     ],
     fromRow: (get) => {
       const name = String(get('Name') ?? '').trim();
@@ -346,6 +468,8 @@ export const EXPORT_MODULES = [
       const daysRaw = String(get('Days Before') ?? '').trim();
       const daysBefore = daysRaw === '' ? 1 : parseInt(daysRaw, 10);
       if (Number.isNaN(daysBefore) || daysBefore < 0) return { error: 'Days Before must be a non-negative integer' };
+      const image = String(get('Image URL') ?? '').trim();
+      if (!validUrl(image)) return { error: 'Image URL must start with http:// or https://' };
       return {
         data: {
           name,
@@ -353,11 +477,44 @@ export const EXPORT_MODULES = [
           type,
           category: String(get('Category') ?? '').trim(),
           priority,
-          reminder_enabled: String(get('Reminder') ?? '').trim().toLowerCase() === 'yes' ? 1 : 0,
+          reminder_enabled: isAffirmative(get('Reminder')) ? 1 : 0,
           reminder_type: reminderType,
           reminder_days_before: daysBefore,
+          image: image || null,
           notes: String(get('Notes') ?? '').trim(),
           created_at: nowIso(),
+        },
+      };
+    },
+  },
+  {
+    id: 'budget',
+    label: 'Budgets',
+    table: 'budgets',
+    dateField: 'year',
+    headers: ['Year', 'Expense Budget', 'Income Target', CURRENCY_HEADER, 'Created At'],
+    example: [String(new Date().getFullYear()), 12000, 18000, DEFAULT_CURRENCY, nowIso()],
+    toRow: (item) => [
+      safe(item.year), safe(item.expense_budget ?? 0), safe(item.income_target ?? 0),
+      safe(item.currency), safe(item.created_at),
+    ],
+    fromRow: (get) => {
+      const year = String(get('Year') ?? '').trim();
+      if (!/^\d{4}$/.test(year)) return { error: 'Year must be a four-digit number' };
+      const expense = Number(get('Expense Budget') || 0);
+      const income = Number(get('Income Target') || 0);
+      if (!Number.isFinite(expense) || expense < 0 || !Number.isFinite(income) || income < 0) {
+        return { error: 'Budget amounts must be non-negative numbers' };
+      }
+      if (expense <= 0 && income <= 0) return { error: 'At least one budget amount is required' };
+      return {
+        data: {
+          year,
+          expense_budget: expense,
+          income_target: income,
+          currency: String(get('Currency') ?? '').trim() || DEFAULT_CURRENCY,
+          created_at: nowIso(),
+          updated_at: nowIso(),
         },
       };
     },
@@ -367,7 +524,7 @@ export const EXPORT_MODULES = [
     label: 'Mood Records',
     table: 'check_ins',
     dateField: 'check_date',
-    headers: ['Date', 'Mood', 'Score', 'Created At'],
+    headers: ['Date', enumHeader('Mood', MOODS.map((mood) => mood.label)), 'Score', 'Created At'],
     example: ['2025-07-01', 'Happy (😊)', 5, nowIso()],
     toRow: (item) => {
       const mood = MOODS.find((m) => m.key === item.mood);
@@ -406,7 +563,10 @@ export const moduleById = (id) => EXPORT_MODULES.find((m) => m.id === id) || nul
 
 /** Build an xlsx workbook (single sheet) from module rows. */
 export function buildWorkbook(mod, rows) {
-  const aoa = [mod.headers, ...rows.map(mod.toRow)];
+  const aoa = [
+    mod.headers.map(localizedHeader),
+    ...rows.map((row) => formatTimestampColumns(mod.headers, mod.toRow(row))),
+  ];
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, mod.label);
@@ -415,7 +575,10 @@ export function buildWorkbook(mod, rows) {
 
 /** Build the template workbook (headers + one example row). */
 export function buildTemplateWorkbook(mod) {
-  const ws = XLSX.utils.aoa_to_sheet([mod.headers, mod.example]);
+  const ws = XLSX.utils.aoa_to_sheet([
+    mod.headers.map(localizedHeader),
+    formatTimestampColumns(mod.headers, localizedExample(mod.example)),
+  ]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, mod.label);
   return wb;
@@ -437,7 +600,18 @@ export function readSheetRows(buffer) {
 /** Header → cell accessor for one data row (exact header match). */
 export function makeGetter(headers, row) {
   return (headerKey) => {
-    const idx = headers.findIndex((h) => String(h ?? '').trim() === headerKey);
+    const normalizedKey = String(headerKey).trim().replace(/\s*\([^)]*\)\s*$/, '');
+    const idx = headers.findIndex(
+      (h) => {
+        const candidate = String(h ?? '').trim().replace(/\s*\([^)]*\)\s*$/, '');
+        const labels = HEADER_LABELS[normalizedKey];
+        return (
+          candidate === normalizedKey ||
+          Object.values(labels || {}).includes(candidate) ||
+          (LEGACY_HEADER_LABELS[normalizedKey] || []).includes(candidate)
+        );
+      },
+    );
     if (idx < 0 || idx >= row.length) return '';
     return row[idx];
   };

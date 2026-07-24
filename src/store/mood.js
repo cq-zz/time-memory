@@ -3,7 +3,7 @@
  * Persisted through the platform db layer (SQLite native / AsyncStorage web).
  */
 import { create } from 'zustand';
-import { getAllCheckIns, upsertCheckIn } from './db';
+import { deleteCheckIn, getAllCheckIns, upsertCheckIn } from './db';
 
 /** Local-timezone YYYY-MM-DD (avoids UTC drift from toISOString). */
 export function todayStr() {
@@ -44,6 +44,16 @@ export const useMoodStore = create((set, get) => ({
     set((state) => ({
       records,
       todayMood: checkDate === todayStr() ? moodKey : state.todayMood,
+    }));
+  },
+
+  /** Remove a mood record for a date — defaults to today. */
+  removeMood: async (date) => {
+    const checkDate = date || todayStr();
+    await deleteCheckIn(checkDate);
+    set((state) => ({
+      records: state.records.filter((record) => record.check_date !== checkDate),
+      todayMood: checkDate === todayStr() ? null : state.todayMood,
     }));
   },
 }));

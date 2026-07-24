@@ -14,8 +14,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
-import { getAllRows, insertRow, clearAllData, upsertCheckIn } from '../../store/db';
+import { getAllRows, insertRow, clearAllData } from '../../store/db';
 import { useMoodStore } from '../../store/mood';
+import { useCategoryStore, getMergedCategories, BUILTIN_NS } from '../../store/categories';
+import zhCN from '../../i18n/locales/zh-CN';
+import en from '../../i18n/locales/en';
 import {
   EXPORT_MODULES,
   moduleById,
@@ -30,8 +33,92 @@ import ConfirmModal from '../common/ConfirmModal';
 import useAlert from '../../hooks/useAlert';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+const RESET_PRESERVED_SETTING_KEYS = ['profile.avatar', 'profile.nickname', 'darkMode', 'language'];
 
 const genId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+const fileDate = () => {
+  const date = new Date();
+  const pad = (value) => String(value).padStart(2, '0');
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+};
+const CATEGORY_TYPES = { durable: 'item', asset: 'asset', bills: 'bill' };
+
+function duplicateKey(moduleId, row) {
+  const name = row.name ?? row.title ?? '';
+  const dateField = {
+    durable: 'purchase_date',
+    asset: 'purchase_date',
+    bills: 'consumption_date',
+    schedule: 'start_date',
+    diary: 'date',
+    'important-date': 'date',
+    mood: 'check_date',
+    budget: 'year',
+  }[moduleId];
+  return `${String(name).trim().toLowerCase()}|${String(row[dateField] ?? '').trim()}`;
+}
+
+async function resolveImportedCategory(moduleId, rawCategory, t) {
+  const type = CATEGORY_TYPES[moduleId];
+  const raw = String(rawCategory ?? '').trim();
+  if (!type || !raw) return raw;
+
+  const store = useCategoryStore.getState();
+  const categories = getMergedCategories(store, type);
+  const normalized = raw.toLocaleLowerCase();
+  const matched = categories.find((category) => {
+    const builtinLabel = category.isBuiltin ? t(`${BUILTIN_NS[type]}.${category.key}`) : '';
+    const zhLabel = category.isBuiltin ? zhCN[BUILTIN_NS[type]]?.[category.key] : '';
+    const enLabel = category.isBuiltin ? en[BUILTIN_NS[type]]?.[category.key] : '';
+    return [category.key, category.name, builtinLabel, zhLabel, enLabel]
+      .filter(Boolean)
+      .some((value) => String(value).toLocaleLowerCase() === normalized);
+  });
+  if (matched) return matched.key;
+  return store.addCustom(type, raw, 'pricetag-outline');
+}
+
+function confirmDiscardMissingRelation(alert, t, name) {
+  return new Promise((resolve) => {
+    alert({
+      title: t('butler.missingRelationTitle'),
+      message: t('butler.missingRelationDesc', { name }),
+      type: 'confirm',
+      buttons: [
+        { text: t('common.cancel'), style: 'cancel', onPress: () => resolve(false) },
+        { text: t('butler.importWithoutRelation'), onPress: () => resolve(true) },
+      ],
+    });
+  });
+}
+
+async function resolveImportedRelation(moduleId, data, alert, t) {
+  const linkedName = data._linked_asset_name;
+  const sourceName = data._source_name;
+  const sourceType = String(data._source_type || '').toLowerCase();
+  delete data._linked_asset_name;
+  delete data._source_name;
+  delete data._source_type;
+
+  if (moduleId === 'durable' && linkedName) {
+    const assets = await getAllRows('assets');
+    const asset = assets.find((row) => String(row.name).trim().toLowerCase() === linkedName.toLowerCase());
+    if (asset) data.linked_asset_id = asset.id;
+    else if (!(await confirmDiscardMissingRelation(alert, t, linkedName))) return false;
+  }
+  if (moduleId === 'bills' && sourceName) {
+    const table = ['item', 'durable'].includes(sourceType) ? 'durables' : 'assets';
+    const rows = await getAllRows(table);
+    const source = rows.find((row) => String(row.name).trim().toLowerCase() === sourceName.toLowerCase());
+    if (source) {
+      data.source = table === 'durables' ? 'durable' : 'asset';
+      data.source_id = source.id;
+    } else if (!(await confirmDiscardMissingRelation(alert, t, sourceName))) {
+      return false;
+    }
+  }
+  return true;
+}
 
 // ── File delivery (platform split) ────────────────
 // Native: write xlsx bytes into the cache dir and hand the URI to the
@@ -131,6 +218,7 @@ const MODULE_LABEL_KEYS = {
   schedule: 'butler.moduleSchedule',
   diary: 'butler.moduleDiary',
   'important-date': 'butler.moduleImportantDate',
+  budget: 'butler.moduleBudget',
   mood: 'butler.moduleMood',
 };
 
@@ -258,10 +346,22 @@ function ExportModal({ visible, onClose }) {
         alert(t('settings.noDataTitle'), t('butler.noDataDesc', { module: moduleName, period }));
         return;
       }
-      const fileName = `timemory_${mod.label.replace(/\s+/g, '_')}_${range === 'year' ? year : 'all'}.xlsx`;
+      if (mod.id === 'durable' || mod.id === 'bills') {
+        const [durables, assets] = await Promise.all([getAllRows('durables'), getAllRows('assets')]);
+        const sourceMap = new Map([
+          ...durables.map((row) => [`durable:${row.id}`, row.name]),
+          ...assets.map((row) => [`asset:${row.id}`, row.name]),
+        ]);
+        rows = rows.map((row) => ({
+          ...row,
+          linked_asset_name: mod.id === 'durable' ? sourceMap.get(`asset:${row.linked_asset_id}`) || '' : undefined,
+          source_name: mod.id === 'bills' ? sourceMap.get(`${row.source}:${row.source_id}`) || '' : undefined,
+        }));
+      }
+      const moduleName = t(MODULE_LABEL_KEYS[mod.id], { defaultValue: mod.label });
+      const fileName = `${t('home.brand')}-${moduleName}-${fileDate()}.xlsx`;
       await deliverWorkbook(buildWorkbook(mod, rows), fileName);
-      const moduleName = t(MODULE_LABEL_KEYS[mod.id], { defaultValue: mod.label }).toLowerCase();
-      showToast(t('butler.exportedRows', { count: rows.length, module: moduleName }));
+      showToast(t('butler.exportedRows', { count: rows.length, module: moduleName.toLowerCase() }));
       onClose();
     } catch (e) {
       alert(
@@ -363,7 +463,11 @@ function ImportModal({ visible, onClose }) {
     const mod = moduleById(moduleId);
     if (!mod) return;
     try {
-      await deliverWorkbook(buildTemplateWorkbook(mod), `timemory_template_${mod.label.replace(/\s+/g, '_')}.xlsx`);
+      const moduleName = t(MODULE_LABEL_KEYS[mod.id], { defaultValue: mod.label });
+      await deliverWorkbook(
+        buildTemplateWorkbook(mod),
+        `${t('home.brand')}-${moduleName}-${t('butler.templateFileSuffix')}-${fileDate()}.xlsx`,
+      );
       showToast(t('butler.templateReady'));
     } catch (e) {
       alert(t('butler.templateFailedTitle'), e?.message || t('butler.templateFailedDesc'));
@@ -392,7 +496,11 @@ function ImportModal({ visible, onClose }) {
       }
       const headers = headerRow.map((h) => String(h ?? '').trim());
 
+      await useCategoryStore.getState().loadCategories();
+      const existingRows = await getAllRows(mod.table);
+      const seen = new Set(existingRows.map((row) => duplicateKey(mod.id, row)));
       let ok = 0;
+      let skipped = 0;
       const errors = [];
       for (let i = 0; i < dataRows.length; i += 1) {
         const row = dataRows[i];
@@ -403,11 +511,17 @@ function ImportModal({ visible, onClose }) {
           continue;
         }
         try {
-          if (mod.id === 'mood') {
-            await upsertCheckIn(result.data.check_date, result.data.mood);
-          } else {
-            await insertRow(mod.table, { id: genId(), ...result.data });
+          const key = duplicateKey(mod.id, result.data);
+          if (seen.has(key)) {
+            skipped += 1;
+            continue;
           }
+          result.data.category = await resolveImportedCategory(mod.id, result.data.category, t);
+          if (!(await resolveImportedRelation(mod.id, result.data, alert, t))) {
+            return;
+          }
+          await insertRow(mod.table, { id: genId(), ...result.data });
+          seen.add(key);
           ok += 1;
         } catch (e) {
           errors.push(t('butler.rowError', { row: i + 2, error: e?.message || 'insert failed' }));
@@ -420,7 +534,10 @@ function ImportModal({ visible, onClose }) {
 
       const moduleName = t(MODULE_LABEL_KEYS[mod.id], { defaultValue: mod.label }).toLowerCase();
       if (errors.length > 0) {
-        if (ok > 0) showToast(t('butler.importedRows', { count: ok, module: moduleName }));
+        if (ok > 0) {
+          showToast(t('butler.importedRows', { count: ok, module: moduleName }) +
+            (skipped ? `，${t('butler.importSkippedDuplicates', { count: skipped })}` : ''));
+        }
         const shown = errors.slice(0, 5).join('\n');
         const more = errors.length > 5 ? `\n${t('butler.moreErrors', { count: errors.length - 5 })}` : '';
         alert(
@@ -430,7 +547,8 @@ function ImportModal({ visible, onClose }) {
       } else if (ok === 0) {
         alert(t('butler.nothingImportedTitle'), t('butler.nothingImportedDesc'));
       } else {
-        showToast(t('butler.importedRows', { count: ok, module: moduleName }));
+        showToast(t('butler.importedRows', { count: ok, module: moduleName }) +
+          (skipped ? `，${t('butler.importSkippedDuplicates', { count: skipped })}` : ''));
         onClose();
       }
     } catch (e) {
@@ -499,8 +617,12 @@ export default function DataManagement() {
   const handleReset = async () => {
     setResetOpen(false);
     try {
-      await clearAllData();
-      await useMoodStore.getState().loadMoods();
+      await clearAllData(RESET_PRESERVED_SETTING_KEYS);
+      await Promise.all([
+        useMoodStore.getState().loadMoods(),
+        useSettingsStore.getState().loadSettings(),
+        useCategoryStore.getState().loadCategories(),
+      ]);
       showToast(t('butler.allDataCleared'));
     } catch (e) {
       showToast(t('butler.resetFailedDesc'));

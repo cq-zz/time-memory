@@ -130,7 +130,6 @@ export default function BillFormScreen() {
       saveLockRef.current = false;
       setSaving(false);
     }
-    showToast(t('common.saved'));
     router.back();
   };
 

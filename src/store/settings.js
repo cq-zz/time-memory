@@ -74,9 +74,14 @@ export const useSettingsStore = create((set) => ({
       const settings = { ...DEFAULT_SETTINGS, ...stored };
       // First run: no language persisted yet — follow the device locale.
       const hasLanguageRow = rows.some((r) => r.key === 'language');
+      const hasCurrencyRow = rows.some((r) => r.key === 'currency');
       if (!hasLanguageRow) {
         settings.language = detectSystemLanguage();
         await saveSettingRow('language', JSON.stringify(settings.language));
+      }
+      if (!hasCurrencyRow) {
+        settings.currency = settings.language === 'zh-CN' ? 'CNY' : DEFAULT_CURRENCY;
+        await saveSettingRow('currency', JSON.stringify(settings.currency));
       }
       applyLanguage(settings.language);
       set({ settings, loaded: true });

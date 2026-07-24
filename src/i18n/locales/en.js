@@ -81,6 +81,7 @@ export default {
     takePhoto: "Take Photo",
     chooseFromLibrary: "From Gallery",
     fromNetwork: "From URL",
+    imageSourceExportHint: "URLs are recommended for migration. Only URLs are exported; camera and gallery images are not.",
     imageUrlPlaceholder: "Paste image URL",
     imageUrlHint: "Make sure the URL is valid",
     imageUrlTitle: "Image URL",
@@ -112,16 +113,19 @@ export default {
     appSettings: "System",
     appSettingsDesc: "Currency, language, password & theme",
     other: "More",
-    otherDesc: "Privacy, version, usage guide",
+    otherDesc: "Privacy and version information",
     privacyPolicy: "Privacy Policy",
     hello: "Hello, {{name}}!",
-    userGuide: "User Guide",
     about: "About Timemory",
     noAvatarHint: "No avatar set yet",
   },
   privacyPolicy: {
     coreCommitment:
       "Core Commitment: Timemory is a fully offline, local-only app. We do not collect, upload, store, or share any of your personal data. All your data stays on your device, under your complete control.",
+    localOnlyTitle: "Fully Local",
+    noCollectionTitle: "No Data Collection",
+    storageTitle: "Stored on Your Device",
+    controlTitle: "You Stay in Control",
     section1Title: "1. Who We Are",
     section1:
       "Timemory is a fully offline personal life management tool. The developer runs no backend servers, provides no cloud sync, and uses no third-party analytics or tracking.",
@@ -415,19 +419,19 @@ export default {
     usageGuideModules: "Feature Modules",
     usageGuideGeneral: "General Usage",
     usageGuideGeneralContent:
-      "From the home screen, view asset overview (Total Asset Value = In-use item value + All assets current value), monthly income/expense, annual plan, and today's reminders. Tap any module card to enter its list page.\n\nIn each module's list page:\n• Tap + to add a new record\n• Tap a record card to view details\n• Detail pages support edit and delete\n• Use filters and search to quickly find data\n\nOn the Profile tab, manage your avatar, nickname, switch themes (Light/Dark/Candy), and access Settings for more options.\n\nIn Settings, you can manage home module visibility, currency & language, reminder settings, year range, category management, private password, data import/export, and more.",
+      "The home screen summarizes in-use item value, active asset value, monthly income and expense, annual budgets, and reminders. Tap a feature card to open its module.\n\nIn list pages, use + to create a record, tap a record for details, and use filters or search to find content. Detail pages support editing and deletion.\n\nOn the Profile tab, manage your avatar, nickname, light/dark theme, language, and private-diary password. The Butler tab manages currency, reminders, year range, categories, and data import/export.",
     usageGuideDataNote:
       "All data is stored locally on your device. Export regularly via Settings > Data Management to prevent data loss.",
     usageGuideExpand: "Expand",
     usageGuideCollapse: "Collapse",
 
     usageGuideDurableOps:
-      "• Record item details (name, category, purchase date, price)\n• Upload item image\n• Set usage status (In Use / Archived)\n• Auto-calculate total assets, time owned, daily average value\n• Link bills to items via 'Billing Object' in the Bills module\n• Filter by status, year/month, search by name",
+      "• Record item name, category, acquisition method, acquisition date, and value\n• Upload an image and set status (In Use / Archived)\n• Automatically calculate time owned and daily average value\n• Link an item through Billing Object and view related income/expenses in details\n• Filter by status or month and search by name",
     usageGuideDurableData:
       "Item data is stored locally. The entered value auto-generates a corresponding bill. When creating a bill with a 'Billing Object', the bill links to the item's 'Related Expenses' or 'Related Income'. Deleting an item removes its auto-generated purchase bill; manually linked bills get their billing object reset.",
 
     usageGuideAssetOps:
-      "• Record asset details (name, type, purchase date, value, current value)\n• Upload asset image\n• Customizable asset types (House, Vehicle, Gold, Jewelry, etc.)\n• Current value used for total asset calculation; use value if unsure\n• Link bills to assets via 'Billing Object' in the Bills module\n• Filter by category, search by name",
+      "• Record asset name, category, acquisition method, acquisition date, value, and current value\n• Upload an image and manage custom asset categories\n• Current value is used for total assets; use value if unsure\n• Link an asset through Billing Object and view related income/expenses in details\n• Filter by category and search by name",
     usageGuideAssetData:
       "Asset data is stored locally. Asset types support custom management. When creating a bill with 'Billing Object' set to an asset, it links to the asset's 'Related Expenses' or 'Related Income'. Deleting an asset resets linked bills' billing object. Home total asset value = In-use item value + All assets current value.",
 
@@ -437,14 +441,14 @@ export default {
       "Plan data is stored locally. Enabled reminders trigger local notifications at the scheduled time.",
 
     usageGuideBillsOps:
-      "• Record expenses & income with amount, category, and time\n• Upload receipt or invoice images\n• Link bills to items or assets via 'Billing Object'\n• Auto-sync purchase bills from the Items module\n• Summary cards: total income/expense, daily/monthly avg, MoM/YoY trends\n• Charts: donut (category breakdown), line (monthly trend)\n• Filter by category, search by name",
+      "• Record expenses or income with amount, category, and date\n• Upload receipt or invoice images\n• Link an item or asset through Billing Object; related income/expenses appear in its details\n• Summary cards and charts show totals, category shares, and monthly trends\n• Filter by category and search by name",
     usageGuideBillsData:
       "Bill data is stored locally. Purchase bills from the Items module sync automatically when the source item is updated. Manually linked bills also sync to the item or asset's related expenses/income.",
 
     usageGuideDiaryOps:
       "• Write diary entries with title, content, date, and weather tags\n• Upload images\n• Enable private password protection (set password in Settings first)\n• Private entries require password to view\n• Filter by year/month",
     usageGuideDiaryData:
-      "Diary data is stored locally. Private entries are SHA-256 encrypted and only decrypted with the correct password.",
+      "Diary data stays on your device. Private entries are protected by a local password and require it to be viewed.",
 
     usageGuideImportantDateOps:
       "• Record important dates (birthdays, anniversaries, memorials, other)\n• Set reminder type (Annual / One-Time)\n• Set priority (High/Medium/Low)\n• Enable countdown reminders with configurable lead days\n• Auto-calculate countdown days and year count\n• Filter by type, search by name",
@@ -475,9 +479,9 @@ export default {
 
     usageGuideSettingsTitle: "Settings & Data Management",
     usageGuideSettingsContent:
-      "In Settings, you can configure:\n• Home Module Visibility — Show/hide modules on home\n• Module Quick Access — Jump to any module's list page\n• Currency & Language — Select currency unit and app language\n• Reminder Settings — Configure reminder lead days for plans & items\n• Year Range — Set min/max year for date pickers\n• Category Management — Add, edit, reorder custom categories (items, bills, assets)\n• Annual Plan — Set yearly expense budget and income target\n• Private Password — Set diary encryption password with history support\n• Appearance — Light / Dark / Candy themes\n• Data Management — Import, export, or reset all local data",
+      "You can manage:\n• Avatar, nickname, light/dark theme, and app language\n• Currency, reminder lead days, and year range\n• Custom categories for items, bills, and assets\n• Annual expense budgets and income targets\n• Private-diary password and password history\n• Local data import, export, and reset",
     usageGuideDataManagementContent:
-      "In Settings > Data Management:\n• Import Data — Select a module, upload an Excel file to import. Download a template for reference. Unknown categories are auto-created.\n• Export Data — Export by module as Excel files, by year or all data.\n• Reset Data — Clear all data and settings, restoring the app to initial state.\n\nRegular backups are recommended to prevent data loss.",
+      "In Data Management on the Butler tab:\n• Import Data — Download a template or upload Excel. Categories are matched by name and missing ones are created.\n• Export Data — Export module data to Excel by year or all data.\n• Images — Only image URLs can be imported or exported. Camera and gallery images are not exported.\n• Reset Data — Clear all data while keeping your avatar, nickname, theme, and language.\n\nExport regular backups to prevent data loss.",
   },
   butler: {
     goodMorning: "GOOD MORNING",
@@ -527,6 +531,7 @@ export default {
     exportFailedDesc: "Something went wrong while exporting.",
     sharingUnavailable: "Sharing is not available on this device",
     templateReady: "Template ready",
+    templateFileSuffix: "Template",
     templateFailedTitle: "Template Failed",
     templateFailedDesc: "Could not generate the template.",
     pickFailedTitle: "Pick Failed",
@@ -535,6 +540,10 @@ export default {
     emptyFileDesc: "The selected file has no data rows.",
     rowError: "Row {{row}}: {{error}}",
     importedRows: "Imported {{count}} {{module}} rows",
+    importSkippedDuplicates: "{{count}} duplicate rows skipped",
+    missingRelationTitle: "Linked data not found",
+    missingRelationDesc: "“{{name}}” was not found. Import its linked item or asset first, or continue without the link.",
+    importWithoutRelation: "Import without link",
     moreErrors: "…and {{count}} more",
     importErrorsTitle: "Import Finished with Errors",
     importErrorsDesc: "{{ok}} rows imported, {{failed}} skipped.\n\n{{details}}",
@@ -547,7 +556,7 @@ export default {
     allDataCleared: "All data cleared",
     resetAllTitle: "Reset All Data",
     resetAllDesc:
-      "This resets the entire app and clears all data. Only the personal settings on the Profile page are kept.",
+      "This clears all data. Only your avatar, nickname, theme, and language are kept.",
     resetFailedTitle: "Reset Failed",
     resetFailedDesc: "Something went wrong while resetting. Please try again.",
     moduleDurable: "Durables",
@@ -556,6 +565,7 @@ export default {
     moduleSchedule: "Schedules",
     moduleDiary: "Diary",
     moduleImportantDate: "Important Dates",
+    moduleBudget: "Budgets",
     moduleMood: "Mood",
   },
   settings: {
@@ -566,6 +576,7 @@ export default {
     profileSettings: "Profile Settings",
     security: "Security",
     darkModeLabel: "Dark Mode",
+    lightModeLabel: "Light Mode",
     securityLog: "Password Activity",
     avatar: "Avatar",
     nickname: "Nickname",
@@ -928,7 +939,7 @@ export default {
     amountLabel: "{{type}} Amount",
     name: "Name",
     namePlaceholder: "e.g. Iced latte",
-    time: "Time",
+    time: "Date",
     category: "Category",
     selectCategory: "Category",
     attachment: "Receipt",
@@ -962,12 +973,12 @@ export default {
     assetName: "Name",
     assetNamePlaceholder: "e.g. 3BR Downtown",
     category: "Category",
-    purchaseDate: "Purchase Date",
-    purchaseDateRequired: "Pick a date",
+    purchaseDate: "Acquisition Date",
+    purchaseDateRequired: "Pick an acquisition date",
     purchasePrice: "Value",
     purchasePriceRequired: "Enter a value",
     currentPrice: "Current Value",
-    acquisitionMethod: "Source",
+    acquisitionMethod: "Acquisition Method",
     acquisitionPurchase: "Bought",
     acquisitionGift: "Gift",
     acquisitionReward: "Reward",
@@ -975,8 +986,8 @@ export default {
     acquisitionHomemade: "DIY",
     acquisitionOther: "Other",
     acquisitionHint: "Enter 0 if free",
-    acquisitionLabel: "Source",
-    acquisitionDate: "Date",
+    acquisitionLabel: "Acquisition Method",
+    acquisitionDate: "Acquisition Date",
     acquisitionPrice: "Cost",
     currentPriceHint: "Use value if unsure",
     currentPriceRequired: "Enter current value",
@@ -1046,8 +1057,8 @@ export default {
     itemNamePlaceholder: "e.g. Dyson V15",
     nameRequired: "Please enter a name",
     category: "Category",
-    purchaseDate: "Date Bought",
-    purchaseDateRequired: "Pick a date",
+    purchaseDate: "Acquisition Date",
+    purchaseDateRequired: "Pick an acquisition date",
     purchasePriceLabel: "Value",
     purchasePriceRequired: "Enter a value",
     expectedEndDate: "Expected End",
@@ -1086,7 +1097,7 @@ export default {
     unitBillion: "M",
     unitTenThousand: "W",
     loadingDetail: "Loading…",
-    acquisitionMethod: "Source",
+    acquisitionMethod: "Acquisition Method",
     acquisitionPurchase: "Bought",
     acquisitionGift: "Gift",
     acquisitionReward: "Reward",
@@ -1095,7 +1106,7 @@ export default {
     acquisitionOther: "Other",
     acquisitionHint: "Enter 0 if free",
     acquisitionLabel: "Acquisition",
-    acquisitionDate: "Date",
+    acquisitionDate: "Acquisition Date",
     acquisitionPrice: "Cost",
     linkedAsset: "Linked Asset",
     linkedAssetPlaceholder: "Select",
@@ -1253,7 +1264,7 @@ export default {
     countdown: "Countdown",
     timeLeft: "Time Left",
     category: "Category",
-    purchaseDate: "Purchase Date",
+    purchaseDate: "Acquisition Date",
     dailyCost: "Daily Cost",
     companionTime: "Companion Time",
     expectedDailyCost: "Expected Daily Cost (Lifespan)",

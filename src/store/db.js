@@ -228,6 +228,12 @@ export async function upsertCheckIn(checkDate, mood) {
   );
 }
 
+/** Remove a mood check-in for a given date (YYYY-MM-DD). */
+export async function deleteCheckIn(checkDate) {
+  const db = await getDb();
+  await db.runAsync('DELETE FROM check_ins WHERE check_date = ?', [checkDate]);
+}
+
 // ── Generic row access (import / export / reset) ──
 
 /** All rows of a module table. `table` must be one of DATA_TABLES. */
@@ -275,10 +281,16 @@ export async function deleteRow(table, id) {
   await db.runAsync(`DELETE FROM ${table} WHERE id = ?`, [id]);
 }
 
-/** Wipe every module table (settings are kept). */
-export async function clearAllData() {
+/** Wipe every module table and all settings except explicitly preserved keys. */
+export async function clearAllData(keepSettingsKeys = []) {
   const db = await getDb();
   for (const table of DATA_TABLES) {
     await db.runAsync(`DELETE FROM ${table}`);
+  }
+  if (keepSettingsKeys.length > 0) {
+    const placeholders = keepSettingsKeys.map(() => '?').join(', ');
+    await db.runAsync(`DELETE FROM settings WHERE key NOT IN (${placeholders})`, keepSettingsKeys);
+  } else {
+    await db.runAsync('DELETE FROM settings');
   }
 }

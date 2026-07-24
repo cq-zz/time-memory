@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
-import { useSettingsStore, LANGUAGES, languageMeta } from '../../store/settings';
-import { showToast } from '../common/Toast';
+import { useSettingsStore, LANGUAGES } from '../../store/settings';
 import WheelColumn from '../common/WheelColumn';
+import { showToast } from '../common/Toast';
 
 const LANGUAGE_ITEMS = LANGUAGES.map((l) => ({ value: l.code, label: l.label }));
 
@@ -28,9 +28,12 @@ export default function LanguageModal({ visible, onClose }) {
   }, [visible]);
 
   const handleConfirm = async () => {
-    await updateSetting('language', selected);
-    showToast(t('settings.languageSet', { label: languageMeta(selected).label }));
-    onClose();
+    try {
+      await updateSetting('language', selected);
+      onClose();
+    } catch {
+      showToast(t('common.saveFailed'));
+    }
   };
 
   if (!visible) return null;

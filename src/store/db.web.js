@@ -83,6 +83,12 @@ export async function upsertCheckIn(checkDate, mood) {
   }
 }
 
+/** Remove a mood check-in for a given date (YYYY-MM-DD). */
+export async function deleteCheckIn(checkDate) {
+  const rows = await readTable('check_ins');
+  await writeTable('check_ins', rows.filter((row) => row.check_date !== checkDate));
+}
+
 // ── Generic row access (import / export / reset) ──
 
 /** All rows of a module table. `table` must be one of DATA_TABLES. */
@@ -132,9 +138,15 @@ export async function deleteRow(table, id) {
   await writeTable(table, rows.filter((r) => r.id !== id));
 }
 
-/** Wipe every module table (settings are kept). */
-export async function clearAllData() {
+/** Wipe every module table and all settings except explicitly preserved keys. */
+export async function clearAllData(keepSettingsKeys = []) {
   await AsyncStorage.multiRemove(DATA_TABLES.map(tableKey));
+  const rows = await loadSettingsRows();
+  const keep = new Set(keepSettingsKeys);
+  await AsyncStorage.setItem(
+    SETTINGS_KEY,
+    JSON.stringify(Object.fromEntries(rows.filter((row) => keep.has(row.key)).map((row) => [row.key, row.value]))),
+  );
 }
 
 /** SQLite is unavailable on web — callers needing raw SQL must guard. */

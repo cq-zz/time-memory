@@ -76,13 +76,16 @@ export default function CategoryFormScreen({ type, editKey }) {
   const handleSave = async () => {
     const trimmed = validate();
     if (!trimmed) return;
-    if (isEdit) {
-      await updateCustom(type, editKey, { name: trimmed, icon, enabled });
-    } else {
-      await addCustom(type, trimmed, icon);
+    try {
+      if (isEdit) {
+        await updateCustom(type, editKey, { name: trimmed, icon, enabled });
+      } else {
+        await addCustom(type, trimmed, icon);
+      }
+      router.back();
+    } catch {
+      showToast(t('common.saveFailed'));
     }
-    showToast(t('common.saved'));
-    router.back();
   };
 
   const handleDeleteTap = async () => {
@@ -92,11 +95,14 @@ export default function CategoryFormScreen({ type, editKey }) {
   };
 
   const handleDeleteConfirm = async () => {
-    if (inUse) await reassignCategory(TYPE_TABLE[type], editKey);
-    await deleteCustom(type, editKey);
-    setDeleteOpen(false);
-    showToast(t('common.saved'));
-    router.back();
+    try {
+      if (inUse) await reassignCategory(TYPE_TABLE[type], editKey);
+      await deleteCustom(type, editKey);
+      setDeleteOpen(false);
+      router.back();
+    } catch {
+      showToast(t('common.saveFailed'));
+    }
   };
 
   return (

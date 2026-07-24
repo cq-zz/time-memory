@@ -460,6 +460,8 @@ export default {
     pickFailedDesc: "无法读取所选文件",
     emptyFileTitle: "文件为空",
     emptyFileDesc: "所选文件没有数据行",
+    invalidHeadersTitle: "表头不匹配",
+    invalidHeadersDesc: "文件缺少以下表头：{{headers}}。请使用当前模块导出的文件或最新模板。",
     rowError: "第 {{row}} 行：{{error}}",
     importedRows: "已导入 {{count}} 条{{module}}记录",
     importSkippedDuplicates: "跳过 {{count}} 条重复记录",

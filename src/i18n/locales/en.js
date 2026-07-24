@@ -467,6 +467,8 @@ export default {
     pickFailedDesc: "Could not read the selected file.",
     emptyFileTitle: "Empty File",
     emptyFileDesc: "The selected file has no data rows.",
+    invalidHeadersTitle: "Header Mismatch",
+    invalidHeadersDesc: "Missing headers: {{headers}}. Use an export from this module or the latest template.",
     rowError: "Row {{row}}: {{error}}",
     importedRows: "Imported {{count}} {{module}} rows",
     importSkippedDuplicates: "{{count}} duplicate rows skipped",

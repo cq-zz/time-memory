@@ -26,6 +26,7 @@ import {
   buildTemplateWorkbook,
   workbookToArray,
   readSheetRows,
+  missingHeaders,
   makeGetter,
 } from '../../utils/excel';
 import { showToast } from '../common/Toast';
@@ -495,6 +496,14 @@ function ImportModal({ visible, onClose }) {
         return;
       }
       const headers = headerRow.map((h) => String(h ?? '').trim());
+      const missing = missingHeaders(mod, headers);
+      if (missing.length > 0) {
+        alert(
+          t('butler.invalidHeadersTitle'),
+          t('butler.invalidHeadersDesc', { headers: missing.join('、') }),
+        );
+        return;
+      }
 
       await useCategoryStore.getState().loadCategories();
       const existingRows = await getAllRows(mod.table);
@@ -520,7 +529,10 @@ function ImportModal({ visible, onClose }) {
           if (!(await resolveImportedRelation(mod.id, result.data, alert, t))) {
             return;
           }
-          await insertRow(mod.table, { id: genId(), ...result.data });
+          const rowToInsert = mod.id === 'mood'
+            ? result.data
+            : { id: genId(), ...result.data };
+          await insertRow(mod.table, rowToInsert);
           seen.add(key);
           ok += 1;
         } catch (e) {
@@ -544,6 +556,9 @@ function ImportModal({ visible, onClose }) {
           t('butler.importErrorsTitle'),
           t('butler.importErrorsDesc', { ok, failed: errors.length, details: `${shown}${more}` })
         );
+      } else if (ok === 0 && skipped > 0) {
+        showToast(t('butler.importSkippedDuplicates', { count: skipped }));
+        onClose();
       } else if (ok === 0) {
         alert(t('butler.nothingImportedTitle'), t('butler.nothingImportedDesc'));
       } else {

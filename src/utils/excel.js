@@ -36,17 +36,25 @@ const formatExcelDateTime = (value) => {
 };
 
 const ENUM_TEXT_ZH = {
-  Purchase: '购买', Gift: '赠予', Reward: '奖励', Inherit: '继承', Homemade: '自制', Other: '其他',
+  Purchase: '购买', Gift: '赠送', Reward: '奖励', Inherit: '继承', Homemade: '自制', Other: '其他',
   'In Use': '使用中', Disposed: '已处置', Active: '持有中',
   Expense: '支出', Income: '收入', High: '高', Medium: '中', Low: '低',
-  'Not Started': '未开始', 'In Progress': '进行中', Completed: '已完成', Postponed: '已延期', Cancelled: '已取消',
-  Sunny: '晴', Cloudy: '多云', Rainy: '雨', Snowy: '雪', Windy: '风', Foggy: '雾',
-  Birthday: '生日', Anniversary: '纪念日', Memorial: '纪念日', Annual: '每年', 'One-Time': '一次性',
-  Yes: '是', No: '否', Item: '物品', Asset: '资产',
+  'Not Started': '未开始', 'In Progress': '进行中', Done: '已完成', Incomplete: '未完成',
+  Sunny: '晴', 'Clear Night': '晴夜', 'Partly Cloudy': '局部多云', Cloudy: '多云',
+  Overcast: '阴', Drizzle: '小雨', Rainy: '雨', Thunderstorm: '雷暴', Snowy: '雪',
+  Sleet: '雨夹雪', Hail: '冰雹', Foggy: '雾', Hazy: '霾', Windy: '大风',
+  Tornado: '龙卷风', Rainbow: '彩虹',
+  Birthday: '生日', Anniversary: '纪念日', Remembrance: '追忆',
+  Annual: '每年', 'One-time': '一次性',
+  Loved: '甜蜜', Excited: '兴奋', Joyful: '开怀', Grateful: '感恩', Amazed: '震撼',
+  Happy: '开心', Peaceful: '平静', Relaxed: '放松', Amused: '得意', Proud: '自豪',
+  Hopeful: '期盼', Thoughtful: '沉思', Neutral: '一般', Sleepy: '困', Anxious: '焦虑',
+  Disappointed: '失落', Stressed: '压力', Sad: '难过', Angry: '生气', Exhausted: '累垮',
+  Yes: '是', No: '否', Item: '物品', Asset: '资产', DoneState: '已完成', PendingState: '未完成',
 };
 
-const localizedEnumText = (text) =>
-  i18n.language === 'zh-CN' ? ENUM_TEXT_ZH[text] || text : text;
+const localizedEnumText = (text, language = i18n.language) =>
+  language === 'zh-CN' ? ENUM_TEXT_ZH[text] || text : text;
 
 const labelOf = (options, key) => {
   const o = options.find((x) => x.key === key);
@@ -60,17 +68,21 @@ const keyOf = (options, raw, fallback) => {
   const o = options.find(
     (x) =>
       x.label.toLowerCase() === t ||
-      localizedEnumText(x.label).toLowerCase() === t ||
+      localizedEnumText(x.label, 'zh-CN').toLowerCase() === t ||
       x.key.toLowerCase() === t,
   );
   return o ? o.key : null;
 };
 
-const optionLabels = (options) => options.map((o) => o.label).join(' / ');
+const optionLabels = (options) => options.map((o) => localizedEnumText(o.label)).join(' / ');
 const enumHeader = (title, values) => `${title} (${values.join('/')})`;
 const optionHeader = (title, options) => enumHeader(title, options.map((option) => option.label));
 const CURRENCY_HEADER = enumHeader('Currency', CURRENCIES.map((currency) => currency.code));
 const YES_NO_HEADER = enumHeader('Reminder', ['Yes', 'No']);
+const BILLING_OBJECT_TYPES = [
+  { key: 'item', label: 'Item' },
+  { key: 'asset', label: 'Asset' },
+];
 
 const HEADER_LABELS = {
   Name: { en: 'Name', 'zh-CN': '名称' }, Title: { en: 'Title', 'zh-CN': '标题' },
@@ -93,11 +105,20 @@ const HEADER_LABELS = {
   'Income Target': { en: 'Income Target', 'zh-CN': '收入目标' }, Mood: { en: 'Mood', 'zh-CN': '心情' },
   Score: { en: 'Score', 'zh-CN': '分值' },
 };
-const LEGACY_HEADER_LABELS = { 'Purchase Date': ['Purchase Date', '购买日期'] };
+const LEGACY_HEADER_LABELS = {
+  'Purchase Date': ['Purchase Date', '购买日期'],
+  Value: ['Purchase Price', 'Price', '购买价格', '取得成本'],
+  'Current Price': ['Current Value', '当前估值'],
+  'Consumption Date': ['消费日期'],
+  Checklist: ['检查清单', '检查清'],
+};
 
 function splitHeader(header) {
-  const match = String(header).match(/^(.*?)\s*(\(.*\))?$/);
-  return { base: match?.[1]?.trim() || String(header), suffix: match?.[2] || '' };
+  const text = String(header ?? '').trim();
+  const match = text.match(/^(.*?)\s*(\([^)]*\))\s*$/);
+  return match
+    ? { base: match[1].trim(), suffix: match[2] }
+    : { base: text, suffix: '' };
 }
 
 function localizedHeader(header) {
@@ -105,13 +126,19 @@ function localizedHeader(header) {
   const language = i18n.language === 'zh-CN' ? 'zh-CN' : 'en';
   const localizedSuffix =
     language === 'zh-CN' && suffix
-      ? `(${suffix.slice(1, -1).split('/').map(localizedEnumText).join('/')})`
+      ? `(${suffix.slice(1, -1).split('/').map((value) => localizedEnumText(value, language)).join('/')})`
       : suffix;
   return `${HEADER_LABELS[base]?.[language] || base}${localizedSuffix}`;
 }
 
 const yesNo = (value) => localizedEnumText(value ? 'Yes' : 'No');
-const isAffirmative = (value) => ['yes', '是', 'true', '1'].includes(String(value ?? '').trim().toLowerCase());
+const booleanValue = (value) => {
+  const normalized = String(value ?? '').trim().toLowerCase();
+  if (!normalized) return 0;
+  if (['yes', '是', 'true', '1'].includes(normalized)) return 1;
+  if (['no', '否', 'false', '0'].includes(normalized)) return 0;
+  return null;
+};
 const EXAMPLE_TEXT_ZH = {
   electronics: '电子产品',
   gold: '黄金',
@@ -123,11 +150,10 @@ const EXAMPLE_TEXT_ZH = {
   Groceries: '日常采购',
   'Weekly shopping': '每周采购',
   'Quarterly review': '季度复盘',
-  '1. [☐] Prepare slides': '1. [☐] 准备演示文稿',
+  '1. Pending: Prepare slides': '1. 未完成：准备演示文稿',
   'A good start': '美好的一天',
   'Feeling productive today.': '今天效率很高。',
   Birthday: '生日',
-  'Happy (😊)': '开心 (😊)',
 };
 
 function localizedExample(example) {
@@ -145,6 +171,8 @@ function formatTimestampColumns(headers, row) {
   });
 }
 
+const stringifyRow = (row) => row.map((value) => String(safe(value)));
+
 /** Coerce a cell to YYYY-MM-DD (handles Excel serial-date numbers). */
 function normalizeDate(v) {
   if (v === null || v === undefined || v === '') return '';
@@ -156,10 +184,31 @@ function normalizeDate(v) {
   return String(v).trim();
 };
 
-const validDate = (v) => v === '' || DATE_RE.test(v);
+const validDate = (v) => {
+  if (v === '') return true;
+  if (!DATE_RE.test(v)) return false;
+  const [year, month, day] = v.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+};
 
 const validUrl = (v) => v === '' || /^https?:\/\//i.test(v);
 const exportImageUrl = (v) => (/^https?:\/\//i.test(String(v || '').trim()) ? String(v).trim() : '');
+
+function normalizeCurrency(raw) {
+  const value = String(raw ?? '').trim().toUpperCase() || DEFAULT_CURRENCY;
+  return CURRENCIES.some((currency) => currency.code === value) ? value : null;
+}
+
+function nonNegativeNumber(raw, fallback = 0) {
+  const text = String(raw ?? '').trim();
+  if (!text) return fallback;
+  const value = Number(text);
+  return Number.isFinite(value) && value >= 0 ? value : null;
+}
+
+const importedTimestamp = (get, header = 'Created At', fallback = nowIso()) =>
+  String(get(header) ?? '').trim() || fallback;
 
 function parseChecklist(raw) {
   try {
@@ -168,6 +217,28 @@ function parseChecklist(raw) {
   } catch {
     return [];
   }
+}
+
+function formatChecklist(raw) {
+  return parseChecklist(raw)
+    .map((item, index) => {
+      const state = localizedEnumText(item.done ? 'DoneState' : 'PendingState');
+      return `${index + 1}. ${state}: ${String(item.text ?? '').trim()}`;
+    })
+    .join('\n');
+}
+
+function parseImportedChecklist(raw) {
+  const text = String(raw ?? '').trim();
+  if (!text) return [];
+  return text.split(/\r?\n/).filter(Boolean).map((line) => {
+    const cleaned = line.replace(/^\s*\d+[.)、]\s*/, '').trim();
+    const legacy = cleaned.match(/^\[(✓|☐|x| )\]\s*(.*)$/i);
+    if (legacy) return { text: legacy[2].trim(), done: ['✓', 'x'].includes(legacy[1].toLowerCase()) };
+    const state = cleaned.match(/^(Done|Pending|已完成|未完成)\s*[:：|-]\s*(.*)$/i);
+    if (state) return { text: state[2].trim(), done: /^(done|已完成)$/i.test(state[1]) };
+    return { text: cleaned, done: false };
+  }).filter((item) => item.text);
 }
 
 // ── Module definitions ────────────────────────────
@@ -207,22 +278,26 @@ export const EXPORT_MODULES = [
       if (!validDate(expiryDate)) return { error: 'Expiry Date must be YYYY-MM-DD' };
       const image = String(get('Image URL') ?? '').trim();
       if (!validUrl(image)) return { error: 'Image URL must start with http:// or https://' };
+      const currency = normalizeCurrency(get('Currency'));
+      if (!currency) return { error: `Invalid Currency "${get('Currency')}"` };
+      const value = nonNegativeNumber(get('Value'));
+      if (value === null) return { error: 'Value must be a non-negative number' };
       return {
         data: {
           name,
           category: String(get('Category') ?? '').trim(),
           acquisition_method: acquisition,
           purchase_date: purchaseDate || null,
-          purchase_price: parseFloat(get('Value') ?? get('Purchase Price')) || 0,
+          purchase_price: value,
           status,
           expected_lifespan: String(get('Expected Lifespan') ?? '').trim() || null,
           expiry_date: expiryDate || null,
-          currency: String(get('Currency') ?? '').trim() || DEFAULT_CURRENCY,
+          currency,
           _linked_asset_name: String(get('Linked Asset') ?? '').trim(),
           image: image || null,
           notes: String(get('Notes') ?? '').trim(),
           repair_record: '{}',
-          created_at: nowIso(),
+          created_at: importedTimestamp(get),
         },
       };
     },
@@ -261,6 +336,12 @@ export const EXPORT_MODULES = [
       if (!validDate(expiryDate)) return { error: 'Expiry Date must be YYYY-MM-DD' };
       const image = String(get('Image URL') ?? '').trim();
       if (!validUrl(image)) return { error: 'Image URL must start with http:// or https://' };
+      const currency = normalizeCurrency(get('Currency'));
+      if (!currency) return { error: `Invalid Currency "${get('Currency')}"` };
+      const value = nonNegativeNumber(get('Value'));
+      if (value === null) return { error: 'Value must be a non-negative number' };
+      const currentPrice = nonNegativeNumber(get('Current Price'));
+      if (currentPrice === null) return { error: 'Current Price must be a non-negative number' };
       return {
         data: {
           name,
@@ -268,15 +349,15 @@ export const EXPORT_MODULES = [
           acquisition_method: acquisition,
           status,
           purchase_date: purchaseDate || null,
-          purchase_price: parseFloat(get('Value') ?? get('Purchase Price')) || 0,
-          current_price: parseFloat(get('Current Price')) || 0,
+          purchase_price: value,
+          current_price: currentPrice,
           expiry_date: expiryDate || null,
-          currency: String(get('Currency') ?? '').trim() || DEFAULT_CURRENCY,
+          currency,
           image: image || null,
           notes: String(get('Notes') ?? '').trim(),
           repair_record: '{}',
-          created_at: nowIso(),
-          updated_at: nowIso(),
+          created_at: importedTimestamp(get),
+          updated_at: importedTimestamp(get, 'Updated At'),
         },
       };
     },
@@ -288,7 +369,7 @@ export const EXPORT_MODULES = [
     dateField: 'consumption_date',
     headers: [
       'Name', optionHeader('Type', BILL_TYPE_OPTIONS), 'Amount', 'Category', 'Consumption Date',
-      CURRENCY_HEADER, enumHeader('Billing Object Type', ['Item', 'Asset']), 'Billing Object', 'Receipt Image URL', 'Notes', 'Created At',
+      CURRENCY_HEADER, optionHeader('Billing Object Type', BILLING_OBJECT_TYPES), 'Billing Object', 'Receipt Image URL', 'Notes', 'Created At',
     ],
     example: [
       'Groceries', 'Expense', 86.5, 'food', '2025-07-01',
@@ -297,28 +378,29 @@ export const EXPORT_MODULES = [
     toRow: (item) => [
       safe(item.name), labelOf(BILL_TYPE_OPTIONS, item.bill_type), safe(item.amount ?? 0),
       safe(item.category), safe(item.consumption_date), safe(item.currency),
-      safe(item.source === 'durable' ? 'Item' : item.source === 'asset' ? 'Asset' : ''),
+      safe(item.source === 'durable' ? localizedEnumText('Item') : item.source === 'asset' ? localizedEnumText('Asset') : ''),
       safe(item.source_name), exportImageUrl(item.receipt_image), safe(item.notes), safe(item.created_at),
     ],
     fromRow: (get) => {
       const name = String(get('Name') ?? '').trim();
       if (!name) return { error: 'Name is required' };
-      const amount = parseFloat(get('Amount'));
-      if (Number.isNaN(amount)) return { error: `Amount must be a number, got "${get('Amount')}"` };
+      const amount = nonNegativeNumber(get('Amount'), null);
+      if (amount === null) return { error: `Amount must be a non-negative number, got "${get('Amount')}"` };
       const typeRaw = String(get('Type') ?? '').trim();
       const billType = keyOf(BILL_TYPE_OPTIONS, typeRaw, 'expense');
       if (billType === null) return { error: `Invalid Type "${typeRaw}" (use ${optionLabels(BILL_TYPE_OPTIONS)})` };
       const consumptionDate = normalizeDate(get('Consumption Date'));
       if (!validDate(consumptionDate)) return { error: 'Consumption Date must be YYYY-MM-DD' };
-      const sourceType = String(get('Billing Object Type') ?? '').trim();
-      if (sourceType && !['item', 'asset'].includes(sourceType.toLowerCase())) {
-        return { error: 'Billing Object Type must be Item or Asset' };
-      }
+      const sourceTypeRaw = String(get('Billing Object Type') ?? '').trim();
+      const sourceType = keyOf(BILLING_OBJECT_TYPES, sourceTypeRaw, '');
+      if (sourceType === null) return { error: 'Billing Object Type must be Item or Asset' };
       if (String(get('Billing Object') ?? '').trim() && !sourceType) {
         return { error: 'Billing Object Type is required when Billing Object is set' };
       }
       const image = String(get('Receipt Image URL') ?? '').trim();
       if (!validUrl(image)) return { error: 'Receipt Image URL must start with http:// or https://' };
+      const currency = normalizeCurrency(get('Currency'));
+      if (!currency) return { error: `Invalid Currency "${get('Currency')}"` };
       return {
         data: {
           name,
@@ -326,14 +408,14 @@ export const EXPORT_MODULES = [
           amount,
           category: String(get('Category') ?? '').trim(),
           consumption_date: consumptionDate || null,
-          currency: String(get('Currency') ?? '').trim() || DEFAULT_CURRENCY,
+          currency,
           _source_type: sourceType,
           _source_name: String(get('Billing Object') ?? '').trim(),
           receipt_image: image || null,
           notes: String(get('Notes') ?? '').trim(),
           source: '',
           source_id: null,
-          created_at: nowIso(),
+          created_at: importedTimestamp(get),
         },
       };
     },
@@ -349,19 +431,14 @@ export const EXPORT_MODULES = [
     ],
     example: [
       'Quarterly review', 'High', 'Not Started', '2025-07-10', '2025-07-15',
-      'Yes', '1', '1. [☐] Prepare slides', '', '', nowIso(),
+      'Yes', '1', '1. Pending: Prepare slides', '', '', nowIso(),
     ],
-    toRow: (item) => {
-      const checklist = parseChecklist(item.checklist)
-        .map((c, i) => `${i + 1}. [${c.done ? '✓' : '☐'}] ${c.text ?? ''}`)
-        .join('\n');
-      return [
+    toRow: (item) => [
         safe(item.title), labelOf(SCHEDULE_PRIORITIES, item.priority),
         labelOf(SCHEDULE_STATUS_OPTIONS, item.status), safe(item.start_date), safe(item.end_date),
         yesNo(item.reminder_enabled), safe(item.reminder_days_before),
-        checklist, exportImageUrl(item.image), safe(item.notes), safe(item.created_at),
-      ];
-    },
+        formatChecklist(item.checklist), exportImageUrl(item.image), safe(item.notes), safe(item.created_at),
+      ],
     fromRow: (get) => {
       const title = String(get('Title') ?? '').trim();
       if (!title) return { error: 'Title is required' };
@@ -382,6 +459,8 @@ export const EXPORT_MODULES = [
       }
       const image = String(get('Image URL') ?? '').trim();
       if (!validUrl(image)) return { error: 'Image URL must start with http:// or https://' };
+      const reminderEnabled = booleanValue(get('Reminder'));
+      if (reminderEnabled === null) return { error: 'Reminder must be Yes or No' };
       return {
         data: {
           title,
@@ -389,12 +468,12 @@ export const EXPORT_MODULES = [
           status,
           start_date: startDate || null,
           end_date: endDate || null,
-          reminder_enabled: isAffirmative(get('Reminder')) ? 1 : 0,
+          reminder_enabled: reminderEnabled,
           reminder_days_before: reminderDaysBefore,
-          checklist: '[]',
+          checklist: JSON.stringify(parseImportedChecklist(get('Checklist'))),
           image: image || null,
           notes: String(get('Notes') ?? '').trim(),
-          created_at: nowIso(),
+          created_at: importedTimestamp(get),
         },
       };
     },
@@ -411,7 +490,7 @@ export const EXPORT_MODULES = [
     toRow: (item) => {
       const weather = WEATHER_OPTIONS.find((w) => w.key === item.weather);
       return [
-        safe(item.title), safe(item.date), weather ? weather.label : safe(item.weather),
+        safe(item.title), safe(item.date), weather ? localizedEnumText(weather.label) : safe(item.weather),
         safe(item.content), exportImageUrl(item.image), safe(item.created_at),
       ];
     },
@@ -420,6 +499,7 @@ export const EXPORT_MODULES = [
       if (!validDate(date)) return { error: 'Date must be YYYY-MM-DD' };
       const weatherRaw = String(get('Weather') ?? '').trim();
       const weather = keyOf(WEATHER_OPTIONS, weatherRaw, null);
+      if (weatherRaw && weather === null) return { error: `Invalid Weather "${weatherRaw}"` };
       const image = String(get('Image URL') ?? '').trim();
       if (!validUrl(image)) return { error: 'Image URL must start with http:// or https://' };
       return {
@@ -429,7 +509,7 @@ export const EXPORT_MODULES = [
           weather: weather || weatherRaw || null,
           content: String(get('Content') ?? '').trim(),
           image: image || null,
-          created_at: nowIso(),
+          created_at: importedTimestamp(get),
         },
       };
     },
@@ -466,10 +546,14 @@ export const EXPORT_MODULES = [
       const reminderType = keyOf(REMINDER_TYPES, reminderTypeRaw, 'annual');
       if (reminderType === null) return { error: `Invalid Reminder Type "${reminderTypeRaw}" (use ${optionLabels(REMINDER_TYPES)})` };
       const daysRaw = String(get('Days Before') ?? '').trim();
-      const daysBefore = daysRaw === '' ? 1 : parseInt(daysRaw, 10);
-      if (Number.isNaN(daysBefore) || daysBefore < 0) return { error: 'Days Before must be a non-negative integer' };
+      const daysBefore = daysRaw === '' ? 1 : Number(daysRaw);
+      if (!Number.isInteger(daysBefore) || daysBefore < 0 || daysBefore > 365) {
+        return { error: 'Days Before must be an integer from 0 to 365' };
+      }
       const image = String(get('Image URL') ?? '').trim();
       if (!validUrl(image)) return { error: 'Image URL must start with http:// or https://' };
+      const reminderEnabled = booleanValue(get('Reminder'));
+      if (reminderEnabled === null) return { error: 'Reminder must be Yes or No' };
       return {
         data: {
           name,
@@ -477,12 +561,12 @@ export const EXPORT_MODULES = [
           type,
           category: String(get('Category') ?? '').trim(),
           priority,
-          reminder_enabled: isAffirmative(get('Reminder')) ? 1 : 0,
+          reminder_enabled: reminderEnabled,
           reminder_type: reminderType,
           reminder_days_before: daysBefore,
           image: image || null,
           notes: String(get('Notes') ?? '').trim(),
-          created_at: nowIso(),
+          created_at: importedTimestamp(get),
         },
       };
     },
@@ -507,14 +591,16 @@ export const EXPORT_MODULES = [
         return { error: 'Budget amounts must be non-negative numbers' };
       }
       if (expense <= 0 && income <= 0) return { error: 'At least one budget amount is required' };
+      const currency = normalizeCurrency(get('Currency'));
+      if (!currency) return { error: `Invalid Currency "${get('Currency')}"` };
       return {
         data: {
           year,
           expense_budget: expense,
           income_target: income,
-          currency: String(get('Currency') ?? '').trim() || DEFAULT_CURRENCY,
-          created_at: nowIso(),
-          updated_at: nowIso(),
+          currency,
+          created_at: importedTimestamp(get),
+          updated_at: importedTimestamp(get),
         },
       };
     },
@@ -525,12 +611,12 @@ export const EXPORT_MODULES = [
     table: 'check_ins',
     dateField: 'check_date',
     headers: ['Date', enumHeader('Mood', MOODS.map((mood) => mood.label)), 'Score', 'Created At'],
-    example: ['2025-07-01', 'Happy (😊)', 5, nowIso()],
+    example: ['2025-07-01', 'Happy', 5, nowIso()],
     toRow: (item) => {
       const mood = MOODS.find((m) => m.key === item.mood);
       return [
         safe(item.check_date),
-        mood ? `${mood.label} (${mood.emoji})` : safe(item.mood),
+        mood ? localizedEnumText(mood.label) : safe(item.mood),
         mood ? mood.score : '',
         safe(item.created_at),
       ];
@@ -538,19 +624,23 @@ export const EXPORT_MODULES = [
     fromRow: (get) => {
       const date = normalizeDate(get('Date'));
       if (!date) return { error: 'Date is required' };
-      if (!DATE_RE.test(date)) return { error: 'Date must be YYYY-MM-DD' };
+      if (!validDate(date)) return { error: 'Date must be YYYY-MM-DD' };
       const raw = String(get('Mood') ?? '').trim();
       if (!raw) return { error: 'Mood is required' };
       const lower = raw.toLowerCase();
       const mood = MOODS.find(
-        (m) => m.key === lower || m.label.toLowerCase() === lower || raw.includes(m.emoji),
+        (m) =>
+          m.key === lower ||
+          m.label.toLowerCase() === lower ||
+          localizedEnumText(m.label, 'zh-CN').toLowerCase() === lower ||
+          raw.includes(m.emoji),
       );
       if (!mood) return { error: `Unknown mood "${raw}"` };
       return {
         data: {
           check_date: date,
           mood: mood.key,
-          created_at: nowIso(),
+          created_at: importedTimestamp(get),
         },
       };
     },
@@ -565,7 +655,7 @@ export const moduleById = (id) => EXPORT_MODULES.find((m) => m.id === id) || nul
 export function buildWorkbook(mod, rows) {
   const aoa = [
     mod.headers.map(localizedHeader),
-    ...rows.map((row) => formatTimestampColumns(mod.headers, mod.toRow(row))),
+    ...rows.map((row) => stringifyRow(formatTimestampColumns(mod.headers, mod.toRow(row)))),
   ];
   const ws = XLSX.utils.aoa_to_sheet(aoa);
   const wb = XLSX.utils.book_new();
@@ -577,7 +667,7 @@ export function buildWorkbook(mod, rows) {
 export function buildTemplateWorkbook(mod) {
   const ws = XLSX.utils.aoa_to_sheet([
     mod.headers.map(localizedHeader),
-    formatTimestampColumns(mod.headers, localizedExample(mod.example)),
+    stringifyRow(formatTimestampColumns(mod.headers, localizedExample(mod.example))),
   ]);
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, mod.label);
@@ -597,21 +687,32 @@ export function readSheetRows(buffer) {
   return XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
 }
 
-/** Header → cell accessor for one data row (exact header match). */
+function headerMatches(candidateHeader, headerKey) {
+  const normalizedKey = splitHeader(headerKey).base;
+  const candidate = splitHeader(candidateHeader).base;
+  const labels = HEADER_LABELS[normalizedKey];
+  return (
+    candidate.toLocaleLowerCase() === normalizedKey.toLocaleLowerCase() ||
+    Object.values(labels || {}).some(
+      (label) => label.toLocaleLowerCase() === candidate.toLocaleLowerCase(),
+    ) ||
+    (LEGACY_HEADER_LABELS[normalizedKey] || []).some(
+      (label) => label.toLocaleLowerCase() === candidate.toLocaleLowerCase(),
+    )
+  );
+}
+
+/** Return localized expected headers that are absent from an imported sheet. */
+export function missingHeaders(mod, headers) {
+  return mod.headers
+    .filter((header) => !headers.some((candidate) => headerMatches(candidate, header)))
+    .map(localizedHeader);
+}
+
+/** Header → cell accessor for one data row (localized and legacy headers supported). */
 export function makeGetter(headers, row) {
   return (headerKey) => {
-    const normalizedKey = String(headerKey).trim().replace(/\s*\([^)]*\)\s*$/, '');
-    const idx = headers.findIndex(
-      (h) => {
-        const candidate = String(h ?? '').trim().replace(/\s*\([^)]*\)\s*$/, '');
-        const labels = HEADER_LABELS[normalizedKey];
-        return (
-          candidate === normalizedKey ||
-          Object.values(labels || {}).includes(candidate) ||
-          (LEGACY_HEADER_LABELS[normalizedKey] || []).includes(candidate)
-        );
-      },
-    );
+    const idx = headers.findIndex((header) => headerMatches(header, headerKey));
     if (idx < 0 || idx >= row.length) return '';
     return row[idx];
   };

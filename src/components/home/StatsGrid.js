@@ -54,9 +54,9 @@ export default function StatsGrid({ durables = [], schedules = [], assets = [] }
 
   const STATS = [
     { value: String(durableCount), label: t('home.statDurables'), icon: 'cube-outline', color: Colors.textPrimary },
-    { value: String(activeSchedules), label: t('home.statSchedules'), icon: 'calendar-outline', color: '#A05C82' },
-    { value: String(assetCount), label: t('home.statAssets'), icon: 'wallet-outline', color: '#F28B50' },
-    { value: completion, label: t('home.statCompletion'), icon: 'checkmark-circle-outline', color: '#4AA868' },
+    { value: String(activeSchedules), label: t('home.statSchedules'), icon: 'calendar-outline', color: Colors.purple },
+    { value: String(assetCount), label: t('home.statAssets'), icon: 'wallet-outline', color: Colors.orange },
+    { value: completion, label: t('home.statCompletion'), icon: 'checkmark-circle-outline', color: Colors.green },
   ];
 
   return (

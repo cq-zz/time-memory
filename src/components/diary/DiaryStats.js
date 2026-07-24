@@ -13,6 +13,7 @@ export default function DiaryStats({ stats }) {
 
   return (
     <ModuleStatsCard
+      compact
       label={t('diary.totalEntries')}
       value={totalCount}
       pills={[

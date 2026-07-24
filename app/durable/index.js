@@ -1,13 +1,14 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/utils/theme';
-import { useSettingsStore } from '../../src/store/settings';
-import { listDurables, durableStats } from '../../src/services/durable';
+import { formatMoney, useSettingsStore } from '../../src/store/settings';
+import { effectiveStatus, listDurables } from '../../src/services/durable';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
+import ModuleOverviewCard from '../../src/components/common/ModuleOverviewCard';
 import DurablesStats from '../../src/components/durables/DurablesStats';
 import YearMonthPicker from '../../src/components/common/YearMonthPicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
@@ -26,7 +27,6 @@ export default function DurablesScreen() {
   const currency = useSettingsStore((s) => s.settings.currency);
 
   const [items, setItems] = useState([]);
-  const [stats, setStats] = useState(null);
   const [year, setYear] = useState(null); // null = All
   const [month, setMonth] = useState(null); // null = full year
   const [search, setSearch] = useState('');
@@ -35,9 +35,7 @@ export default function DurablesScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [rows, st] = await Promise.all([listDurables(), durableStats()]);
-      setItems(rows);
-      setStats(st);
+      setItems(await listDurables());
     } finally {
       setLoading(false);
     }
@@ -50,44 +48,86 @@ export default function DurablesScreen() {
     }, [load])
   );
 
+  const stats = useMemo(() => {
+    const datePrefix = year != null
+      ? month != null
+        ? `${year}-${String(month).padStart(2, '0')}`
+        : String(year)
+      : '';
+    const query = search.trim().toLowerCase();
+    const filtered = items.filter((item) => {
+      if (datePrefix && !(item.purchase_date || '').startsWith(datePrefix)) return false;
+      if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
+      if (query && !(item.name || '').toLowerCase().includes(query)) return false;
+      return true;
+    });
+    const inUse = filtered.filter((item) => effectiveStatus(item) === 'in_use');
+    return {
+      inUseValue: inUse.reduce((sum, item) => sum + (Number(item.purchase_price) || 0), 0),
+      inUseCount: inUse.length,
+      totalCount: filtered.length,
+    };
+  }, [items, year, month, search, filter]);
+
+  const allStats = useMemo(() => {
+    const inUseCount = items.filter((item) => effectiveStatus(item) === 'in_use').length;
+    return {
+      inUseValue: items.reduce(
+        (sum, item) => effectiveStatus(item) === 'in_use'
+          ? sum + (Number(item.purchase_price) || 0)
+          : sum,
+        0,
+      ),
+      inUseCount,
+      archivedCount: items.length - inUseCount,
+    };
+  }, [items]);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
       <ModuleHeader title={t('nav.durable')} />
+
+      <View style={styles.overviewSection}>
+        <ModuleOverviewCard
+          label={t('durable.inUseTotalValue')}
+          value={formatMoney(allStats.inUseValue, currency)}
+          activeCount={allStats.inUseCount}
+          activeLabel={t('durable.inUse')}
+          archivedCount={allStats.archivedCount}
+          archivedLabel={t('durable.disposed')}
+        />
+      </View>
+
+      <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
+        <YearMonthPicker
+          year={year}
+          month={month}
+          showAllOption
+          style={styles.dateFilter}
+          onChange={({ year: y, month: m }) => {
+            setYear(y);
+            setMonth(m);
+          }}
+        />
+        <SearchFilterBar
+          search={search}
+          onSearchChange={setSearch}
+          filter={filter}
+          onFilterChange={setFilter}
+          filters={DURABLE_FILTERS}
+          placeholder={t('durable.searchPlaceholder')}
+        />
+      </View>
+
+      <View style={styles.statsSection}>
+        <DurablesStats stats={stats} currency={currency} />
+      </View>
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[1]}
       >
-        {/* Index 0 — stats (scrolls away) */}
-        <View style={styles.statsSection}>
-          <DurablesStats stats={stats} currency={currency} />
-        </View>
-
-        {/* Index 1 — sticky filter bar (date + search + status) */}
-        <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
-          <YearMonthPicker
-            year={year}
-            month={month}
-            showAllOption
-            style={styles.dateFilter}
-            onChange={({ year: y, month: m }) => {
-              setYear(y);
-              setMonth(m);
-            }}
-          />
-          <SearchFilterBar
-            search={search}
-            onSearchChange={setSearch}
-            filter={filter}
-            onFilterChange={setFilter}
-            filters={DURABLE_FILTERS}
-            placeholder={t('durable.searchPlaceholder')}
-          />
-        </View>
-
-        {/* Index 2 — list */}
         <View style={styles.listSection}>
           <ItemsList
             items={items}
@@ -123,21 +163,24 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 112,
   },
+  overviewSection: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
   statsSection: {
     paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   dateFilter: {
     marginBottom: 12,
   },
   stickyBar: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
   listSection: {
     paddingHorizontal: 16,
-    paddingTop: 16,
   },
   fab: {
     position: 'absolute',

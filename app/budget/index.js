@@ -156,7 +156,6 @@ const styles = StyleSheet.create({
   },
   listSection: {
     paddingHorizontal: 16,
-    paddingTop: 16,
   },
   card: {
     padding: 16,

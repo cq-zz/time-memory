@@ -182,12 +182,12 @@ export const ACQUISITION_METHODS = [
 
 export const DURABLE_STATUS_OPTIONS = [
   { key: 'in_use', label: 'In Use' },
-  { key: 'disposed', label: 'Disposed' },
+  { key: 'disposed', label: 'Archived', aliases: ['Disposed', '已处置'] },
 ];
 
 export const ASSET_STATUS_OPTIONS = [
   { key: 'active', label: 'Active' },
-  { key: 'disposed', label: 'Disposed' },
+  { key: 'disposed', label: 'Archived', aliases: ['Disposed', '已处置'] },
 ];
 
 // ══════════════════════════════════════════════════

@@ -1,11 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/utils/theme';
-import { diaryStats, listDiaries } from '../../src/services/diary';
+import { listDiaries } from '../../src/services/diary';
 import { hasPassword } from '../../src/utils/password';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import YearMonthPicker from '../../src/components/common/YearMonthPicker';
@@ -21,7 +21,6 @@ export default function DiaryScreen() {
 
   const now = new Date();
   const [items, setItems] = useState([]);
-  const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(null);
@@ -32,10 +31,9 @@ export default function DiaryScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [rows, summary] = await Promise.all([listDiaries(), diaryStats()]);
+      const [rows, passwordSet] = await Promise.all([listDiaries(), hasPassword()]);
       setItems(rows);
-      setStats(summary);
-      setHasPwd(await hasPassword());
+      setHasPwd(passwordSet);
     } finally {
       setLoading(false);
     }
@@ -46,6 +44,29 @@ export default function DiaryScreen() {
       load();
     }, [load])
   );
+
+  const stats = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const filtered = items.filter((item) => {
+      const itemDate = typeof item?.date === 'string' ? item.date : '';
+      if (year != null && itemDate && Number(itemDate.slice(0, 4)) !== year) return false;
+      if (month != null && itemDate && Number(itemDate.slice(5, 7)) !== month) return false;
+      if (
+        query &&
+        !String(item?.title || '').toLowerCase().includes(query) &&
+        !String(item?.content || '').toLowerCase().includes(query)
+      ) {
+        return false;
+      }
+      return true;
+    });
+    const currentYear = String(new Date().getFullYear());
+    return {
+      totalCount: filtered.length,
+      currentYearCount: filtered.filter((item) => String(item?.date || '').startsWith(currentYear)).length,
+      privateCount: filtered.filter((item) => Number(item?.is_private) === 1).length,
+    };
+  }, [items, year, month, search]);
 
   const handlePressItem = (item) => {
     if (Number(item.is_private) === 1 && hasPwd) {
@@ -60,37 +81,35 @@ export default function DiaryScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
       <ModuleHeader title={t('nav.diary')} />
 
+      <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
+        <YearMonthPicker
+          year={year}
+          month={month}
+          style={styles.dateFilter}
+          onChange={({ year: y, month: m }) => {
+            setYear(y);
+            setMonth(m);
+          }}
+        />
+        <SearchFilterBar
+          search={search}
+          onSearchChange={setSearch}
+          filter="all"
+          onFilterChange={() => {}}
+          filters={[]}
+          placeholder={t('diary.searchPlaceholder')}
+        />
+      </View>
+
+      <View style={styles.statsSection}>
+        <DiaryStats stats={stats} />
+      </View>
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[1]}
       >
-        <View style={styles.statsSection}>
-          <DiaryStats stats={stats} />
-        </View>
-
-        <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
-          <YearMonthPicker
-            year={year}
-            month={month}
-            style={styles.dateFilter}
-            onChange={({ year: y, month: m }) => {
-              setYear(y);
-              setMonth(m);
-            }}
-          />
-          <SearchFilterBar
-            search={search}
-            onSearchChange={setSearch}
-            filter="all"
-            onFilterChange={() => {}}
-            filters={[]}
-            placeholder={t('diary.searchPlaceholder')}
-          />
-        </View>
-
-        {/* Index 1 — list */}
         <View style={styles.listSection}>
           <DiaryList
             items={items}
@@ -136,19 +155,18 @@ const styles = StyleSheet.create({
   },
   statsSection: {
     paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   dateFilter: {
     marginBottom: 12,
   },
   stickyBar: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
   listSection: {
     paddingHorizontal: 16,
-    paddingTop: 16,
   },
   fab: {
     position: 'absolute',

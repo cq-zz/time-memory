@@ -13,6 +13,8 @@ export default function AssetsStats({ stats, currency }) {
 
   return (
     <ModuleStatsCard
+      compact
+      pillsTopRight
       label={t('asset.totalValue')}
       value={value}
       pills={[

@@ -1,13 +1,14 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/utils/theme';
-import { useSettingsStore } from '../../src/store/settings';
-import { listAssets, assetStats } from '../../src/services/asset';
+import { formatMoney, useSettingsStore } from '../../src/store/settings';
+import { displayValue, effectiveStatus, listAssets } from '../../src/services/asset';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
+import ModuleOverviewCard from '../../src/components/common/ModuleOverviewCard';
 import AssetsStats from '../../src/components/assets/AssetsStats';
 import YearMonthPicker from '../../src/components/common/YearMonthPicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
@@ -26,7 +27,6 @@ export default function AssetsScreen() {
   const currency = useSettingsStore((s) => s.settings.currency);
 
   const [items, setItems] = useState([]);
-  const [stats, setStats] = useState(null);
   const [year, setYear] = useState(null);
   const [month, setMonth] = useState(null);
   const [search, setSearch] = useState('');
@@ -35,9 +35,7 @@ export default function AssetsScreen() {
 
   const load = useCallback(async () => {
     try {
-      const [rows, st] = await Promise.all([listAssets(), assetStats()]);
-      setItems(rows);
-      setStats(st);
+      setItems(await listAssets());
     } finally {
       setLoading(false);
     }
@@ -50,44 +48,80 @@ export default function AssetsScreen() {
     }, [load])
   );
 
+  const stats = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const filtered = items.filter((item) => {
+      if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
+      if (year != null && item.purchase_date && Number(item.purchase_date.slice(0, 4)) !== year) return false;
+      if (month != null && item.purchase_date && Number(item.purchase_date.slice(5, 7)) !== month) return false;
+      if (query && !(item.name || '').toLowerCase().includes(query)) return false;
+      return true;
+    });
+    const active = filtered.filter((item) => effectiveStatus(item) === 'active');
+    return {
+      totalValue: active.reduce((sum, item) => sum + displayValue(item), 0),
+      activeCount: active.length,
+      totalCount: filtered.length,
+    };
+  }, [items, year, month, search, filter]);
+
+  const allStats = useMemo(() => {
+    const activeCount = items.filter((item) => effectiveStatus(item) === 'active').length;
+    return {
+      totalValue: items.reduce(
+        (sum, item) => effectiveStatus(item) === 'active' ? sum + displayValue(item) : sum,
+        0,
+      ),
+      activeCount,
+      archivedCount: items.length - activeCount,
+    };
+  }, [items]);
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
       <ModuleHeader title={t('nav.asset')} />
+
+      <View style={styles.overviewSection}>
+        <ModuleOverviewCard
+          label={t('asset.totalValue')}
+          value={formatMoney(allStats.totalValue, currency)}
+          activeCount={allStats.activeCount}
+          activeLabel={t('asset.active')}
+          archivedCount={allStats.archivedCount}
+          archivedLabel={t('asset.disposed')}
+        />
+      </View>
+
+      <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
+        <YearMonthPicker
+          year={year}
+          month={month}
+          showAllOption
+          style={styles.dateFilter}
+          onChange={({ year: y, month: m }) => {
+            setYear(y);
+            setMonth(m);
+          }}
+        />
+        <SearchFilterBar
+          search={search}
+          onSearchChange={setSearch}
+          filter={filter}
+          onFilterChange={setFilter}
+          filters={ASSET_FILTERS}
+          placeholder={t('asset.searchPlaceholder')}
+        />
+      </View>
+
+      <View style={styles.statsSection}>
+        <AssetsStats stats={stats} currency={currency} />
+      </View>
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[1]}
       >
-        {/* Index 0 — stats (scrolls away) */}
-        <View style={styles.statsSection}>
-          <AssetsStats stats={stats} currency={currency} />
-        </View>
-
-        {/* Index 1 — sticky filter bar (search + status) */}
-        <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
-          <YearMonthPicker
-            year={year}
-            month={month}
-            showAllOption
-            style={styles.dateFilter}
-            onChange={({ year: y, month: m }) => {
-              setYear(y);
-              setMonth(m);
-            }}
-          />
-          <SearchFilterBar
-            search={search}
-            onSearchChange={setSearch}
-            filter={filter}
-            onFilterChange={setFilter}
-            filters={ASSET_FILTERS}
-            placeholder={t('asset.searchPlaceholder')}
-          />
-        </View>
-
-        {/* Index 2 — list */}
         <View style={styles.listSection}>
           <AssetsList
             items={items}
@@ -123,21 +157,24 @@ const styles = StyleSheet.create({
   content: {
     paddingBottom: 112,
   },
+  overviewSection: {
+    paddingHorizontal: 16,
+    paddingBottom: 10,
+  },
   statsSection: {
     paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   dateFilter: {
     marginBottom: 12,
   },
   stickyBar: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
   listSection: {
     paddingHorizontal: 16,
-    paddingTop: 16,
   },
   fab: {
     position: 'absolute',

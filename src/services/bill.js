@@ -27,7 +27,7 @@ export async function getBill(id) {
 
 /**
  * Create or update a bill.
- * - name is required, amount must be > 0
+ * - name and consumption date are required, amount must be > 0
  * - bill_type defaults to 'expense'
  * - currency is stamped from the current setting
  * Throws an Error with a message key on validation failure.
@@ -36,9 +36,13 @@ export async function saveBill(values, id) {
   const now = new Date().toISOString();
   const fields = { ...values };
   if (!fields.name || !fields.name.trim()) throw new Error('nameRequired');
+  if (!fields.consumption_date || !String(fields.consumption_date).trim()) {
+    throw new Error('dateRequired');
+  }
   const amount = Number(fields.amount);
   if (!Number.isFinite(amount) || amount <= 0) throw new Error('amountInvalid');
   fields.name = fields.name.trim();
+  fields.consumption_date = String(fields.consumption_date).trim();
   fields.amount = amount;
   fields.bill_type = fields.bill_type === 'income' ? 'income' : 'expense';
   fields.currency = useSettingsStore.getState().settings.currency;

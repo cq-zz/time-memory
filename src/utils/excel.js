@@ -37,7 +37,7 @@ const formatExcelDateTime = (value) => {
 
 const ENUM_TEXT_ZH = {
   Purchase: '购买', Gift: '赠送', Reward: '奖励', Inherit: '继承', Homemade: '自制', Other: '其他',
-  'In Use': '使用中', Disposed: '已处置', Active: '持有中',
+  'In Use': '使用中', Archived: '已归档', Disposed: '已处置', Active: '持有中',
   Expense: '支出', Income: '收入', High: '高', Medium: '中', Low: '低',
   'Not Started': '未开始', 'In Progress': '进行中', Done: '已完成', Incomplete: '未完成',
   Sunny: '晴', 'Clear Night': '晴夜', 'Partly Cloudy': '局部多云', Cloudy: '多云',
@@ -69,7 +69,8 @@ const keyOf = (options, raw, fallback) => {
     (x) =>
       x.label.toLowerCase() === t ||
       localizedEnumText(x.label, 'zh-CN').toLowerCase() === t ||
-      x.key.toLowerCase() === t,
+      x.key.toLowerCase() === t ||
+      (x.aliases || []).some((alias) => String(alias).toLowerCase() === t),
   );
   return o ? o.key : null;
 };
@@ -88,11 +89,13 @@ const HEADER_LABELS = {
   Name: { en: 'Name', 'zh-CN': '名称' }, Title: { en: 'Title', 'zh-CN': '标题' },
   Category: { en: 'Category', 'zh-CN': '类别' }, 'Acquisition Method': { en: 'Acquisition Method', 'zh-CN': '获取方式' },
   'Purchase Date': { en: 'Acquisition Date', 'zh-CN': '获取日期' }, Value: { en: 'Value', 'zh-CN': '价值' },
-  Status: { en: 'Status', 'zh-CN': '状态' }, 'Expected Lifespan': { en: 'Expected Lifespan', 'zh-CN': '预计使用寿命' },
-  'Expiry Date': { en: 'Expiry Date', 'zh-CN': '到期日期' }, Currency: { en: 'Currency', 'zh-CN': '币种' },
+  Status: { en: 'Status', 'zh-CN': '状态' }, 'Expected End Date': { en: 'Expected End Date', 'zh-CN': '期望使用截止日期' },
+  'Durable Expiry Date': { en: 'Expiry Date', 'zh-CN': '过期日期' },
+  'Asset Expiry Date': { en: 'Expiry Date', 'zh-CN': '失效日期' },
+  Currency: { en: 'Currency', 'zh-CN': '币种' },
   'Linked Asset': { en: 'Linked Asset', 'zh-CN': '关联资产' }, 'Image URL': { en: 'Image URL', 'zh-CN': '图片链接' },
   Notes: { en: 'Notes', 'zh-CN': '备注' }, 'Created At': { en: 'Created At', 'zh-CN': '创建时间' },
-  'Current Price': { en: 'Current Price', 'zh-CN': '当前价值' }, 'Updated At': { en: 'Updated At', 'zh-CN': '更新时间' },
+  'Current Price': { en: 'Current Price', 'zh-CN': '当前估值' }, 'Updated At': { en: 'Updated At', 'zh-CN': '更新时间' },
   Type: { en: 'Type', 'zh-CN': '类型' }, Amount: { en: 'Amount', 'zh-CN': '金额' },
   'Consumption Date': { en: 'Consumption Date', 'zh-CN': '日期' }, 'Billing Object Type': { en: 'Billing Object Type', 'zh-CN': '记账对象类型' },
   'Billing Object': { en: 'Billing Object', 'zh-CN': '记账对象' }, 'Receipt Image URL': { en: 'Receipt Image URL', 'zh-CN': '凭证图片链接' },
@@ -108,8 +111,11 @@ const HEADER_LABELS = {
 const LEGACY_HEADER_LABELS = {
   'Purchase Date': ['Purchase Date', '购买日期'],
   Value: ['Purchase Price', 'Price', '购买价格', '取得成本'],
-  'Current Price': ['Current Value', '当前估值'],
+  'Current Price': ['Current Value', '当前价值'],
   'Consumption Date': ['消费日期'],
+  'Expected End Date': ['Expected Lifespan', 'Expected End', '预计使用寿命', '期望使用截止'],
+  'Durable Expiry Date': ['Expiry Date', '到期日期', '过期日期'],
+  'Asset Expiry Date': ['Expiry Date', '到期日期', '失效日期'],
   Checklist: ['检查清单', '检查清'],
 };
 
@@ -251,11 +257,11 @@ export const EXPORT_MODULES = [
     dateField: 'purchase_date',
     headers: [
       'Name', 'Category', optionHeader('Acquisition Method', ACQUISITION_METHODS), 'Purchase Date', 'Value',
-      optionHeader('Status', DURABLE_STATUS_OPTIONS), 'Expected Lifespan', 'Expiry Date', CURRENCY_HEADER, 'Linked Asset', 'Image URL', 'Notes', 'Created At',
+      optionHeader('Status', DURABLE_STATUS_OPTIONS), 'Expected End Date', 'Durable Expiry Date', CURRENCY_HEADER, 'Linked Asset', 'Image URL', 'Notes', 'Created At',
     ],
     example: [
       'Sony WH-1000XM5', 'electronics', 'Purchase', '2025-06-01', 349,
-      'In Use', '60', '', 'USD', '', '', 'Headphones', nowIso(),
+      'In Use', '2030-06-01', '', 'USD', '', '', 'Headphones', nowIso(),
     ],
     toRow: (item) => [
       safe(item.name), safe(item.category), labelOf(ACQUISITION_METHODS, item.acquisition_method),
@@ -274,7 +280,9 @@ export const EXPORT_MODULES = [
       const statusRaw = String(get('Status') ?? '').trim();
       const status = keyOf(DURABLE_STATUS_OPTIONS, statusRaw, 'in_use');
       if (status === null) return { error: `Invalid Status "${statusRaw}" (use ${optionLabels(DURABLE_STATUS_OPTIONS)})` };
-      const expiryDate = normalizeDate(get('Expiry Date'));
+      const expectedEndDate = normalizeDate(get('Expected End Date'));
+      if (!validDate(expectedEndDate)) return { error: 'Expected End Date must be YYYY-MM-DD' };
+      const expiryDate = normalizeDate(get('Durable Expiry Date'));
       if (!validDate(expiryDate)) return { error: 'Expiry Date must be YYYY-MM-DD' };
       const image = String(get('Image URL') ?? '').trim();
       if (!validUrl(image)) return { error: 'Image URL must start with http:// or https://' };
@@ -290,7 +298,7 @@ export const EXPORT_MODULES = [
           purchase_date: purchaseDate || null,
           purchase_price: value,
           status,
-          expected_lifespan: String(get('Expected Lifespan') ?? '').trim() || null,
+          expected_lifespan: expectedEndDate || null,
           expiry_date: expiryDate || null,
           currency,
           _linked_asset_name: String(get('Linked Asset') ?? '').trim(),
@@ -309,7 +317,7 @@ export const EXPORT_MODULES = [
     dateField: 'purchase_date',
     headers: [
       'Name', 'Category', optionHeader('Acquisition Method', ACQUISITION_METHODS), optionHeader('Status', ASSET_STATUS_OPTIONS), 'Purchase Date', 'Value',
-      'Current Price', 'Expiry Date', CURRENCY_HEADER, 'Image URL', 'Notes', 'Created At', 'Updated At',
+      'Current Price', 'Asset Expiry Date', CURRENCY_HEADER, 'Image URL', 'Notes', 'Created At', 'Updated At',
     ],
     example: [
       'Gold Bar 100g', 'gold', 'Purchase', 'Active', '2024-03-15', 6800,
@@ -332,7 +340,7 @@ export const EXPORT_MODULES = [
       if (status === null) return { error: `Invalid Status "${statusRaw}" (use ${optionLabels(ASSET_STATUS_OPTIONS)})` };
       const purchaseDate = normalizeDate(get('Purchase Date'));
       if (!validDate(purchaseDate)) return { error: 'Purchase Date must be YYYY-MM-DD' };
-      const expiryDate = normalizeDate(get('Expiry Date'));
+      const expiryDate = normalizeDate(get('Asset Expiry Date'));
       if (!validDate(expiryDate)) return { error: 'Expiry Date must be YYYY-MM-DD' };
       const image = String(get('Image URL') ?? '').trim();
       if (!validUrl(image)) return { error: 'Image URL must start with http:// or https://' };
@@ -390,6 +398,7 @@ export const EXPORT_MODULES = [
       const billType = keyOf(BILL_TYPE_OPTIONS, typeRaw, 'expense');
       if (billType === null) return { error: `Invalid Type "${typeRaw}" (use ${optionLabels(BILL_TYPE_OPTIONS)})` };
       const consumptionDate = normalizeDate(get('Consumption Date'));
+      if (!consumptionDate) return { error: 'Consumption Date is required' };
       if (!validDate(consumptionDate)) return { error: 'Consumption Date must be YYYY-MM-DD' };
       const sourceTypeRaw = String(get('Billing Object Type') ?? '').trim();
       const sourceType = keyOf(BILLING_OBJECT_TYPES, sourceTypeRaw, '');

@@ -38,7 +38,6 @@ export default function AssetStatsGrid({
   purchaseDateText,
   purchasePriceText,
   expiryDateText,
-  currentValueText,
   companionText,
 }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
@@ -58,7 +57,6 @@ export default function AssetStatsGrid({
         </View>
         <View style={styles.row}>
           <StatCard label={t('asset.expiryDate')} value={expiryDateText} />
-          <StatCard label={t('detail.currentValue')} value={currentValueText} />
         </View>
       </View>
 

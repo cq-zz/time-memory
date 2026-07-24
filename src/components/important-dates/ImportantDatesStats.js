@@ -13,6 +13,7 @@ export default function ImportantDatesStats({ stats }) {
 
   return (
     <ModuleStatsCard
+      dense
       label={t('importantDate.nextCountdown')}
       value={nextDays === '--' ? nextDays : t('importantDate.daysLeft', { count: nextDays })}
       pills={[

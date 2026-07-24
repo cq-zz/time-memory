@@ -13,6 +13,8 @@ export default function DurablesStats({ stats, currency }) {
 
   return (
     <ModuleStatsCard
+      compact
+      pillsTopRight
       label={t('durable.inUseTotalValue')}
       value={value}
       pills={[

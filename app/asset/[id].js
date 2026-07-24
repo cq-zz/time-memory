@@ -105,7 +105,6 @@ export default function AssetDetailScreen() {
             purchaseDateText={formatDisplay(row.purchase_date)}
             purchasePriceText={priceText}
             expiryDateText={formatDisplay(row.expiry_date)}
-            currentValueText={formatMoney(value, currency)}
             companionText={days != null ? `${days} ${t('common.days')}` : '--'}
           />
           <RelatedBills

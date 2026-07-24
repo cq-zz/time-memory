@@ -1,11 +1,11 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../src/utils/theme';
-import { importantDateStats, listImportantDates } from '../../src/services/importantDate';
+import { countdownDays, listImportantDates } from '../../src/services/importantDate';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import ImportantDatesList from '../../src/components/important-dates/ImportantDatesList';
@@ -25,16 +25,13 @@ export default function ImportantDatesScreen() {
   const router = useRouter();
 
   const [items, setItems] = useState([]);
-  const [stats, setStats] = useState(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
-      const [rows, summary] = await Promise.all([listImportantDates(), importantDateStats()]);
-      setItems(rows);
-      setStats(summary);
+      setItems(await listImportantDates());
     } finally {
       setLoading(false);
     }
@@ -45,6 +42,27 @@ export default function ImportantDatesScreen() {
       load();
     }, [load])
   );
+
+  const stats = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    const filtered = items.filter((item) => {
+      if (filter !== 'all' && item?.type !== filter) return false;
+      if (query && !String(item?.name || '').toLowerCase().includes(query)) return false;
+      return true;
+    });
+    const upcoming = filtered.filter((item) => {
+      const days = countdownDays(item);
+      return days != null && days >= 0 && days <= 30;
+    });
+    return {
+      totalCount: filtered.length,
+      upcomingCount: upcoming.length,
+      nextDays: filtered.reduce((min, item) => {
+        const days = countdownDays(item);
+        return days != null && days >= 0 ? Math.min(min, days) : min;
+      }, Infinity),
+    };
+  }, [items, search, filter]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
@@ -104,7 +122,7 @@ const styles = StyleSheet.create({
   },
   stickyBar: {
     paddingHorizontal: 16,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },

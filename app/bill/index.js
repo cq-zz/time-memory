@@ -47,72 +47,67 @@ export default function BillsScreen() {
     }, [load])
   );
 
-  // Summary reflects the selected period (year/month), ignoring search/type.
+  // Summary reflects the same period, search, and type filters as the list.
   const summary = useMemo(() => {
-    const periodBills = items.filter((b) => {
+    const query = search.trim().toLowerCase();
+    const filteredBills = items.filter((b) => {
       if (year != null && b.consumption_date && Number(b.consumption_date.slice(0, 4)) !== year) return false;
       if (month != null && b.consumption_date && Number(b.consumption_date.slice(5, 7)) !== month) return false;
+      if (filter !== 'all' && b.bill_type !== filter) return false;
+      if (query && !(b.name || '').toLowerCase().includes(query)) return false;
       return true;
     });
-    return billSummary(periodBills);
-  }, [items, year, month]);
+    return billSummary(filteredBills);
+  }, [items, year, month, search, filter]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
       <ModuleHeader title={t('nav.bills')} />
 
+      <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
+        <YearMonthPicker
+          year={year}
+          month={month}
+          style={styles.dateFilter}
+          onChange={({ year: y, month: m }) => {
+            setYear(y);
+            setMonth(m);
+          }}
+        />
+        <SearchFilterBar
+          search={search}
+          onSearchChange={setSearch}
+          filter={filter}
+          onFilterChange={setFilter}
+          filters={BILL_FILTERS}
+          placeholder={t('bills.searchPlaceholder')}
+        />
+      </View>
+
+      <View style={styles.statsSection}>
+        <ModuleStatsCard
+          metrics={[
+            {
+              key: 'expense',
+              label: t('bills.totalExpense'),
+              value: formatMoney(summary.expenseTotal, currency),
+              caption: t('bills.transactionCountPill', { count: summary.expenseCount }),
+            },
+            {
+              key: 'income',
+              label: t('bills.totalIncome'),
+              value: formatMoney(summary.incomeTotal, currency),
+              caption: t('bills.transactionCountPill', { count: summary.incomeCount }),
+            },
+          ]}
+        />
+      </View>
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-        stickyHeaderIndices={[1]}
       >
-        {/* Index 0 — period summary (scrolls away) */}
-        <View style={styles.statsSection}>
-          <ModuleStatsCard
-            label={t('bills.totalExpense')}
-            value={formatMoney(summary.expenseTotal, currency)}
-            pills={[
-              {
-                key: 'income',
-                label: t('bills.totalIncomePill', {
-                  amount: formatMoney(summary.incomeTotal, currency),
-                }),
-                backgroundColor: 'rgba(74, 168, 104, 0.2)',
-                color: Colors.green,
-              },
-              {
-                key: 'count',
-                label: t('bills.transactionCountPill', {
-                  count: summary.expenseCount + summary.incomeCount,
-                }),
-              },
-            ]}
-          />
-        </View>
-
-        {/* Index 1 — sticky filter bar (date + search + type) */}
-        <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
-          <YearMonthPicker
-            year={year}
-            month={month}
-            style={styles.dateFilter}
-            onChange={({ year: y, month: m }) => {
-              setYear(y);
-              setMonth(m);
-            }}
-          />
-          <SearchFilterBar
-            search={search}
-            onSearchChange={setSearch}
-            filter={filter}
-            onFilterChange={setFilter}
-            filters={BILL_FILTERS}
-            placeholder={t('bills.searchPlaceholder')}
-          />
-        </View>
-
-        {/* Index 2 — list */}
         <View style={styles.listSection}>
           <BillsList items={items} year={year} month={month} search={search} filter={filter} loading={loading} />
         </View>
@@ -142,19 +137,18 @@ const styles = StyleSheet.create({
   },
   statsSection: {
     paddingHorizontal: 16,
+    paddingVertical: 10,
   },
   dateFilter: {
     marginBottom: 12,
   },
   stickyBar: {
     paddingHorizontal: 16,
-    paddingTop: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
   },
   listSection: {
     paddingHorizontal: 16,
-    paddingTop: 16,
   },
   fab: {
     position: 'absolute',

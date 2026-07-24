@@ -104,6 +104,10 @@ export default function BillFormScreen() {
       showToast(t('bills.name') + ' *');
       return;
     }
+    if (!consumptionDate) {
+      showToast(t('bills.dateRequired'));
+      return;
+    }
     const values = {
       name: name.trim(),
       bill_type: billType,
@@ -122,6 +126,10 @@ export default function BillFormScreen() {
     } catch (e) {
       if (e?.message === 'amountInvalid') {
         showToast(t('bills.amountLabel', { type: billType === 'income' ? t('bills.income') : t('bills.expense') }) + ' > 0');
+        return;
+      }
+      if (e?.message === 'dateRequired') {
+        showToast(t('bills.dateRequired'));
         return;
       }
       showToast(t('common.saveFailed'));
@@ -214,7 +222,7 @@ export default function BillFormScreen() {
         />
 
         <WheelPicker
-          label={t('bills.time')}
+          label={`${t('bills.time')} *`}
           level="date"
           value={consumptionDate}
           onChange={setConsumptionDate}

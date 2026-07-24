@@ -173,7 +173,6 @@ export default function ManagementSections() {
             min={0}
             max={7}
             onChange={(v) => updateSetting('durableRemindDays', v)}
-            showBorder
           />
           <StepperRow
             label={t('settings.assetRemind')}

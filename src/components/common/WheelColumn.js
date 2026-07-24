@@ -5,6 +5,7 @@ import { useTheme } from '../../utils/theme';
 export const WHEEL_ITEM_HEIGHT = 40;
 export const WHEEL_VISIBLE_ITEMS = 5;
 export const WHEEL_COL_HEIGHT = WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ITEMS;
+const WHEEL_VERTICAL_PADDING = (WHEEL_COL_HEIGHT - WHEEL_ITEM_HEIGHT) / 2;
 
 /**
  * Scroll-snap wheel column shared by WheelPicker (date/time) and the
@@ -16,6 +17,7 @@ export const WHEEL_COL_HEIGHT = WHEEL_ITEM_HEIGHT * WHEEL_VISIBLE_ITEMS;
 export default function WheelColumn({ items, selected, onChange, width = 72 }) {
   const { Colors, Radius, Fonts } = useTheme();
   const ref = useRef(null);
+  const settleTimerRef = useRef(null);
 
   const normalized = useMemo(
     () =>
@@ -32,15 +34,25 @@ export default function WheelColumn({ items, selected, onChange, width = 72 }) {
     const t = setTimeout(() => {
       ref.current?.scrollTo({ y: initialY, animated: false });
     }, 60);
-    return () => clearTimeout(t);
+    return () => {
+      clearTimeout(t);
+      if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+    };
   }, []);
 
-  const handleScrollEnd = useCallback(
+  const handleScroll = useCallback(
     (e) => {
       const currentOffset = e.nativeEvent.contentOffset.y;
-      const index = Math.max(0, Math.min(normalized.length - 1, Math.round(currentOffset / WHEEL_ITEM_HEIGHT)));
-      const item = normalized[index];
-      if (item && item.value !== selected) onChange(item.value);
+      if (settleTimerRef.current) clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = setTimeout(() => {
+        const index = Math.max(0, Math.min(normalized.length - 1, Math.round(currentOffset / WHEEL_ITEM_HEIGHT)));
+        const item = normalized[index];
+        const targetOffset = index * WHEEL_ITEM_HEIGHT;
+        if (Math.abs(currentOffset - targetOffset) > 1) {
+          ref.current?.scrollTo({ y: targetOffset, animated: false });
+        }
+        if (item && item.value !== selected) onChange(item.value);
+      }, 120);
     },
     [normalized, selected, onChange],
   );
@@ -53,12 +65,12 @@ export default function WheelColumn({ items, selected, onChange, width = 72 }) {
       />
       <ScrollView
         ref={ref}
-        contentContainerStyle={{ paddingVertical: (WHEEL_COL_HEIGHT - WHEEL_ITEM_HEIGHT) / 2 }}
+        contentContainerStyle={{ paddingVertical: WHEEL_VERTICAL_PADDING }}
         snapToInterval={WHEEL_ITEM_HEIGHT}
         decelerationRate="fast"
         showsVerticalScrollIndicator={false}
-        onMomentumScrollEnd={handleScrollEnd}
-        onScrollEndDrag={handleScrollEnd}
+        onScroll={handleScroll}
+        scrollEventThrottle={16}
       >
         {normalized.map((it) => (
           <View key={String(it.value)} style={styles.colItem}>
@@ -103,6 +115,8 @@ const styles = StyleSheet.create({
   },
   colItemText: {
     fontSize: 16,
-    lineHeight: 24,
+    height: WHEEL_ITEM_HEIGHT,
+    lineHeight: WHEEL_ITEM_HEIGHT,
+    textAlign: 'center',
   },
 });

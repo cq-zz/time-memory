@@ -1062,6 +1062,7 @@ export default {
   schedule: {
     searchPlaceholder: "Search plans…",
     totalPlans: "Total Plans",
+    completionRate: "Completion Rate",
     inProgressPill: "{{count}} In Progress",
     donePill: "{{count}} Done",
     highPriority: "High",

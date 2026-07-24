@@ -62,6 +62,9 @@ export default function SchedulesScreen() {
 
   const inProgressCount = filteredItems.filter((item) => effectiveStatus(item) === 'in_progress').length;
   const doneCount = filteredItems.filter((item) => effectiveStatus(item) === 'done').length;
+  const completionRate = filteredItems.length > 0
+    ? Math.round((doneCount / filteredItems.length) * 100)
+    : 0;
 
   const load = useCallback(async () => {
     try {
@@ -107,8 +110,18 @@ export default function SchedulesScreen() {
       <View style={styles.statsSection}>
         <ModuleStatsCard
           compact
-          label={t('schedule.totalPlans')}
-          value={filteredItems.length}
+          metrics={[
+            {
+              key: 'total',
+              label: t('schedule.totalPlans'),
+              value: filteredItems.length,
+            },
+            {
+              key: 'completionRate',
+              label: t('schedule.completionRate'),
+              value: `${completionRate}%`,
+            },
+          ]}
           pills={[
             {
               key: 'inProgress',

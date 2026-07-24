@@ -1046,6 +1046,7 @@ export default {
   schedule: {
     searchPlaceholder: "搜索计划...",
     totalPlans: "计划总数",
+    completionRate: "完成率",
     inProgressPill: "{{count}} 个进行中",
     donePill: "{{count}} 个已完成",
     highPriority: "高优先级",

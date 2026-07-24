@@ -310,6 +310,8 @@ export default {
     brand: "时光收藏夹",
     slogan: "记录生活，看见时光",
     heroSlogan: "记录生活的珍贵瞬间。",
+    heroKicker: "TIME, MEMORIES, YOU",
+    heroSubtitle: "让每一天，都成为值得回望的故事。",
     totalItems: "物品总数",
     activePlans: "进行中计划",
     thisMonthExpense: "本月支出",

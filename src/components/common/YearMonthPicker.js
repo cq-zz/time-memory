@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
-
-const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
-const MONTHS_PER_ROW = 4;
+import WheelColumn from './WheelColumn';
 
 const pad = (n) => String(n).padStart(2, '0');
+const ALL_VALUE = '__all__';
 
 /**
  * Year + month period picker (bottom sheet).
- * year=null means "All". yearOnly hides the month grid.
+ * Both wheel columns start with an "All" option. yearOnly hides the month wheel.
  * Year range follows the global Year Range setting.
  */
 export default function YearMonthPicker({
@@ -74,39 +73,48 @@ export default function YearMonthPicker({
   );
 }
 
-function PickerPanel({ currentYear, currentMonth, onSelect, onClose, yearOnly, showAllOption }) {
+function PickerPanel({ currentYear, currentMonth, onSelect, onClose, yearOnly }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
   const yearStart = useSettingsStore((s) => s.settings.yearStart);
   const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
   const monthNames = t('calendar.monthsShort', { returnObjects: true });
 
-  const initialYear = currentYear || new Date().getFullYear();
-  const [viewYear, setViewYear] = useState(initialYear);
-  const [localMonth, setLocalMonth] = useState(currentMonth);
-  const [localAll, setLocalAll] = useState(currentYear == null);
+  const [draftYear, setDraftYear] = useState(currentYear ?? ALL_VALUE);
+  const [draftMonth, setDraftMonth] = useState(currentMonth ?? ALL_VALUE);
 
-  const handleYearChange = (y) => {
-    setViewYear(y);
-    setLocalMonth(null);
-    setLocalAll(false);
-  };
+  useEffect(() => {
+    setDraftYear(currentYear ?? ALL_VALUE);
+    setDraftMonth(currentMonth ?? ALL_VALUE);
+  }, [currentYear, currentMonth]);
 
-  const years = useMemo(() => {
-    const list = [];
-    for (let y = yearEnd; y >= yearStart; y--) list.push(y);
-    return list;
-  }, [yearStart, yearEnd]);
+  const years = useMemo(
+    () => [
+      { value: ALL_VALUE, label: t('common.all') },
+      ...Array.from({ length: yearEnd - yearStart + 1 }, (_, i) => {
+        const year = yearStart + i;
+        return { value: year, label: String(year) };
+      }),
+    ],
+    [yearStart, yearEnd, t],
+  );
+  const months = useMemo(
+    () => [
+      { value: ALL_VALUE, label: t('common.all') },
+      ...Array.from({ length: 12 }, (_, i) => ({ value: i + 1, label: monthNames[i] })),
+    ],
+    [monthNames, t],
+  );
 
   const handleConfirm = useCallback(() => {
-    if (localAll) {
+    if (draftYear === ALL_VALUE) {
       onSelect(null, null);
     } else if (yearOnly) {
-      onSelect(viewYear, null);
+      onSelect(draftYear, null);
     } else {
-      onSelect(viewYear, localMonth);
+      onSelect(draftYear, draftMonth === ALL_VALUE ? null : draftMonth);
     }
-  }, [localAll, yearOnly, viewYear, localMonth, onSelect]);
+  }, [draftYear, draftMonth, yearOnly, onSelect]);
 
   return (
     <View style={styles.modalRoot}>
@@ -129,135 +137,23 @@ function PickerPanel({ currentYear, currentMonth, onSelect, onClose, yearOnly, s
           </Pressable>
         </View>
 
-        <Text style={[styles.allHint, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-          {t('common.allYearDefault')}
-        </Text>
-
-        {showAllOption && (
-          <Pressable
-            style={[
-              styles.allOption,
-              {
-                backgroundColor: localAll ? Colors.purple : Colors.iconBg,
-                borderColor: localAll ? Colors.purple : Colors.cardBorder,
-                borderRadius: Radius.md,
-              },
-            ]}
-            onPress={() => {
-              if (localAll) {
-                setLocalAll(false);
-                setViewYear(new Date().getFullYear());
-              } else {
-                setLocalAll(true);
-                setLocalMonth(null);
-              }
-            }}
-          >
-            <Text
-              style={[
-                styles.allOptionText,
-                { color: localAll ? Colors.white : Colors.textSecondary, fontFamily: Fonts.bold },
-              ]}
-            >
-              {t('common.all')}
-            </Text>
-          </Pressable>
-        )}
-
-        {!yearOnly && (
-          <View style={styles.monthGrid}>
-            {[0, 1, 2].map((row) => (
-              <View key={row} style={styles.monthRow}>
-                {MONTHS.slice(row * MONTHS_PER_ROW, row * MONTHS_PER_ROW + MONTHS_PER_ROW).map((m) => {
-                  const isActive = localMonth === m;
-                  return (
-                    <Pressable
-                      key={m}
-                      style={[
-                        styles.monthCell,
-                        {
-                          backgroundColor: isActive ? Colors.purple : Colors.iconBg,
-                          borderColor: isActive ? Colors.purple : Colors.cardBorder,
-                          borderRadius: Radius.md,
-                        },
-                      ]}
-                      onPress={() => {
-                        setLocalMonth(localMonth === m ? null : m);
-                        setLocalAll(false);
-                      }}
-                    >
-                      <Text
-                        style={[
-                          styles.monthCellText,
-                          { color: isActive ? Colors.white : Colors.textSecondary, fontFamily: Fonts.semiBold },
-                        ]}
-                      >
-                        {monthNames[m - 1]}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            ))}
+        <View style={styles.pickerBody}>
+          <View style={styles.columns}>
+            <WheelColumn
+              items={years}
+              selected={draftYear}
+              onChange={(value) => {
+                setDraftYear(value);
+                if (value === ALL_VALUE) setDraftMonth(ALL_VALUE);
+              }}
+              width={112}
+            />
+            {!yearOnly && draftYear !== ALL_VALUE ? (
+              <WheelColumn items={months} selected={draftMonth} onChange={setDraftMonth} width={112} />
+            ) : !yearOnly ? (
+              <View style={styles.emptyColumn} />
+            ) : null}
           </View>
-        )}
-
-        {/* Year selector */}
-        <View style={styles.yearHeader}>
-          <Pressable
-            onPress={() => handleYearChange(Math.max(viewYear - 1, yearStart))}
-            style={[styles.yearNavBtn, { backgroundColor: Colors.iconBg, borderColor: Colors.cardBorder }]}
-          >
-            <Ionicons name="chevron-back" size={16} color={Colors.textSecondary} />
-          </Pressable>
-          <Text style={[styles.yearHeaderTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-            {viewYear}
-          </Text>
-          <Pressable
-            onPress={() => handleYearChange(Math.min(viewYear + 1, yearEnd))}
-            style={[styles.yearNavBtn, { backgroundColor: Colors.iconBg, borderColor: Colors.cardBorder }]}
-          >
-            <Ionicons name="chevron-forward" size={16} color={Colors.textSecondary} />
-          </Pressable>
-        </View>
-
-        {/* Year quick jump */}
-        <View style={styles.yearSection}>
-          <Text style={[styles.yearSectionLabel, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
-            {t('common.quickJumpYear')}
-          </Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.yearGridRow}
-          >
-            {years.map((y) => {
-              const isActive = currentYear === y;
-              return (
-                <Pressable
-                  key={y}
-                  style={[
-                    styles.yearChip,
-                    {
-                      backgroundColor: isActive ? Colors.purple : Colors.iconBg,
-                      borderColor: isActive ? Colors.purple : Colors.cardBorder,
-                      borderRadius: Radius.pill,
-                    },
-                  ]}
-                  onPress={() => handleYearChange(y)}
-                >
-                  <Text
-                    style={[
-                      styles.yearChipText,
-                      { color: isActive ? Colors.white : Colors.textTertiary, fontFamily: Fonts.semiBold },
-                    ]}
-                  >
-                    {y}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
         </View>
       </View>
     </View>
@@ -303,6 +199,18 @@ const styles = StyleSheet.create({
   panelTitle: {
     fontSize: 16,
     lineHeight: 24,
+  },
+  pickerBody: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  columns: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  emptyColumn: {
+    width: 112,
+    height: 200,
   },
   headerBtnCancel: {
     fontSize: 15,

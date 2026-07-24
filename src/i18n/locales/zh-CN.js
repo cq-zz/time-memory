@@ -21,6 +21,7 @@ export default {
     dateRangeInvalid: "开始日期不能晚于结束日期",
     newUser: "时光伙伴",
     all: "全部",
+    total: "总数",
     viewAll: "查看全部",
     backToList: "返回列表",
     notSet: "--",
@@ -891,6 +892,7 @@ export default {
   },
   asset: {
     totalValue: "持有中资产总价值",
+    filteredActiveValue: "筛选内持有中总估值",
     assetCount: "资产总数{{count}} 项资产",
     statsHint: "* 仅统计持有中资产的当前估值之和",
     searchPlaceholder: "搜索我的资产...",
@@ -968,6 +970,7 @@ export default {
     itemCount: "物品总数{{count}} 件物品",
     statsHint: "* 仅统计使用中物品的价值",
     inUseTotalValue: "使用中物品总价值",
+    filteredInUseValue: "筛选内使用中总价值",
     inUsePill: "{{count}} 使用中",
     totalPill: "{{count}} 总数",
     searchPlaceholder: "搜索我的物品...",

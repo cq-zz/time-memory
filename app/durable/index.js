@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
   },
   statsSection: {
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 6,
   },
   dateFilter: {
     marginBottom: 12,

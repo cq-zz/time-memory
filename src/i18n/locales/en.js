@@ -21,6 +21,7 @@ export default {
     dateRangeInvalid: "Start must be before end",
     newUser: "Time Buddy",
     all: "All",
+    total: "Total",
     viewAll: "View All",
     backToList: "Back",
     notSet: "—",
@@ -907,6 +908,7 @@ export default {
   },
   asset: {
     totalValue: "Total Active Asset Value",
+    filteredActiveValue: "TOTAL ACTIVE VALUE IN RESULTS",
     assetCount: "{{count}} total",
     statsHint: "* Only active assets valued at current price",
     searchPlaceholder: "Search assets…",
@@ -984,6 +986,7 @@ export default {
     itemCount: "{{count}} total",
     statsHint: "* Only counts the value of in-use items",
     inUseTotalValue: "In-Use Items Total Value",
+    filteredInUseValue: "TOTAL IN-USE VALUE IN RESULTS",
     inUsePill: "{{count}} In-Use",
     totalPill: "{{count}} Total",
     searchPlaceholder: "Search items…",

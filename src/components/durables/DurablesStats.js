@@ -1,31 +1,17 @@
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../utils/theme';
 import { formatMoney } from '../../store/settings';
-import ModuleStatsCard from '../common/ModuleStatsCard';
+import FilteredSummaryBar from '../common/FilteredSummaryBar';
 
 export default function DurablesStats({ stats, currency }) {
-  const { Colors } = useTheme();
   const { t } = useTranslation();
 
-  const value = stats ? formatMoney(stats.inUseValue, currency) : '--';
-  const inUseCount = stats ? stats.inUseCount : '--';
-  const totalCount = stats ? stats.totalCount : '--';
-
   return (
-    <ModuleStatsCard
-      compact
-      pillsTopRight
-      label={t('durable.inUseTotalValue')}
-      value={value}
-      pills={[
-        {
-          key: 'inUse',
-          label: t('durable.inUsePill', { count: inUseCount }),
-          backgroundColor: 'rgba(74, 168, 104, 0.2)',
-          color: Colors.green,
-        },
-        { key: 'total', label: t('durable.totalPill', { count: totalCount }) },
-      ]}
+    <FilteredSummaryBar
+      label={t('durable.filteredInUseValue')}
+      value={stats ? formatMoney(stats.inUseValue, currency) : '--'}
+      activeCount={stats ? stats.inUseCount : '--'}
+      activeLabel={t('durable.inUse')}
+      totalCount={stats ? stats.totalCount : '--'}
     />
   );
 }

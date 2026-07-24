@@ -153,3 +153,19 @@ export async function clearAllData(keepSettingsKeys = []) {
 export function getDb() {
   return Promise.reject(new Error('SQLite is not available on web'));
 }
+
+export function importDatabase() {
+  return Promise.reject(new Error('SQLite is not available on web'));
+}
+
+export async function getDbFilePath() {
+  throw new Error('SQLite is not available on web');
+}
+
+export async function getDbPath() {
+  throw new Error('SQLite is not available on web');
+}
+
+export async function closeDb() {
+  throw new Error('SQLite is not available on web');
+}

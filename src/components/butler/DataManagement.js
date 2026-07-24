@@ -14,9 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
-import { getAllRows, insertRow, clearAllData } from '../../store/db';
+import { getAllRows, insertRow, clearAllData, getDb, importDatabase } from '../../store/db';
 import { useMoodStore } from '../../store/mood';
 import { useCategoryStore, getMergedCategories, BUILTIN_NS } from '../../store/categories';
+import { useProfileStore } from '../../store/profile';
 import zhCN from '../../i18n/locales/zh-CN';
 import en from '../../i18n/locales/en';
 import {
@@ -307,6 +308,149 @@ function PrimaryButton({ label, onPress, busy, disabled }) {
         <Text style={[styles.primaryBtnText, { color: Colors.white, fontFamily: Fonts.bold }]}>{label}</Text>
       )}
     </Pressable>
+  );
+}
+
+// ── Migration modal ───────────────────────────────
+
+const DB_MIME = 'application/vnd.sqlite3';
+const DB_PICKER_TYPES = [DB_MIME, 'application/octet-stream'];
+
+async function pickDbFileNative() {
+  const fs = await import('expo-file-system');
+  // File.pickFileAsync keeps Android's SAF read grant attached to the returned
+  // File. DocumentPicker URIs can lose that grant with some cloud providers.
+  if (Platform.OS === 'android') {
+    const result = await fs.File.pickFileAsync({ mimeTypes: DB_PICKER_TYPES });
+    if (result.canceled || !result.result) return null;
+    return { name: result.result.name, bytes: await result.result.bytes() };
+  }
+
+  const DocumentPicker = await import('expo-document-picker');
+  const result = await DocumentPicker.getDocumentAsync({
+    type: DB_PICKER_TYPES,
+    copyToCacheDirectory: true,
+  });
+  if (result.canceled || !result.assets?.[0]) return null;
+  const asset = result.assets[0];
+  const bytes = await new fs.File(asset.uri).bytes();
+  return { name: asset.name, bytes };
+}
+
+function MigrationModal({ visible, onClose }) {
+  const { Colors, Radius, Fonts } = useTheme();
+  const { t } = useTranslation();
+  const { alert } = useAlert();
+  const [busy, setBusy] = useState(false);
+  const [importConfirmOpen, setImportConfirmOpen] = useState(false);
+
+  const handleExportDb = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const [fs, Sharing] = await Promise.all([import('expo-file-system'), import('expo-sharing')]);
+      const db = await getDb();
+      const data = await db.serializeAsync();
+
+      const fileName = `timemory-${fileDate()}.db`;
+      const cacheFile = new fs.File(fs.Paths.cache, fileName);
+      if (cacheFile.exists) cacheFile.delete();
+      cacheFile.create();
+      cacheFile.write(new Uint8Array(data));
+
+      const canShare = await Sharing.isAvailableAsync();
+      if (!canShare) throw new Error('butler.sharingUnavailable');
+      await Sharing.shareAsync(cacheFile.uri, { mimeType: DB_MIME, dialogTitle: 'Timemory Database' });
+      showToast(t('butler.exportDbSuccess'));
+      onClose();
+    } catch (e) {
+      alert(t('butler.exportFailedTitle'), e?.message || t('butler.exportFailedDesc'));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleImportDb = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const picked = await pickDbFileNative();
+      if (!picked) return;
+      await importDatabase(picked.bytes);
+      await Promise.all([
+        useMoodStore.getState().loadMoods(),
+        useSettingsStore.getState().loadSettings(),
+        useCategoryStore.getState().loadCategories(),
+        useProfileStore.getState().loadProfile(),
+      ]);
+      showToast(t('butler.importDbSuccess'));
+      onClose();
+    } catch (e) {
+      alert(
+        t('butler.importDbFailed'),
+        e?.message ? t(e.message, { defaultValue: e.message }) : t('butler.importDbFailedDesc'),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <>
+      <SheetShell visible={visible} title={t('butler.dataMigration')} onClose={onClose}>
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.body}>
+          <Text style={[styles.sectionLabel, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
+            {t('butler.dataMigrationDesc')}
+          </Text>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.outlineBtn,
+              { borderColor: Colors.grayDot, backgroundColor: Colors.card, borderRadius: Radius.sm },
+              pressed && { opacity: 0.75 },
+              busy && { opacity: 0.5 },
+            ]}
+            onPress={handleExportDb}
+            disabled={busy}
+          >
+            <Ionicons name="cloud-download-outline" size={16} color={Colors.purple} />
+            <Text style={[styles.outlineBtnText, { color: Colors.purple, fontFamily: Fonts.semiBold }]}>
+              {t('butler.exportDb')}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.outlineBtn,
+              { borderColor: Colors.grayDot, backgroundColor: Colors.bg, borderRadius: Radius.sm },
+              pressed && { opacity: 0.75 },
+              busy && { opacity: 0.5 },
+            ]}
+            onPress={() => setImportConfirmOpen(true)}
+            disabled={busy}
+          >
+            <Ionicons name="cloud-upload-outline" size={16} color={Colors.textSecondary} />
+            <Text style={[styles.outlineBtnText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+              {t('butler.importDb')}
+            </Text>
+          </Pressable>
+        </ScrollView>
+      </SheetShell>
+
+      <ConfirmModal
+        visible={importConfirmOpen}
+        onClose={() => setImportConfirmOpen(false)}
+        onConfirm={async () => {
+          setImportConfirmOpen(false);
+          await new Promise((r) => setTimeout(r, 300));
+          await handleImportDb();
+        }}
+        icon="warning-outline"
+        title={t('butler.importDbConfirmTitle')}
+        description={t('butler.importDbConfirmDesc')}
+        confirmText={t('common.confirm')}
+      />
+    </>
   );
 }
 
@@ -628,6 +772,7 @@ export default function DataManagement() {
   const [exportOpen, setExportOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  const [migrationOpen, setMigrationOpen] = useState(false);
 
   const handleReset = async () => {
     setResetOpen(false);
@@ -656,8 +801,29 @@ export default function DataManagement() {
         <DataButton icon="trash-outline" label={t('butler.resetBtn')} danger onPress={() => setResetOpen(true)} />
       </View>
 
+      {Platform.OS !== 'web' && (
+        <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.grayDot }]}>
+          <TouchableOpacity
+            style={styles.migrationRow}
+            activeOpacity={0.7}
+            onPress={() => setMigrationOpen(true)}
+          >
+            <View style={styles.rowLeft}>
+              <Ionicons name="swap-horizontal-outline" size={18} color={Colors.textPrimary} />
+              <Text style={[styles.rowLabel, { color: Colors.textDark, fontFamily: Fonts.semiBold }]}>
+                {t('butler.dataMigration')}
+              </Text>
+            </View>
+            <View style={styles.rowRight}>
+              <Ionicons name="chevron-forward" size={14} color={Colors.textSecondary} />
+            </View>
+          </TouchableOpacity>
+        </View>
+      )}
+
       <ExportModal visible={exportOpen} onClose={() => setExportOpen(false)} />
       <ImportModal visible={importOpen} onClose={() => setImportOpen(false)} />
+      <MigrationModal visible={migrationOpen} onClose={() => setMigrationOpen(false)} />
       <ConfirmModal
         visible={resetOpen}
         onClose={() => setResetOpen(false)}
@@ -799,6 +965,35 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     flexShrink: 1,
+  },
+  migrationRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+  },
+  card: {
+    borderWidth: 1,
+    borderRadius: 32,
+  },
+  rowLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  rowRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  rowLabel: {
+    fontSize: 16,
+    lineHeight: 28,
+  },
+  rowValue: {
+    fontSize: 14,
+    lineHeight: 22,
   },
   footer: {
     paddingHorizontal: 20,

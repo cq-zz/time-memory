@@ -22,6 +22,7 @@ export const DATA_TABLES = [
   'check_ins',
   'budgets',
 ];
+const REQUIRED_TABLES = ['settings', ...DATA_TABLES];
 
 const SCHEMA_SQL = `
   PRAGMA journal_mode = WAL;
@@ -182,7 +183,7 @@ async function ensureColumns(db) {
  * Returns a promise of the singleton database instance.
  * Opens the DB on first call and ensures the schema exists.
  */
-export function getDb() {
+export async function getDb() {
   if (!dbPromise) {
     dbPromise = SQLite.openDatabaseAsync(DB_NAME).then(async (db) => {
       await db.execAsync(SCHEMA_SQL);
@@ -191,6 +192,51 @@ export function getDb() {
     });
   }
   return dbPromise;
+}
+
+/**
+ * Validate and replace the current database from serialized SQLite bytes.
+ * The input is first opened from a temporary app-owned file, so an invalid
+ * or unrelated file cannot overwrite the user's existing data.
+ */
+export async function importDatabase(bytes) {
+  const { File, Paths } = await import('expo-file-system');
+  const tempName = `timemory-import-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.db`;
+  const tempDirectory = Paths.cache;
+  const tempFile = new File(tempDirectory, tempName);
+  tempFile.create();
+  tempFile.write(bytes);
+
+  let source = null;
+  try {
+    source = await SQLite.openDatabaseAsync(tempName, {}, tempDirectory.uri);
+    const integrity = await source.getFirstAsync('PRAGMA integrity_check');
+    if (Object.values(integrity || {})[0] !== 'ok') {
+      throw new Error('butler.invalidDatabaseFile');
+    }
+
+    const tables = await source.getAllAsync(
+      `SELECT name FROM sqlite_master WHERE type = 'table' AND name IN (${REQUIRED_TABLES.map(() => '?').join(', ')})`,
+      REQUIRED_TABLES,
+    );
+    const found = new Set(tables.map((table) => table.name));
+    if (REQUIRED_TABLES.some((table) => !found.has(table))) {
+      throw new Error('butler.invalidDatabaseFile');
+    }
+
+    const destination = await getDb();
+    await SQLite.backupDatabaseAsync({
+      sourceDatabase: source,
+      sourceDatabaseName: 'main',
+      destDatabase: destination,
+      destDatabaseName: 'main',
+    });
+    await destination.execAsync(SCHEMA_SQL);
+    await ensureColumns(destination);
+  } finally {
+    if (source) await source.closeAsync();
+    if (tempFile.exists) tempFile.delete();
+  }
 }
 
 // ── Settings (key-value) ──────────────────────────

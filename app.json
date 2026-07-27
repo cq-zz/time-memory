@@ -11,10 +11,6 @@
       "supportsTablet": true
     },
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#2A1F30",
-        "foregroundImage": "./assets/images/splash-en.png"
-      },
       "package": "com.ffz.timememory"
     },
     "web": {
@@ -29,7 +25,14 @@
       "expo-image",
       "@react-native-community/datetimepicker",
       "expo-sharing",
-      "expo-localization"
+      "expo-localization",
+      "expo-splash-screen",
+      {
+        "backgroundColor": "#2A1F30",
+        "image": "./assets/splash-en.png",
+        "imageWidth": 200,
+        "resizeMode": "contain"
+      }
     ]
   }
 }

@@ -322,7 +322,7 @@ export default {
     brand: "Timemory",
     slogan: "Every moment tells a story",
     heroSlogan: "Track your life's precious moments.",
-    heroKicker: "TIME, MEMORIES, YOU",
+    heroKicker: "Where Time Becomes Memory",
     heroSubtitle: "Let every day become a story worth revisiting.",
     totalItems: "Items",
     activePlans: "Active",

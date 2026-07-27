@@ -315,7 +315,7 @@ export default {
     brand: "Timemory",
     slogan: "记录生活，看见时光",
     heroSlogan: "记录生活的珍贵瞬间。",
-    heroKicker: "TIME, MEMORIES, YOU",
+    heroKicker: "让时光，化作记忆",
     heroSubtitle: "让每一天，都成为值得回望的故事。",
     totalItems: "物品总数",
     activePlans: "进行中计划",

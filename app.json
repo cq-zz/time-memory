@@ -12,7 +12,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundImage": "./assets/splash-en-bg.png"
+        "backgroundColor": "#2A1F30",
+        "foregroundImage": "./assets/images/splash-en.png"
       },
       "package": "com.ffz.timememory"
     },

@@ -119,17 +119,17 @@ export default {
   },
   privacyPolicy: {
     coreCommitment:
-      "核心承诺：时光收藏夹（Timemory）是一款完全离线运行的本地应用。我们不会收集、上传、存储或分享您的任何个人数据到任何远程服务器。您的一切数据都保存在您自己的设备中，由您完全掌控",
+      "核心承诺：Timemory是一款完全离线运行的本地应用。我们不会收集、上传、存储或分享您的任何个人数据到任何远程服务器。您的一切数据都保存在您自己的设备中，由您完全掌控",
     localOnlyTitle: "完全本地运行",
     noCollectionTitle: "不收集任何数据",
     storageTitle: "数据仅存于设备",
     controlTitle: "数据由你掌控",
     section1Title: "1. 我们是谁",
     section1:
-      "时光收藏夹（Timemory）是一款完全离线运行的个人生活管理工具。开发者不运营任何后端服务器，不提供云同步服务，也不使用任何第三方分析或追踪工具",
+      "Timemory是一款完全离线运行的个人生活管理工具。开发者不运营任何后端服务器，不提供云同步服务，也不使用任何第三方分析或追踪工具",
     section2Title: "2. 我们收集哪些数据",
     section2:
-      "时光收藏夹不收集任何数据——所有数据均由您主动输入并存储在您的设备本地。我们无法访问这些数据，也无法将其传输至任何外部服务器",
+      "Timemory不收集任何数据——所有数据均由您主动输入并存储在您的设备本地。我们无法访问这些数据，也无法将其传输至任何外部服务器",
     section2_1Title: "您主动创建的内容",
     section2_1:
       "您在应用中创建的所有业务数据均存储在您的设备本地 SQLite 数据库中，由您完全掌控",
@@ -192,7 +192,7 @@ export default {
       "由于所有数据都在您的设备本地，您可以直接行使上述权利，无需联系开发者。如您有任何疑问，可以通过应用商店页面提供的联系方式与我们取得联系人",
     section9Title: "9. 儿童隐私",
     section9:
-      "时光收藏夹不收集任何用户的个人数据，因此也不存在收集儿童数据的问题。我们建议 13 岁以下的儿童在监护人指导下使用本应用",
+      "Timemory不收集任何用户的个人数据，因此也不存在收集儿童数据的问题。我们建议 13 岁以下的儿童在监护人指导下使用本应用",
     section10Title: "10. 隐私政策更新",
     section10:
       "我们可能会不时更新本隐私政策。更新后的政策将在应用内发布，并在顶部标注更新日期。由于应用不连接网络，我们不会通过推送通知告知您政策变更，建议您定期查看本页面",
@@ -312,7 +312,7 @@ export default {
     overIncome: "超额 {{amount}}",
   },
   home: {
-    brand: "时光收藏夹",
+    brand: "Timemory",
     slogan: "记录生活，看见时光",
     heroSlogan: "记录生活的珍贵瞬间。",
     heroKicker: "TIME, MEMORIES, YOU",
@@ -325,7 +325,7 @@ export default {
     todayReminder: "今日提醒",
     noReminder: "暂无提醒",
     noReminderDesc: "当前没有需要关注的事项",
-    footer: "时光收藏夹 · 记录生活，看见时光",
+    footer: "Timemory · 记录生活，看见时光",
     momTrend: "环比",
     yoyTrend: "同比",
     durableDesc: "物品概览",
@@ -670,7 +670,7 @@ export default {
     selectExportModule: "选择导出模块",
     exportModuleHint: "请选择要导出的模块",
     excelNoDataHint: "无数",
-    exportFileName: "时光收藏夹_{{date}}_{{module}}.xlsx",
+    exportFileName: "Timemory_{{date}}_{{module}}.xlsx",
     noDataTitle: "暂无数据",
     excelSheetMood: "心情记录",
     excelMoodDate: "日期",

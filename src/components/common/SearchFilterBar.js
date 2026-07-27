@@ -22,7 +22,6 @@ export default function SearchFilterBar({ search, onSearchChange, filter, onFilt
             borderColor: Colors.cardBorder,
             borderRadius: Radius.pill,
           },
-          Shadows.card,
         ]}
       >
         <Ionicons name="search" size={20} color={Colors.textSecondary} />

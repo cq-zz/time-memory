@@ -42,7 +42,6 @@ export default function RemindersSearch({ search, onSearchChange, filter, onFilt
               style={[
                 styles.chip,
                 { backgroundColor: isActive ? Colors.inkDeep : Colors.card, borderRadius: Radius.circle },
-                !isActive && Shadows.dark,
               ]}
             >
               <Text

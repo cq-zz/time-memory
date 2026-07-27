@@ -6,7 +6,7 @@ import { useTheme } from '../../utils/theme';
 const W = 294;
 const H = 112;
 const PAD_Y = 12;
-const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+const MONTHS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
 
 /** Last 6 months (oldest → newest) as { key, label, income, expense }. */
 export function monthlySeries(bills, months = 6, monthLabels = MONTHS) {

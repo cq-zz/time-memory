@@ -26,13 +26,15 @@
       "@react-native-community/datetimepicker",
       "expo-sharing",
       "expo-localization",
-      "expo-splash-screen",
-      {
-        "backgroundColor": "#2A1F30",
-        "image": "./assets/splash-en.png",
-        "imageWidth": 200,
-        "resizeMode": "contain"
-      }
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#2A1F30",
+          "image": "./assets/splash-en.png",
+          "imageWidth": 200,
+          "resizeMode": "contain"
+        }
+      ]
     ]
   }
 }

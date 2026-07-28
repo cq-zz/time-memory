@@ -38,7 +38,7 @@ function BillCard({ item, isLast }) {
       {/* Body */}
       <View style={styles.body}>
         <View style={styles.titleRow}>
-          <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
+          <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={2}>
             {item.name || '--'}
           </Text>
           {linked ? <Ionicons name="link" size={13} color={Colors.textTertiary} /> : null}
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
   },
   titleRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: 6,
   },
   name: {

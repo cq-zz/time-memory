@@ -42,14 +42,19 @@ function AssetCard({ item, currency, isLast }) {
         </View>
 
         <View style={styles.info}>
-          <View style={styles.categoryRow}>
-            <Ionicons name={cat.icon} size={12} color={Colors.textSecondary} />
-            <Text style={[styles.categoryText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-              {cat.label}
+          <View style={styles.topInfoRow}>
+            <View style={styles.categoryRow}>
+              <Ionicons name={cat.icon} size={12} color={Colors.textSecondary} />
+              <Text style={[styles.categoryText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+                {cat.label}
+              </Text>
+            </View>
+            <Text style={[styles.price, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
+              {formatMoney(displayValue(item), currency)}
             </Text>
           </View>
 
-          <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
+          <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={2}>
             {item.name}
           </Text>
 
@@ -70,10 +75,6 @@ function AssetCard({ item, currency, isLast }) {
             </Text>
           </View>
         </View>
-
-        <Text style={[styles.price, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
-          {formatMoney(displayValue(item), currency)}
-        </Text>
       </View>
 
       {/* Meta row */}
@@ -149,6 +150,11 @@ const styles = StyleSheet.create({
     gap: 6,
     justifyContent: 'center',
   },
+  topInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   categoryRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -183,10 +189,11 @@ const styles = StyleSheet.create({
     letterSpacing: 0.6,
   },
   price: {
-    fontSize: 18,
-    lineHeight: 24,
-    maxWidth: 110,
+    fontSize: 16,
+    lineHeight: 22,
+    maxWidth: 120,
     textAlign: 'right',
+    flexShrink: 0,
   },
   metaRow: {
     flexDirection: 'row',

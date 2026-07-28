@@ -49,14 +49,19 @@ function ItemCard({ item, currency, isLast }) {
         </View>
 
         <View style={styles.info}>
-          <View style={styles.categoryRow}>
-            <Ionicons name={cat.icon} size={12} color={Colors.textSecondary} />
-            <Text style={[styles.categoryText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-              {cat.label}
+          <View style={styles.topInfoRow}>
+            <View style={styles.categoryRow}>
+              <Ionicons name={cat.icon} size={12} color={Colors.textSecondary} />
+              <Text style={[styles.categoryText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+                {cat.label}
+              </Text>
+            </View>
+            <Text style={[styles.price, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
+              {formatMoney(item.purchase_price, currency)}
             </Text>
           </View>
 
-          <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
+          <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={2}>
             {item.name}
           </Text>
 
@@ -76,15 +81,6 @@ function ItemCard({ item, currency, isLast }) {
               {inUse ? t('durable.inUse') : t('durable.disposed')}
             </Text>
           </View>
-        </View>
-
-        <View style={styles.priceCol}>
-          <Text style={[styles.priceLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-            {t('durable.purchasePrice')}
-          </Text>
-          <Text style={[styles.price, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
-            {formatMoney(item.purchase_price, currency)}
-          </Text>
         </View>
       </View>
 
@@ -181,6 +177,11 @@ const styles = StyleSheet.create({
     gap: 6,
     justifyContent: 'center',
   },
+  topInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   categoryRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -214,21 +215,12 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     letterSpacing: 0.6,
   },
-  priceCol: {
-    alignItems: 'flex-end',
-    justifyContent: 'center',
-    maxWidth: 110,
-  },
-  priceLabel: {
-    fontSize: 9,
-    lineHeight: 13,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
-  },
   price: {
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 16,
+    lineHeight: 22,
+    maxWidth: 120,
     textAlign: 'right',
+    flexShrink: 0,
   },
   lifespanBlock: {
     marginTop: 16,

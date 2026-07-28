@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { useFonts, WorkSans_400Regular, WorkSans_600SemiBold, WorkSans_700Bold } from '@expo-google-fonts/work-sans';
 import { useSettingsStore } from '../src/store/settings';
 import { useMoodStore } from '../src/store/mood';
@@ -35,19 +36,21 @@ export default function RootLayout() {
   }
 
   return (
-    <ToastProvider>
-      <AlertProvider>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            animation: 'slide_from_right',
-            contentStyle: { backgroundColor: Colors.bg },
-          }}
-        >
-          <Stack.Screen name="(tabs)" />
-        </Stack>
-        <StatusBar style={darkMode ? 'light' : 'dark'} />
-      </AlertProvider>
-    </ToastProvider>
+    <KeyboardProvider>
+      <ToastProvider>
+        <AlertProvider>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              animation: 'slide_from_right',
+              contentStyle: { backgroundColor: Colors.bg },
+            }}
+          >
+            <Stack.Screen name="(tabs)" />
+          </Stack>
+          <StatusBar style={darkMode ? 'light' : 'dark'} />
+        </AlertProvider>
+      </ToastProvider>
+    </KeyboardProvider>
   );
 }

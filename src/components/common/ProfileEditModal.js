@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
@@ -7,6 +8,7 @@ import { useProfileStore, NICKNAME_MAX } from '../../store/profile';
 import { showToast } from './Toast';
 import ImageUploadField from './ImageUploadField';
 import FormInput from './FormInput';
+import FormKeyboardScrollView from './FormKeyboardScrollView';
 
 /**
  * Personal settings bottom sheet — avatar upload (camera / gallery / URL via
@@ -42,50 +44,56 @@ export default function ProfileEditModal({ visible, onClose }) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable
-          style={[styles.sheet, { backgroundColor: Colors.card, borderRadius: Radius.xl }]}
-          onPress={(e) => e.stopPropagation()}
+        <KeyboardAvoidingView
+          automaticOffset
+          behavior="padding"
+          style={styles.keyboardAvoider}
         >
-          <View style={styles.header}>
-            <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-              {t('profile.editProfile')}
-            </Text>
-            <Pressable onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={22} color={Colors.textSecondary} />
-            </Pressable>
-          </View>
-
-          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-            <ImageUploadField
-              value={draftAvatar}
-              onChange={setDraftAvatar}
-              placeholder={t('settings.avatar')}
-              height={160}
-            />
-
-            <FormInput
-              label={t('settings.nickname')}
-              placeholder={t('settings.nicknamePlaceholder')}
-              value={draftNickname}
-              onChangeText={(v) => setDraftNickname(v.slice(0, NICKNAME_MAX))}
-            />
-          </ScrollView>
-
-          <View style={styles.footer}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.saveBtn,
-                { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl },
-                pressed && { opacity: 0.85 },
-              ]}
-              onPress={handleSave}
-            >
-              <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-                {t('common.saveRecord')}
+          <Pressable
+            style={[styles.sheet, { backgroundColor: Colors.card, borderRadius: Radius.xl }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.header}>
+              <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
+                {t('profile.editProfile')}
               </Text>
-            </Pressable>
-          </View>
-        </Pressable>
+              <Pressable onPress={onClose} hitSlop={8}>
+                <Ionicons name="close" size={22} color={Colors.textSecondary} />
+              </Pressable>
+            </View>
+
+            <FormKeyboardScrollView contentContainerStyle={styles.content}>
+              <ImageUploadField
+                value={draftAvatar}
+                onChange={setDraftAvatar}
+                placeholder={t('settings.avatar')}
+                height={160}
+              />
+
+              <FormInput
+                label={t('settings.nickname')}
+                placeholder={t('settings.nicknamePlaceholder')}
+                value={draftNickname}
+                onChangeText={(v) => setDraftNickname(v.slice(0, NICKNAME_MAX))}
+              />
+            </FormKeyboardScrollView>
+
+            <View style={styles.footer}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.saveBtn,
+                  { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl },
+                  pressed && { opacity: 0.85 },
+                ]}
+                onPress={handleSave}
+              >
+                <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
+                  {t('common.saveRecord')}
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </KeyboardAvoidingView>
       </Pressable>
     </Modal>
   );
@@ -96,6 +104,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
+  },
+  keyboardAvoider: {
+    width: '100%',
   },
   sheet: {
     maxHeight: '80%',

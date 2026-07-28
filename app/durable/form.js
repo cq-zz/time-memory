@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +16,7 @@ import AmountField from '../../src/components/common/AmountField';
 import CategoryPicker from '../../src/components/common/CategoryPicker';
 import AcquisitionPicker from '../../src/components/common/AcquisitionPicker';
 import FormSaveFooter from '../../src/components/common/FormSaveFooter';
+import FormKeyboardScrollView from '../../src/components/common/FormKeyboardScrollView';
 import ScreenState from '../../src/components/common/ScreenState';
 import LinkedAssetPicker from '../../src/components/durable-form/LinkedAssetPicker';
 
@@ -137,10 +138,9 @@ export default function DurableFormScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
       <FormHeader title={isEdit ? t('nav.editDurable') : t('nav.addDurable')} />
 
-      <ScrollView
+      <FormKeyboardScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
       >
         <ImageUploadField
           value={image}
@@ -231,7 +231,7 @@ export default function DurableFormScreen() {
           onChangeText={setNotes}
           multiline
         />
-      </ScrollView>
+      </FormKeyboardScrollView>
 
       <FormSaveFooter
         label={t('durable.confirmSave')}

@@ -1,14 +1,13 @@
 import { useEffect, useState } from 'react';
 import {
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
@@ -86,7 +85,9 @@ export default function YearRangeModal({ visible, onClose }) {
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={[styles.overlay, { backgroundColor: Colors.overlay }]} onPress={onClose}>
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          automaticOffset
+          behavior="position"
+          contentContainerStyle={styles.avoidContent}
           style={styles.avoid}
         >
           <Pressable
@@ -195,6 +196,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   avoid: {
+    width: '100%',
+  },
+  avoidContent: {
     width: '100%',
     alignItems: 'center',
   },

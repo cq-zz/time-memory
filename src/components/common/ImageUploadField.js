@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Linking, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -201,87 +202,94 @@ export default function ImageUploadField({
       <Modal visible={urlModalOpen} transparent animationType="fade" onRequestClose={() => setUrlModalOpen(false)}>
         <View style={[styles.urlOverlay, { backgroundColor: Colors.overlay }]}>
           <Pressable style={StyleSheet.absoluteFill} onPress={() => setUrlModalOpen(false)} />
-          <View style={[styles.urlDialog, { backgroundColor: Colors.card, borderRadius: Radius.md }]}>
-            <Text style={[styles.urlTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-              {t('common.imageUrlTitle')}
-            </Text>
-            <Text style={[styles.urlHint, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-              {t('common.imageUrlPlaceholder')}
-            </Text>
-            <TextInput
-              style={[
-                styles.urlInput,
-                {
-                  borderColor: Colors.cardBorder,
-                  backgroundColor: Colors.iconBg,
-                  color: Colors.textPrimary,
-                  borderRadius: Radius.sm,
-                  fontFamily: Fonts.regular,
-                },
-              ]}
-              value={urlInput}
-              onChangeText={(text) => {
-                setUrlInput(text);
-                setUrlError('');
-                setPreviewError(false);
-              }}
-              placeholder="https://..."
-              placeholderTextColor={Colors.textTertiary}
-              autoCapitalize="none"
-              autoCorrect={false}
-              keyboardType="url"
-            />
-            {urlError ? (
-              <Text style={[styles.urlErrorText, { color: Colors.rose, fontFamily: Fonts.semiBold }]}>
-                {urlError}
+          <KeyboardAvoidingView
+            automaticOffset
+            behavior="position"
+            contentContainerStyle={styles.urlKeyboardContent}
+            style={styles.urlKeyboardAvoider}
+          >
+            <View style={[styles.urlDialog, { backgroundColor: Colors.card, borderRadius: Radius.md }]}>
+              <Text style={[styles.urlTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
+                {t('common.imageUrlTitle')}
               </Text>
-            ) : null}
-            {urlInput.trim() && /^https?:\/\//i.test(urlInput.trim()) && (
-              <View style={[styles.previewWrap, { backgroundColor: Colors.iconBg, borderRadius: Radius.sm }]}>
-                {previewError ? (
-                  <View style={styles.previewErrorWrap}>
-                    <Text style={[styles.previewErrorText, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-                      {t('common.imageBroken')}
-                    </Text>
-                  </View>
-                ) : (
-                  <Image
-                    source={{ uri: urlInput.trim() }}
-                    style={styles.previewImage}
-                    contentFit="contain"
-                    onError={() => setPreviewError(true)}
-                    onLoad={() => setPreviewError(false)}
-                  />
-                )}
+              <Text style={[styles.urlHint, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
+                {t('common.imageUrlPlaceholder')}
+              </Text>
+              <TextInput
+                style={[
+                  styles.urlInput,
+                  {
+                    borderColor: Colors.cardBorder,
+                    backgroundColor: Colors.iconBg,
+                    color: Colors.textPrimary,
+                    borderRadius: Radius.sm,
+                    fontFamily: Fonts.regular,
+                  },
+                ]}
+                value={urlInput}
+                onChangeText={(text) => {
+                  setUrlInput(text);
+                  setUrlError('');
+                  setPreviewError(false);
+                }}
+                placeholder="https://..."
+                placeholderTextColor={Colors.textTertiary}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+              />
+              {urlError ? (
+                <Text style={[styles.urlErrorText, { color: Colors.rose, fontFamily: Fonts.semiBold }]}>
+                  {urlError}
+                </Text>
+              ) : null}
+              {urlInput.trim() && /^https?:\/\//i.test(urlInput.trim()) && (
+                <View style={[styles.previewWrap, { backgroundColor: Colors.iconBg, borderRadius: Radius.sm }]}>
+                  {previewError ? (
+                    <View style={styles.previewErrorWrap}>
+                      <Text style={[styles.previewErrorText, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
+                        {t('common.imageBroken')}
+                      </Text>
+                    </View>
+                  ) : (
+                    <Image
+                      source={{ uri: urlInput.trim() }}
+                      style={styles.previewImage}
+                      contentFit="contain"
+                      onError={() => setPreviewError(true)}
+                      onLoad={() => setPreviewError(false)}
+                    />
+                  )}
+                </View>
+              )}
+              <View style={styles.urlActions}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.urlBtn,
+                    { backgroundColor: Colors.iconBg, borderWidth: 1, borderColor: Colors.cardBorder },
+                    pressed && { opacity: 0.7 },
+                  ]}
+                  onPress={() => setUrlModalOpen(false)}
+                >
+                  <Text style={[styles.urlBtnCancelText, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
+                    {t('common.cancel')}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.urlBtn,
+                    { backgroundColor: Colors.purple },
+                    pressed && { opacity: 0.7 },
+                  ]}
+                  onPress={handleUrlConfirm}
+                >
+                  <Text style={[styles.urlBtnConfirmText, { color: Colors.white, fontFamily: Fonts.semiBold }]}>
+                    {t('common.confirm')}
+                  </Text>
+                </Pressable>
               </View>
-            )}
-            <View style={styles.urlActions}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.urlBtn,
-                  { backgroundColor: Colors.iconBg, borderWidth: 1, borderColor: Colors.cardBorder },
-                  pressed && { opacity: 0.7 },
-                ]}
-                onPress={() => setUrlModalOpen(false)}
-              >
-                <Text style={[styles.urlBtnCancelText, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
-                  {t('common.cancel')}
-                </Text>
-              </Pressable>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.urlBtn,
-                  { backgroundColor: Colors.purple },
-                  pressed && { opacity: 0.7 },
-                ]}
-                onPress={handleUrlConfirm}
-              >
-                <Text style={[styles.urlBtnConfirmText, { color: Colors.white, fontFamily: Fonts.semiBold }]}>
-                  {t('common.confirm')}
-                </Text>
-              </Pressable>
             </View>
-          </View>
+          </KeyboardAvoidingView>
         </View>
       </Modal>
 
@@ -477,6 +485,13 @@ const styles = StyleSheet.create({
   urlOverlay: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+  },
+  urlKeyboardAvoider: {
+    width: '100%',
+  },
+  urlKeyboardContent: {
+    width: '100%',
     alignItems: 'center',
   },
   urlDialog: {

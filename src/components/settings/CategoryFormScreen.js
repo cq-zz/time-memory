@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ import { showToast } from '../common/Toast';
 import ConfirmModal from '../common/ConfirmModal';
 import FormHeader from '../common/FormHeader';
 import FormInput from '../common/FormInput';
+import FormKeyboardScrollView from '../common/FormKeyboardScrollView';
 
 /** i18n namespace holding the built-in display names for each type. */
 const BUILTIN_NS = { item: 'categories', bill: 'billCategories', asset: 'assetCategories' };
@@ -109,10 +110,9 @@ export default function CategoryFormScreen({ type, editKey }) {
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
       <FormHeader title={isEdit ? t('common.edit') : t('common.add')} />
 
-      <ScrollView
+      <FormKeyboardScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
       >
         <FormInput
           label={t('settings.categoryNamePlaceholder')}
@@ -162,7 +162,7 @@ export default function CategoryFormScreen({ type, editKey }) {
             />
           </View>
         )}
-      </ScrollView>
+      </FormKeyboardScrollView>
 
       {/* Footer actions */}
       <View style={styles.footer}>

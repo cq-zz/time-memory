@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../utils/theme';
@@ -7,6 +8,7 @@ import { hasPassword, setPassword, verifyPassword } from '../../utils/password';
 import { logPasswordAction } from '../../utils/passwordHistory';
 import { showToast } from './Toast';
 import FormInput from './FormInput';
+import FormKeyboardScrollView from './FormKeyboardScrollView';
 
 const MIN_LENGTH = 6;
 
@@ -81,90 +83,96 @@ export default function SecurityModal({ visible, onClose, onChanged }) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable
-          style={[styles.sheet, { backgroundColor: Colors.card, borderRadius: Radius.xl }]}
-          onPress={(e) => e.stopPropagation()}
+        <KeyboardAvoidingView
+          automaticOffset
+          behavior="padding"
+          style={styles.keyboardAvoider}
         >
-          <View style={styles.header}>
-            <View style={styles.headerLeft}>
-              <View style={[styles.iconWrap, { backgroundColor: hexToRgba(Colors.purple, 0.12) }]}>
-                <Ionicons name="lock-closed" size={18} color={Colors.purple} />
+          <Pressable
+            style={[styles.sheet, { backgroundColor: Colors.card, borderRadius: Radius.xl }]}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={styles.header}>
+              <View style={styles.headerLeft}>
+                <View style={[styles.iconWrap, { backgroundColor: hexToRgba(Colors.purple, 0.12) }]}>
+                  <Ionicons name="lock-closed" size={18} color={Colors.purple} />
+                </View>
+                <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
+                  {pwdSet ? t('settings.changePassword') : t('settings.setPassword')}
+                </Text>
               </View>
-              <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-                {pwdSet ? t('settings.changePassword') : t('settings.setPassword')}
-              </Text>
+              <Pressable onPress={onClose} hitSlop={8}>
+                <Ionicons name="close" size={22} color={Colors.textSecondary} />
+              </Pressable>
             </View>
-            <Pressable onPress={onClose} hitSlop={8}>
-              <Ionicons name="close" size={22} color={Colors.textSecondary} />
-            </Pressable>
-          </View>
 
-          <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-            {pwdSet ? (
+            <FormKeyboardScrollView contentContainerStyle={styles.content}>
+              {pwdSet ? (
+                <FormInput
+                  label={t('settings.oldPassword')}
+                  placeholder="••••••"
+                  value={oldPwd}
+                  onChangeText={(v) => {
+                    setOldPwd(v);
+                    setError('');
+                  }}
+                  secure
+                />
+              ) : null}
+
               <FormInput
-                label={t('settings.oldPassword')}
+                label={t('settings.newPassword')}
                 placeholder="••••••"
-                value={oldPwd}
+                value={newPwd}
                 onChangeText={(v) => {
-                  setOldPwd(v);
+                  setNewPwd(v);
                   setError('');
                 }}
                 secure
               />
-            ) : null}
 
-            <FormInput
-              label={t('settings.newPassword')}
-              placeholder="••••••"
-              value={newPwd}
-              onChangeText={(v) => {
-                setNewPwd(v);
-                setError('');
-              }}
-              secure
-            />
+              <FormInput
+                label={t('settings.confirmPassword')}
+                placeholder="••••••"
+                value={confirmPwd}
+                onChangeText={(v) => {
+                  setConfirmPwd(v);
+                  setError('');
+                }}
+                secure
+              />
 
-            <FormInput
-              label={t('settings.confirmPassword')}
-              placeholder="••••••"
-              value={confirmPwd}
-              onChangeText={(v) => {
-                setConfirmPwd(v);
-                setError('');
-              }}
-              secure
-            />
+              {error ? (
+                <Text style={[styles.errorText, { color: Colors.rose, fontFamily: Fonts.semiBold }]}>
+                  {error}
+                </Text>
+              ) : null}
 
-            {error ? (
-              <Text style={[styles.errorText, { color: Colors.rose, fontFamily: Fonts.semiBold }]}>
-                {error}
-              </Text>
-            ) : null}
+              <View style={[styles.notice, { backgroundColor: hexToRgba(Colors.orange, 0.1), borderRadius: Radius.sm }]}>
+                <Ionicons name="alert-circle-outline" size={16} color={Colors.orange} />
+                <Text style={[styles.noticeText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+                  {t('settings.setPasswordNotice')}
+                </Text>
+              </View>
+            </FormKeyboardScrollView>
 
-            <View style={[styles.notice, { backgroundColor: hexToRgba(Colors.orange, 0.1), borderRadius: Radius.sm }]}>
-              <Ionicons name="alert-circle-outline" size={16} color={Colors.orange} />
-              <Text style={[styles.noticeText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-                {t('settings.setPasswordNotice')}
-              </Text>
+            <View style={styles.footer}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.saveBtn,
+                  { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl },
+                  pressed && { opacity: 0.85 },
+                  saving && { opacity: 0.6 },
+                ]}
+                onPress={handleSave}
+              >
+                <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
+                  {t('common.saveRecord')}
+                </Text>
+              </Pressable>
             </View>
-          </ScrollView>
-
-          <View style={styles.footer}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.saveBtn,
-                { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl },
-                pressed && { opacity: 0.85 },
-                saving && { opacity: 0.6 },
-              ]}
-              onPress={handleSave}
-            >
-              <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-                {t('common.saveRecord')}
-              </Text>
-            </Pressable>
-          </View>
-        </Pressable>
+          </Pressable>
+        </KeyboardAvoidingView>
       </Pressable>
     </Modal>
   );
@@ -175,6 +183,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
+  },
+  keyboardAvoider: {
+    width: '100%',
   },
   sheet: {
     maxHeight: '85%',

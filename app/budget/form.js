@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -11,6 +11,7 @@ import FormHeader from '../../src/components/common/FormHeader';
 import WheelPicker from '../../src/components/common/WheelPicker';
 import AmountField from '../../src/components/common/AmountField';
 import FormSaveFooter from '../../src/components/common/FormSaveFooter';
+import FormKeyboardScrollView from '../../src/components/common/FormKeyboardScrollView';
 import ScreenState from '../../src/components/common/ScreenState';
 
 export default function BudgetFormScreen() {
@@ -123,10 +124,9 @@ export default function BudgetFormScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
       <FormHeader title={isEdit ? t('nav.editBudget') : t('nav.addBudget')} />
 
-      <ScrollView
+      <FormKeyboardScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
       >
         <WheelPicker
           label={`${t('budget.year')} *`}
@@ -154,7 +154,7 @@ export default function BudgetFormScreen() {
         <Text style={[styles.formHint, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
           {t('budget.amountHint')}
         </Text>
-      </ScrollView>
+      </FormKeyboardScrollView>
 
       <FormSaveFooter
         label={t('common.saveRecord')}

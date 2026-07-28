@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../utils/theme';
@@ -43,85 +44,92 @@ export default function PasswordModal({ visible, onClose, onSuccess }) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.overlay} onPress={onClose}>
-        <Pressable
-          style={[
-            styles.card,
-            {
-              backgroundColor: Colors.card,
-              borderRadius: Radius.xl,
-              borderColor: Colors.cardBorder,
-            },
-            Shadows.dark,
-          ]}
-          onPress={(e) => e.stopPropagation()}
+        <KeyboardAvoidingView
+          automaticOffset
+          behavior="position"
+          contentContainerStyle={styles.keyboardAvoiderContent}
+          style={styles.keyboardAvoider}
         >
-          <View style={[styles.iconWrap, { backgroundColor: hexToRgba(Colors.purple, 0.12) }]}>
-            <Ionicons name="lock-closed" size={24} color={Colors.purple} />
-          </View>
-
-          <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-            {t('diary.privateDiary')}
-          </Text>
-          <Text style={[styles.desc, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-            {t('diary.privateDiaryHint')}
-          </Text>
-
-          <TextInput
+          <Pressable
             style={[
-              styles.input,
+              styles.card,
               {
-                backgroundColor: Colors.bg,
-                borderRadius: Radius.sm,
-                borderColor: error ? Colors.rose : Colors.grayDot,
-                color: Colors.textPrimary,
-                fontFamily: Fonts.regular,
+                backgroundColor: Colors.card,
+                borderRadius: Radius.xl,
+                borderColor: Colors.cardBorder,
               },
+              Shadows.dark,
             ]}
-            secureTextEntry
-            placeholder="••••••"
-            placeholderTextColor={Colors.textTertiary}
-            value={pwd}
-            onChangeText={(v) => {
-              setPwd(v);
-              setError('');
-            }}
-            autoFocus
-          />
-          {error ? (
-            <Text style={[styles.errorText, { color: Colors.rose, fontFamily: Fonts.semiBold }]}>
-              {error}
-            </Text>
-          ) : null}
+            onPress={(e) => e.stopPropagation()}
+          >
+            <View style={[styles.iconWrap, { backgroundColor: hexToRgba(Colors.purple, 0.12) }]}>
+              <Ionicons name="lock-closed" size={24} color={Colors.purple} />
+            </View>
 
-          <View style={styles.actions}>
-            <Pressable
-              style={({ pressed }) => [
-                styles.btn,
-                styles.btnCancel,
-                { backgroundColor: Colors.bg, borderColor: Colors.grayDot },
-                pressed && { opacity: 0.8 },
+            <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
+              {t('diary.privateDiary')}
+            </Text>
+            <Text style={[styles.desc, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+              {t('diary.privateDiaryHint')}
+            </Text>
+
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: Colors.bg,
+                  borderRadius: Radius.sm,
+                  borderColor: error ? Colors.rose : Colors.grayDot,
+                  color: Colors.textPrimary,
+                  fontFamily: Fonts.regular,
+                },
               ]}
-              onPress={onClose}
-            >
-              <Text style={[styles.btnCancelText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-                {t('common.cancel')}
+              secureTextEntry
+              placeholder="••••••"
+              placeholderTextColor={Colors.textTertiary}
+              value={pwd}
+              onChangeText={(v) => {
+                setPwd(v);
+                setError('');
+              }}
+              autoFocus
+            />
+            {error ? (
+              <Text style={[styles.errorText, { color: Colors.rose, fontFamily: Fonts.semiBold }]}>
+                {error}
               </Text>
-            </Pressable>
-            <Pressable
-              style={({ pressed }) => [
-                styles.btn,
-                styles.btnConfirm,
-                { backgroundColor: Colors.purple },
-                pressed && { opacity: 0.8 },
-              ]}
-              onPress={handleConfirm}
-            >
-              <Text style={[styles.btnConfirmText, { fontFamily: Fonts.semiBold }]}>
-                {t('common.confirm')}
-              </Text>
-            </Pressable>
-          </View>
-        </Pressable>
+            ) : null}
+
+            <View style={styles.actions}>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btn,
+                  styles.btnCancel,
+                  { backgroundColor: Colors.bg, borderColor: Colors.grayDot },
+                  pressed && { opacity: 0.8 },
+                ]}
+                onPress={onClose}
+              >
+                <Text style={[styles.btnCancelText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+                  {t('common.cancel')}
+                </Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btn,
+                  styles.btnConfirm,
+                  { backgroundColor: Colors.purple },
+                  pressed && { opacity: 0.8 },
+                ]}
+                onPress={handleConfirm}
+              >
+                <Text style={[styles.btnConfirmText, { fontFamily: Fonts.semiBold }]}>
+                  {t('common.confirm')}
+                </Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </KeyboardAvoidingView>
       </Pressable>
     </Modal>
   );
@@ -134,6 +142,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
+  },
+  keyboardAvoider: {
+    width: '100%',
+  },
+  keyboardAvoiderContent: {
+    alignItems: 'center',
   },
   card: {
     width: '100%',

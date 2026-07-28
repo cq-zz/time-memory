@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, ScrollView, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +13,7 @@ import ImageUploadField from '../../src/components/common/ImageUploadField';
 import WheelPicker from '../../src/components/common/WheelPicker';
 import FormInput from '../../src/components/common/FormInput';
 import FormSaveFooter from '../../src/components/common/FormSaveFooter';
+import FormKeyboardScrollView from '../../src/components/common/FormKeyboardScrollView';
 import ScreenState from '../../src/components/common/ScreenState';
 
 const TYPE_LABEL = {
@@ -182,10 +183,9 @@ export default function ImportantDateFormScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
       <FormHeader title={isEdit ? t('nav.editImportantDate') : t('nav.addImportantDate')} />
 
-      <ScrollView
+      <FormKeyboardScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
       >
         <ImageUploadField
           value={image}
@@ -273,7 +273,7 @@ export default function ImportantDateFormScreen() {
           onChangeText={setNotes}
           multiline
         />
-      </ScrollView>
+      </FormKeyboardScrollView>
 
       <FormSaveFooter
         label={t('common.saveRecord')}

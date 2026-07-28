@@ -11,7 +11,8 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.ffz.timememory"
+      "package": "com.ffz.timememory",
+      "softwareKeyboardLayoutMode": "resize"
     },
     "web": {
       "bundler": "metro",

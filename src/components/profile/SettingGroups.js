@@ -129,7 +129,7 @@ export default function SettingGroups() {
             icon={darkMode ? 'moon-outline' : 'sunny-outline'}
             label={darkMode ? t('settings.darkModeLabel') : t('settings.lightModeLabel')}
             isToggle
-            toggleValue={darkMode}
+            toggleValue={!darkMode}
             onToggle={() => updateSetting('darkMode', !darkMode)}
           />
           <SettingRow

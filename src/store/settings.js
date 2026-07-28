@@ -18,7 +18,7 @@ import {
 export { CURRENCIES };
 
 export const DEFAULT_SETTINGS = {
-  darkMode: false,
+  darkMode: true,
   language: 'en',
   currency: DEFAULT_CURRENCY,
   annualBudget: 0, // 0 = not set yet

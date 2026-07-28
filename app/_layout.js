@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
+import { StatusBar } from 'react-native';
 import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { useFonts, WorkSans_400Regular, WorkSans_600SemiBold, WorkSans_700Bold } from '@expo-google-fonts/work-sans';
 import { useSettingsStore } from '../src/store/settings';
@@ -36,7 +36,11 @@ export default function RootLayout() {
   }
 
   return (
-    <KeyboardProvider>
+    <KeyboardProvider
+      statusBarTranslucent
+      navigationBarTranslucent
+      preserveEdgeToEdge
+    >
       <ToastProvider>
         <AlertProvider>
           <Stack
@@ -48,7 +52,10 @@ export default function RootLayout() {
           >
             <Stack.Screen name="(tabs)" />
           </Stack>
-          <StatusBar style={darkMode ? 'light' : 'dark'} />
+          <StatusBar
+            barStyle={darkMode ? 'light-content' : 'dark-content'}
+            translucent
+          />
         </AlertProvider>
       </ToastProvider>
     </KeyboardProvider>

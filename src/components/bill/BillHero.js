@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme, hexToRgba } from '../../utils/theme';
 import ImagePreviewModal from '../common/ImagePreviewModal';
+
+const HERO_HEIGHT = Dimensions.get('window').width * 4 / 3;
 
 export default function BillHero({
   image,
@@ -85,7 +87,7 @@ export default function BillHero({
 
 const styles = StyleSheet.create({
   container: { width: '100%' },
-  imageWrap: { width: '100%', aspectRatio: 3 / 4 },
+  imageWrap: { width: '100%', height: HERO_HEIGHT },
   imageFill: { ...StyleSheet.absoluteFillObject },
   image: { width: '100%', height: '100%' },
   fallback: { alignItems: 'center', justifyContent: 'center' },

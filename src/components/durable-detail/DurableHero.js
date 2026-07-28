@@ -1,9 +1,11 @@
 import { useRef, useState } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../utils/theme';
 import ImagePreviewModal from '../common/ImagePreviewModal';
+
+const HERO_HEIGHT = Dimensions.get('window').width * 4 / 3;
 
 /**
  * Durable detail hero: a 3:4 image area (tap to preview, contain-fit with
@@ -87,8 +89,8 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   imageWrap: {
-    aspectRatio: 3 / 4,
     width: '100%',
+    height: HERO_HEIGHT,
   },
   imageFill: {
     ...StyleSheet.absoluteFillObject,

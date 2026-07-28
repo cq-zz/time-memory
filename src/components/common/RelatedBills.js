@@ -31,7 +31,7 @@ function BillRow({ bill, currency, amountColor }) {
         <View style={styles.billTextCol}>
           <Text
             style={[styles.billTitle, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
-            numberOfLines={1}
+            numberOfLines={2}
           >
             {bill.name || '--'}
           </Text>

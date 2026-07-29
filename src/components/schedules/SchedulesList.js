@@ -18,6 +18,7 @@ function ScheduleCard({ item, isLast, onChanged }) {
   const pri = priorityMeta(item.priority, Colors, t);
   const prog = progress(item);
   const reminderOn = Number(item.reminder_enabled) === 1;
+  const progPercent = prog.total > 0 ? prog.done / prog.total : 0;
 
   const cycleStatus = async () => {
     await patchSchedule(item.id, { status: nextStatus(status) });
@@ -40,57 +41,66 @@ function ScheduleCard({ item, isLast, onChanged }) {
         !isLast && styles.cardGap,
       ]}
     >
-      {/* Top row: priority badge + reminder bell */}
+      {/* Top row: title + status pill (right) */}
       <View style={styles.topRow}>
-        <View style={[styles.priorityBadge, { backgroundColor: hexToRgba(pri.color, 0.12) }]}>
-          <View style={[styles.priorityDot, { backgroundColor: pri.color }]} />
-          <Text style={[styles.priorityText, { color: pri.color, fontFamily: Fonts.bold }]}>
-            {pri.label}
-          </Text>
-        </View>
-        {reminderOn ? <Ionicons name="notifications" size={18} color={Colors.purple} /> : null}
-      </View>
-
-      {/* Title */}
-      <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={2}>
-        {item.title}
-      </Text>
-
-      {/* Date range + checklist progress */}
-      <View style={styles.metaRow}>
-        <View style={styles.metaLeft}>
-          <Ionicons name="calendar-outline" size={14} color={Colors.textSecondary} />
-          <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-            {dateRangeText(item)}
-          </Text>
-        </View>
-        {prog.total > 0 ? (
-          <Text style={[styles.progressText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-            {prog.done}/{prog.total}
-          </Text>
-        ) : null}
-      </View>
-
-      {/* Bottom row: status pill (tap to cycle) + reminder switch */}
-      <View style={styles.bottomRow}>
+        <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
+          {item.title}
+        </Text>
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={cycleStatus}
           style={[styles.statusPill, { backgroundColor: hexToRgba(sta.color, 0.12) }]}
         >
-          <Ionicons name={sta.icon} size={14} color={sta.color} />
-          <Text style={[styles.statusText, { color: sta.color, fontFamily: Fonts.bold }]}>
+          <Ionicons name={sta.icon} size={12} color={sta.color} />
+          <Text style={[styles.statusText, { color: sta.color, fontFamily: Fonts.semiBold }]}>
             {sta.label}
           </Text>
         </TouchableOpacity>
+      </View>
+
+      {/* Middle: left icon + right info */}
+      <View style={styles.middle}>
+        <View style={[styles.iconBox, { backgroundColor: hexToRgba(pri.color, 0.1), borderRadius: Radius.md }]}>
+          <Ionicons name="calendar-outline" size={28} color={pri.color} />
+        </View>
+
+        <View style={styles.info}>
+          <Text style={[styles.priorityLabel, { color: pri.color, fontFamily: Fonts.bold }]} numberOfLines={1}>
+            {pri.label}
+          </Text>
+          <View style={styles.metaRow}>
+            <Ionicons name="calendar-outline" size={11} color={Colors.textSecondary} />
+            <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
+              {dateRangeText(item)}
+            </Text>
+          </View>
+          {prog.total > 0 ? (
+            <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+              {prog.done}/{prog.total} {t('schedule.checklist') || 'checklist'}
+            </Text>
+          ) : null}
+        </View>
 
         <Switch
           value={reminderOn}
           onValueChange={toggleReminder}
           trackColor={{ false: Colors.lightGray, true: hexToRgba(Colors.purple, 0.4) }}
           thumbColor={reminderOn ? Colors.purple : Colors.card}
+          style={styles.switch}
         />
       </View>
+
+      {/* Bottom: checklist progress bar */}
+      {prog.total > 0 ? (
+        <View style={[styles.track, { backgroundColor: Colors.avatarBg, borderRadius: Radius.pill }]}>
+          <View
+            style={[
+              styles.fill,
+              { backgroundColor: sta.color, borderRadius: Radius.pill, width: `${progPercent * 100}%` },
+            ]}
+          />
+        </View>
+      ) : null}
     </TouchableOpacity>
   );
 }
@@ -146,7 +156,7 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   card: {
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     gap: 10,
   },
@@ -157,71 +167,66 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 8,
   },
-  priorityBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 9999,
-  },
-  priorityDot: {
-    width: 7,
-    height: 7,
-    borderRadius: 9999,
-  },
-  priorityText: {
-    fontSize: 11,
-    lineHeight: 16,
-    letterSpacing: 0.4,
-  },
-  title: {
-    fontSize: 17,
-    lineHeight: 24,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  metaLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
+  name: {
+    fontSize: 14,
+    lineHeight: 20,
     flexShrink: 1,
-  },
-  metaText: {
-    fontSize: 12,
-    lineHeight: 18,
-    letterSpacing: 0.4,
-  },
-  progressText: {
-    fontSize: 12,
-    lineHeight: 18,
-    letterSpacing: 0.4,
-  },
-  bottomRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(120,120,120,0.12)',
   },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 9999,
+    flexShrink: 0,
   },
   statusText: {
-    fontSize: 12,
+    fontSize: 10,
+    lineHeight: 14,
+    letterSpacing: 0.6,
+  },
+  middle: {
+    flexDirection: 'row',
+    gap: 12,
+    alignItems: 'center',
+  },
+  iconBox: {
+    width: 80,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  info: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 4,
+  },
+  priorityLabel: {
+    fontSize: 20,
+    lineHeight: 26,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 11,
     lineHeight: 16,
     letterSpacing: 0.4,
+  },
+  switch: {
+    flexShrink: 0,
+  },
+  track: {
+    height: 6,
+    overflow: 'hidden',
+  },
+  fill: {
+    height: 6,
   },
   empty: {
     paddingVertical: 48,

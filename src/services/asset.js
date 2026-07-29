@@ -35,7 +35,22 @@ export function companionDays(row) {
     return null;
   }
   const days = daysBetween(row.purchase_date, endDate);
-  return Number.isFinite(days) ? Math.max(0, days) : null;
+  return Number.isFinite(days) ? Math.max(1, days) : null;
+}
+
+/** Expected total lifespan in days (purchase → expiry); null when no expiry_date. */
+export function expectedLifespanDays(row) {
+  if (!row.purchase_date || !row.expiry_date) return null;
+  const d = daysBetween(row.purchase_date, row.expiry_date);
+  return Number.isFinite(d) && d > 0 ? d : null;
+}
+
+/** Percentage of lifespan consumed (0–100); null when not computable. */
+export function lifespanPercent(row) {
+  const used = companionDays(row);
+  const total = expectedLifespanDays(row);
+  if (used == null || !total || total <= 0) return null;
+  return Math.max(0, Math.min(100, (used / total) * 100));
 }
 
 /** The value to show for an asset: current_price, falling back to purchase_price. */

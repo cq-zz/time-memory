@@ -40,7 +40,7 @@ export default function ImportantDateHero({ image, fallbackIcon, title, typeText
           </View>
         )}
         <View style={styles.imageTag} pointerEvents="none">
-          <View style={[styles.countdownChip, { backgroundColor: hexToRgba(Colors.inkDeep, 0.55) }]}>
+          <View style={styles.countdownChip}>
             <Text style={[styles.countdownLabel, { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.bold }]}>
               {t('detail.countdown')}
             </Text>
@@ -78,6 +78,8 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   imageFallback: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },

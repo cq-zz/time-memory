@@ -5,7 +5,6 @@ import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../utils/theme';
 import { countdownDays, yearsPassed } from '../../services/importantDate';
 import { typeMeta, countdownText } from '../../utils/importantDateMeta';
-import { priorityMeta } from '../../utils/scheduleMeta';
 import { formatDisplay } from '../../utils/date';
 
 function ImportantDateCard({ item, isLast }) {
@@ -14,10 +13,8 @@ function ImportantDateCard({ item, isLast }) {
   const router = useRouter();
 
   const ty = typeMeta(item.type, Colors, t);
-  const pri = priorityMeta(item.priority, Colors, t);
   const days = countdownDays(item);
   const cd = countdownText(days, Colors, t);
-  const reminderOn = Number(item.reminder_enabled) === 1;
   const isAnnual = (item.reminder_type || 'annual') === 'annual';
   const years = yearsPassed(item);
 
@@ -32,41 +29,41 @@ function ImportantDateCard({ item, isLast }) {
         !isLast && styles.cardGap,
       ]}
     >
-      {/* Top row: type badge + priority + bell */}
+      {/* Top row: name + type pill (right) */}
       <View style={styles.topRow}>
-        <View style={[styles.typeBadge, { backgroundColor: hexToRgba(ty.color, 0.12) }]}>
-          <Ionicons name={ty.icon} size={12} color={ty.color} />
-          <Text style={[styles.typeText, { color: ty.color, fontFamily: Fonts.bold }]}>{ty.label}</Text>
-        </View>
-        <View style={styles.topRight}>
-          <View style={[styles.priorityBadge, { backgroundColor: hexToRgba(pri.color, 0.12) }]}>
-            <Text style={[styles.priorityText, { color: pri.color, fontFamily: Fonts.bold }]}>
-              {pri.label}
-            </Text>
-          </View>
-          {reminderOn ? <Ionicons name="notifications" size={16} color={Colors.purple} /> : null}
+        <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <View style={[styles.statusPill, { backgroundColor: hexToRgba(ty.color, 0.12) }]}>
+          <Ionicons name={ty.icon} size={11} color={ty.color} />
+          <Text style={[styles.statusText, { color: ty.color, fontFamily: Fonts.semiBold }]}>
+            {ty.label}
+          </Text>
         </View>
       </View>
 
-      {/* Name */}
-      <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
-        {item.name}
-      </Text>
+      {/* Middle: left icon + right info */}
+      <View style={styles.middle}>
+        <View style={[styles.iconBox, { backgroundColor: hexToRgba(ty.color, 0.1), borderRadius: Radius.md }]}>
+          <Ionicons name={ty.icon} size={28} color={ty.color} />
+        </View>
 
-      {/* Details row */}
-      <View style={styles.detailRow}>
-        <View style={styles.detailLeft}>
-          <Ionicons name="calendar-outline" size={14} color={Colors.textSecondary} />
-          <Text style={[styles.detailText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-            {formatDisplay(item.date)}
+        <View style={styles.info}>
+          <Text style={[styles.countdown, { color: cd.color, fontFamily: Fonts.bold }]} numberOfLines={1}>
+            {cd.text}
           </Text>
+          <View style={styles.metaRow}>
+            <Ionicons name="calendar-outline" size={11} color={Colors.textSecondary} />
+            <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+              {formatDisplay(item.date)}
+            </Text>
+          </View>
           {isAnnual && years != null ? (
-            <Text style={[styles.yearText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+            <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
               {t('importantDate.yearCount', { count: years + 1 })}
             </Text>
           ) : null}
         </View>
-        <Text style={[styles.countdown, { color: cd.color, fontFamily: Fonts.bold }]}>{cd.text}</Text>
       </View>
     </TouchableOpacity>
   );
@@ -107,7 +104,7 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   card: {
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
     gap: 10,
   },
@@ -118,67 +115,54 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  typeBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start',
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 9999,
-  },
-  typeText: {
-    fontSize: 11,
-    lineHeight: 16,
-    letterSpacing: 0.4,
-  },
-  topRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
     gap: 8,
   },
-  priorityBadge: {
+  name: {
+    fontSize: 14,
+    lineHeight: 20,
+    flexShrink: 1,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 9999,
+    flexShrink: 0,
   },
-  priorityText: {
+  statusText: {
     fontSize: 10,
-    lineHeight: 15,
-    letterSpacing: 0.4,
+    lineHeight: 14,
+    letterSpacing: 0.6,
   },
-  name: {
-    fontSize: 17,
-    lineHeight: 24,
-  },
-  detailRow: {
+  middle: {
     flexDirection: 'row',
+    gap: 12,
+  },
+  iconBox: {
+    width: 80,
+    height: 80,
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(120,120,120,0.12)',
+    justifyContent: 'center',
   },
-  detailLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    flexShrink: 1,
-  },
-  detailText: {
-    fontSize: 12,
-    lineHeight: 18,
-    letterSpacing: 0.4,
-  },
-  yearText: {
-    fontSize: 12,
-    lineHeight: 18,
-    letterSpacing: 0.4,
+  info: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 4,
   },
   countdown: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 20,
+    lineHeight: 26,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 11,
+    lineHeight: 16,
     letterSpacing: 0.4,
   },
   empty: {

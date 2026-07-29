@@ -53,7 +53,7 @@ export default function BillHero({
         )}
 
         <View style={styles.tags} pointerEvents="none">
-          <View style={[styles.valueChip, { backgroundColor: hexToRgba(Colors.inkDeep, 0.55) }]}>
+          <View style={styles.valueChip}>
             <Text
               style={[styles.valueLabel, { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.bold }]}
               numberOfLines={1}
@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   imageWrap: { width: '100%', height: HERO_HEIGHT },
   imageFill: { ...StyleSheet.absoluteFillObject },
   image: { width: '100%', height: '100%' },
-  fallback: { alignItems: 'center', justifyContent: 'center' },
+  fallback: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
   tags: { position: 'absolute', left: 16, right: 16, bottom: 16, alignItems: 'flex-start', gap: 8 },
   valueChip: {
     flexDirection: 'row',

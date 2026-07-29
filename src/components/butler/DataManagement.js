@@ -60,10 +60,26 @@ function duplicateKey(moduleId, row) {
   return `${String(name).trim().toLowerCase()}|${String(row[dateField] ?? '').trim()}`;
 }
 
+const IMPORTANT_DATE_CATEGORY_KEYS = ['family', 'friend', 'birthday', 'wedding', 'holiday', 'work', 'other'];
+
 async function resolveImportedCategory(moduleId, rawCategory, t) {
-  const type = CATEGORY_TYPES[moduleId];
   const raw = String(rawCategory ?? '').trim();
-  if (!type || !raw) return raw;
+  if (!raw) return raw;
+
+  // Important-date categories: map translated labels back to keys
+  if (moduleId === 'important-date') {
+    const normalized = raw.toLocaleLowerCase();
+    const matched = IMPORTANT_DATE_CATEGORY_KEYS.find((key) => {
+      const suffix = key.charAt(0).toUpperCase() + key.slice(1);
+      const zhLabel = zhCN.importantDate?.[`category${suffix}`] || '';
+      const enLabel = en.importantDate?.[`category${suffix}`] || '';
+      return [key, zhLabel, enLabel].some((v) => v && String(v).toLocaleLowerCase() === normalized);
+    });
+    return matched || raw;
+  }
+
+  const type = CATEGORY_TYPES[moduleId];
+  if (!type) return raw;
 
   const store = useCategoryStore.getState();
   const categories = getMergedCategories(store, type);

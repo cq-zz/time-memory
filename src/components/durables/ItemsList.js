@@ -38,75 +38,63 @@ function ItemCard({ item, currency, isLast }) {
         !isLast && styles.cardGap,
       ]}
     >
-      <View style={styles.cardTop}>
-        {/* Image / icon fallback */}
-        <View style={[styles.image, { backgroundColor: Colors.avatarBg, borderRadius: Radius.xl }]}>
+      {/* Top row: name + status pill (right) */}
+      <View style={styles.topRow}>
+        <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
+          {item.name}
+        </Text>
+        <View
+          style={[
+            styles.statusPill,
+            { backgroundColor: inUse ? 'rgba(74, 168, 104, 0.15)' : 'rgba(120,120,120,0.15)' },
+          ]}
+        >
+          <View style={[styles.statusDot, { backgroundColor: inUse ? Colors.green : Colors.textSecondary }]} />
+          <Text style={[styles.statusText, { color: inUse ? Colors.green : Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+            {inUse ? t('durable.inUse') : t('durable.disposed')}
+          </Text>
+        </View>
+      </View>
+
+      {/* Middle: left image + right info */}
+      <View style={styles.middle}>
+        <View style={[styles.image, { backgroundColor: Colors.avatarBg, borderRadius: Radius.md }]}>
           {item.image ? (
             <Image source={{ uri: item.image }} style={styles.imageInner} resizeMode="cover" />
           ) : (
-            <Ionicons name={cat.icon} size={36} color={Colors.textSecondary} />
+            <Ionicons name={cat.icon} size={32} color={Colors.textSecondary} />
           )}
         </View>
 
         <View style={styles.info}>
-          <View style={styles.topInfoRow}>
-            <View style={styles.categoryRow}>
-              <Ionicons name={cat.icon} size={12} color={Colors.textSecondary} />
-              <Text style={[styles.categoryText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-                {cat.label}
-              </Text>
-            </View>
-            <Text style={[styles.price, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
-              {formatMoney(item.purchase_price, currency)}
+          <Text style={[styles.price, { color: Colors.textPrimary, fontFamily: Fonts.bold }]} numberOfLines={1}>
+            {formatMoney(item.purchase_price, currency)}
+          </Text>
+          <View style={styles.metaRow}>
+            <Ionicons name={cat.icon} size={11} color={Colors.textSecondary} />
+            <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+              {cat.label}
             </Text>
           </View>
-
-          <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={2}>
-            {item.name}
-          </Text>
-
-          <View
-            style={[
-              styles.statusPill,
-              { backgroundColor: inUse ? 'rgba(74, 168, 104, 0.15)' : 'rgba(120,120,120,0.15)' },
-            ]}
-          >
-            <View style={[styles.statusDot, { backgroundColor: inUse ? Colors.green : Colors.textSecondary }]} />
-            <Text
-              style={[
-                styles.statusText,
-                { color: inUse ? Colors.green : Colors.textSecondary, fontFamily: Fonts.semiBold },
-              ]}
-            >
-              {inUse ? t('durable.inUse') : t('durable.disposed')}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Lifespan */}
-      <View style={styles.lifespanBlock}>
-        <View style={styles.lifespanRow}>
-          <Text style={[styles.lifespanLabel, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-            {t('durable.companionDuration')}
-          </Text>
-          <Text style={[styles.lifespanValue, { color: barColor, fontFamily: Fonts.semiBold }]}>
+          <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
             {days != null
-              ? `${days}${lifespanDays ? ` / ${lifespanDays}` : ''} ${t('common.days')}`
+              ? `${t('durable.companionDuration')} ${days}${lifespanDays ? ` / ${lifespanDays}` : ''} ${t('common.days')}`
               : '--'}
           </Text>
-        </View>
-        <View style={[styles.track, { backgroundColor: Colors.avatarBg, borderRadius: Radius.pill }]}>
-          <View
-            style={[
-              styles.fill,
-              {
-                backgroundColor: barColor,
-                borderRadius: Radius.pill,
-                width: `${(progress ?? 0) * 100}%`,
-              },
-            ]}
-          />
+          {lifespanDays ? (
+            <View style={[styles.track, { backgroundColor: Colors.avatarBg, borderRadius: Radius.pill }]}>
+              <View
+                style={[
+                  styles.fill,
+                  {
+                    backgroundColor: barColor,
+                    borderRadius: Radius.pill,
+                    width: `${(progress ?? 0) * 100}%`,
+                  },
+                ]}
+              />
+            </View>
+          ) : null}
         </View>
       </View>
     </TouchableOpacity>
@@ -119,7 +107,6 @@ export default function ItemsList({ items, year, month, search, filter, currency
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
-  // year=null → all; month=null → whole year; otherwise match YYYY-MM prefix.
   const datePrefix = year != null ? (month != null ? `${year}-${pad(month)}` : `${year}`) : null;
 
   const filtered = items.filter((item) => {
@@ -151,59 +138,32 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   card: {
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
+    gap: 10,
   },
   cardGap: {
     marginBottom: 16,
   },
-  cardTop: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  image: {
-    width: 96,
-    height: 96,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  imageInner: {
-    width: 96,
-    height: 96,
-  },
-  info: {
-    flex: 1,
-    gap: 6,
-    justifyContent: 'center',
-  },
-  topInfoRow: {
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-  },
-  categoryRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  categoryText: {
-    fontSize: 10,
-    lineHeight: 14,
-    letterSpacing: 0.8,
+    gap: 8,
   },
   name: {
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 20,
+    flexShrink: 1,
   },
   statusPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-start',
     gap: 5,
     paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     borderRadius: 9999,
+    flexShrink: 0,
   },
   statusDot: {
     width: 6,
@@ -215,37 +175,46 @@ const styles = StyleSheet.create({
     lineHeight: 14,
     letterSpacing: 0.6,
   },
+  middle: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  image: {
+    width: 80,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  imageInner: {
+    width: 80,
+    height: 80,
+  },
+  info: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 4,
+  },
   price: {
-    fontSize: 16,
-    lineHeight: 22,
-    maxWidth: 120,
-    textAlign: 'right',
-    flexShrink: 0,
+    fontSize: 20,
+    lineHeight: 26,
   },
-  lifespanBlock: {
-    marginTop: 16,
-    gap: 8,
-  },
-  lifespanRow: {
+  metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 4,
   },
-  lifespanLabel: {
-    fontSize: 10,
-    lineHeight: 14,
-    letterSpacing: 0.8,
-  },
-  lifespanValue: {
-    fontSize: 12,
+  metaText: {
+    fontSize: 11,
     lineHeight: 16,
+    letterSpacing: 0.4,
   },
   track: {
-    height: 8,
+    height: 6,
     overflow: 'hidden',
   },
   fill: {
-    height: 8,
+    height: 6,
   },
   empty: {
     paddingVertical: 48,

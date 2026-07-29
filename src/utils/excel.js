@@ -19,7 +19,9 @@ import {
   WEATHER_OPTIONS,
   IMPORTANT_DATE_TYPES,
   REMINDER_TYPES,
+  CATEGORY_BUILTINS,
 } from './constant';
+import { useCategoryStore, BUILTIN_NS } from '../store/categories';
 
 // ── Small helpers ─────────────────────────────────
 
@@ -59,6 +61,43 @@ const localizedEnumText = (text, language = i18n.language) =>
 const labelOf = (options, key) => {
   const o = options.find((x) => x.key === key);
   return o ? localizedEnumText(o.label) : key || '';
+};
+
+/** Module id → category type used by the category store. */
+const MODULE_CATEGORY_TYPE = { durable: 'item', asset: 'asset', bills: 'bill' };
+
+/** Important-date category keys → i18n suffix (importantDate.category<Suffix>). */
+const IMPORTANT_DATE_CATEGORY_KEYS = ['family', 'friend', 'birthday', 'wedding', 'holiday', 'work', 'other'];
+
+/**
+ * Translate a stored category key to its localized display label for export.
+ * - Built-in categories: resolved via i18n namespace (categories / billCategories / assetCategories).
+ * - Custom categories: use their user-defined name directly.
+ * - Important-date categories: resolved via importantDate.categoryXxx keys.
+ * - Fallback: return the raw key as-is.
+ */
+const localizedCategory = (moduleId, key) => {
+  if (!key) return '';
+  const type = MODULE_CATEGORY_TYPE[moduleId];
+  if (type) {
+    const builtin = (CATEGORY_BUILTINS[type] || []).find((c) => c.key === key);
+    if (builtin) {
+      const translated = i18n.t(`${BUILTIN_NS[type]}.${key}`);
+      // i18next returns the key path itself when translation is missing
+      return translated !== `${BUILTIN_NS[type]}.${key}` ? translated : builtin.label;
+    }
+    const custom = (useCategoryStore.getState().custom[type] || []).find((c) => c.key === key);
+    if (custom) return custom.name;
+    return key;
+  }
+  if (moduleId === 'important-date') {
+    const suffix = key.charAt(0).toUpperCase() + key.slice(1);
+    if (IMPORTANT_DATE_CATEGORY_KEYS.includes(key)) {
+      return i18n.t(`importantDate.category${suffix}`);
+    }
+    return key;
+  }
+  return key;
 };
 
 /** Case-insensitive label-or-key lookup. Returns fallback when empty, null when invalid. */
@@ -264,7 +303,7 @@ export const EXPORT_MODULES = [
       'In Use', '2030-06-01', '', 'USD', '', '', 'Headphones', nowIso(),
     ],
     toRow: (item) => [
-      safe(item.name), safe(item.category), labelOf(ACQUISITION_METHODS, item.acquisition_method),
+      safe(item.name), localizedCategory('durable', item.category), labelOf(ACQUISITION_METHODS, item.acquisition_method),
       safe(item.purchase_date), safe(item.purchase_price ?? 0),
       labelOf(DURABLE_STATUS_OPTIONS, item.status), safe(item.expected_lifespan),
       safe(item.expiry_date), safe(item.currency), safe(item.linked_asset_name), exportImageUrl(item.image), safe(item.notes), safe(item.created_at),
@@ -324,7 +363,7 @@ export const EXPORT_MODULES = [
       7450, '', 'USD', '', '', nowIso(), nowIso(),
     ],
     toRow: (item) => [
-      safe(item.name), safe(item.category), labelOf(ACQUISITION_METHODS, item.acquisition_method),
+      safe(item.name), localizedCategory('asset', item.category), labelOf(ACQUISITION_METHODS, item.acquisition_method),
       labelOf(ASSET_STATUS_OPTIONS, item.status), safe(item.purchase_date), safe(item.purchase_price ?? 0),
       safe(item.current_price ?? 0), safe(item.expiry_date), safe(item.currency),
       exportImageUrl(item.image), safe(item.notes), safe(item.created_at), safe(item.updated_at),
@@ -385,7 +424,7 @@ export const EXPORT_MODULES = [
     ],
     toRow: (item) => [
       safe(item.name), labelOf(BILL_TYPE_OPTIONS, item.bill_type), safe(item.amount ?? 0),
-      safe(item.category), safe(item.consumption_date), safe(item.currency),
+      localizedCategory('bills', item.category), safe(item.consumption_date), safe(item.currency),
       safe(item.source === 'durable' ? localizedEnumText('Item') : item.source === 'asset' ? localizedEnumText('Asset') : ''),
       safe(item.source_name), exportImageUrl(item.receipt_image), safe(item.notes), safe(item.created_at),
     ],
@@ -536,7 +575,7 @@ export const EXPORT_MODULES = [
     example: ['Birthday', '2025-09-12', 'Birthday', 'family', 'High', 'Yes', 'Annual', '1', '', '', nowIso()],
     toRow: (item) => [
       safe(item.name), safe(item.date), labelOf(IMPORTANT_DATE_TYPES, item.type),
-      safe(item.category), labelOf(SCHEDULE_PRIORITIES, item.priority),
+      localizedCategory('important-date', item.category), labelOf(SCHEDULE_PRIORITIES, item.priority),
       yesNo(item.reminder_enabled), labelOf(REMINDER_TYPES, item.reminder_type),
       safe(item.reminder_days_before), exportImageUrl(item.image), safe(item.notes), safe(item.created_at),
     ],

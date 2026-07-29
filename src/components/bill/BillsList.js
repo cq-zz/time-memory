@@ -17,7 +17,6 @@ function BillCard({ item, isLast }) {
   const isIncome = item.bill_type === 'income';
   const cat = resolveCategoryMeta(categoryState, 'bill', item.category, t);
   const amountColor = isIncome ? Colors.green : Colors.rose;
-  const linked = Boolean(item.source && item.source_id);
 
   return (
     <TouchableOpacity
@@ -30,34 +29,39 @@ function BillCard({ item, isLast }) {
         !isLast && styles.cardGap,
       ]}
     >
-      {/* Category icon */}
-      <View style={[styles.iconBox, { backgroundColor: hexToRgba(Colors.purple, 0.1), borderRadius: Radius.circle }]}>
-        <Ionicons name={cat.icon || 'pricetag-outline'} size={20} color={Colors.purple} />
-      </View>
-
-      {/* Body */}
-      <View style={styles.body}>
-        <View style={styles.titleRow}>
-          <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={2}>
-            {item.name || '--'}
+      {/* Top row: name + type pill (right) */}
+      <View style={styles.topRow}>
+        <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
+          {item.name || '--'}
+        </Text>
+        <View style={[styles.statusPill, { backgroundColor: hexToRgba(amountColor, 0.12) }]}>
+          <View style={[styles.statusDot, { backgroundColor: amountColor }]} />
+          <Text style={[styles.statusText, { color: amountColor, fontFamily: Fonts.semiBold }]}>
+            {isIncome ? t('bills.income') : t('bills.expense')}
           </Text>
-          {linked ? <Ionicons name="link" size={13} color={Colors.textTertiary} /> : null}
         </View>
-        <Text style={[styles.meta, { color: Colors.textSecondary, fontFamily: Fonts.regular }]} numberOfLines={1}>
-          {formatDisplay(item.consumption_date)}
-          {cat.label ? ` · ${cat.label}` : ''}
-        </Text>
       </View>
 
-      {/* Amount */}
-      <View style={styles.amountCol}>
-        <Text style={[styles.amount, { color: amountColor, fontFamily: Fonts.bold }]}>
-          {isIncome ? '+' : '-'}
-          {formatMoney(Number(item.amount) || 0, currency)}
-        </Text>
-        <Text style={[styles.typeText, { color: amountColor, fontFamily: Fonts.bold }]}>
-          {isIncome ? t('bills.income') : t('bills.expense')}
-        </Text>
+      {/* Middle: left icon + right info */}
+      <View style={styles.middle}>
+        <View style={[styles.iconBox, { backgroundColor: hexToRgba(Colors.purple, 0.1), borderRadius: Radius.md }]}>
+          <Ionicons name={cat.icon || 'pricetag-outline'} size={28} color={Colors.purple} />
+        </View>
+
+        <View style={styles.info}>
+          <Text style={[styles.amount, { color: amountColor, fontFamily: Fonts.bold }]} numberOfLines={1}>
+            {isIncome ? '+' : '-'}{formatMoney(Number(item.amount) || 0, currency)}
+          </Text>
+          <View style={styles.metaRow}>
+            <Ionicons name={cat.icon} size={11} color={Colors.textSecondary} />
+            <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+              {cat.label}
+            </Text>
+          </View>
+          <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+            {formatDisplay(item.consumption_date)}
+          </Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
@@ -97,54 +101,71 @@ export default function BillsList({ items, year, month, search, filter, loading 
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
+    padding: 14,
     borderWidth: 1,
-    gap: 12,
+    gap: 10,
   },
   cardGap: {
     marginBottom: 16,
   },
+  topRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 8,
+  },
+  name: {
+    fontSize: 14,
+    lineHeight: 20,
+    flexShrink: 1,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 9999,
+    flexShrink: 0,
+  },
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 9999,
+  },
+  statusText: {
+    fontSize: 10,
+    lineHeight: 14,
+    letterSpacing: 0.6,
+  },
+  middle: {
+    flexDirection: 'row',
+    gap: 12,
+  },
   iconBox: {
-    width: 44,
-    height: 44,
+    width: 80,
+    height: 80,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  body: {
+  info: {
     flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 6,
-  },
-  name: {
-    fontSize: 15,
-    lineHeight: 21,
-    flexShrink: 1,
-  },
-  meta: {
-    fontSize: 12,
-    lineHeight: 17,
-  },
-  amountCol: {
-    alignItems: 'flex-end',
-    gap: 2,
-    flexShrink: 0,
+    justifyContent: 'center',
+    gap: 4,
   },
   amount: {
-    fontSize: 15,
-    lineHeight: 21,
+    fontSize: 20,
+    lineHeight: 26,
   },
-  typeText: {
-    fontSize: 10,
-    lineHeight: 14,
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  metaText: {
+    fontSize: 11,
+    lineHeight: 16,
     letterSpacing: 0.4,
-    textTransform: 'uppercase',
   },
   empty: {
     paddingVertical: 48,

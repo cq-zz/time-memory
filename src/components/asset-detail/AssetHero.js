@@ -42,7 +42,7 @@ export default function AssetHero({ image, fallbackIcon, title, statusText, stat
         )}
 
         <View style={styles.imageTag} pointerEvents="none">
-          <View style={[styles.valueChip, { backgroundColor: hexToRgba(Colors.inkDeep, 0.55) }]}>
+          <View style={styles.valueChip}>
             <Text style={[styles.valueLabel, { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.bold }]}>
               {t('detail.currentValue')}
             </Text>
@@ -82,6 +82,8 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   imageFallback: {
+    width: '100%',
+    height: '100%',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -62,7 +62,7 @@ export function companionDays(row) {
   }
 
   const days = daysBetween(row.purchase_date, endDate);
-  return days == null ? null : Math.max(0, days);
+  return days == null ? null : Math.max(1, days);
 }
 
 /**

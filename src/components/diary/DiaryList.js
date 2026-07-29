@@ -7,8 +7,6 @@ import { useTheme, hexToRgba } from '../../utils/theme';
 import { WEATHER_OPTIONS } from '../../utils/constant';
 import { formatDisplay } from '../../utils/date';
 
-const ACCENT_CYCLE = ['#F28B50', '#A05C82', '#4A90D9', '#E86B8A', '#E8B830', '#6BAA90'];
-
 const WEATHER_EMOJI = {};
 WEATHER_OPTIONS.forEach((w) => {
   WEATHER_EMOJI[w.key] = w.emoji;
@@ -19,16 +17,14 @@ export function weatherLabel(key, t) {
   return t(`diary.weather${key.charAt(0).toUpperCase()}${key.slice(1)}`);
 }
 
-function DiaryCard({ item, index, isLast, onPress }) {
+function DiaryCard({ item, isLast, onPress }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
   const [imageError, setImageError] = useState(false);
 
-  const accent = ACCENT_CYCLE[index % ACCENT_CYCLE.length];
   const emoji = WEATHER_EMOJI[item.weather] || '';
   const isPrivate = Number(item.is_private) === 1;
   const hasImage = Boolean(item.image) && !imageError;
-  const isBroken = Boolean(item.image) && imageError;
 
   return (
     <TouchableOpacity
@@ -41,49 +37,50 @@ function DiaryCard({ item, index, isLast, onPress }) {
         !isLast && styles.cardGap,
       ]}
     >
-      {/* Accent bar */}
-      <View style={[styles.bar, { backgroundColor: accent }]} />
-
-      {/* Icon chip: thumbnail / broken hint / book icon */}
-      <View style={[styles.chip, { backgroundColor: hexToRgba(accent, 0.12), borderRadius: Radius.sm }]}>
-        {hasImage ? (
-          <Image
-            source={{ uri: item.image }}
-            style={styles.chipImage}
-            contentFit="cover"
-            onError={() => setImageError(true)}
-          />
-        ) : isBroken ? (
-          <Text style={[styles.brokenHint, { color: Colors.textTertiary, fontFamily: Fonts.semiBold }]}>
-            {t('diary.imageBroken')}
-          </Text>
-        ) : (
-          <Ionicons name="book-outline" size={22} color={accent} />
-        )}
-      </View>
-
-      {/* Body */}
-      <View style={styles.body}>
-        <View style={styles.titleRow}>
-          <Text
-            style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
-            numberOfLines={1}
-          >
-            {item.title}
-          </Text>
-          {isPrivate ? <Ionicons name="lock-closed" size={13} color={Colors.textTertiary} /> : null}
-        </View>
-        <Text style={[styles.date, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-          {formatDisplay(item.date)}
+      {/* Top row: title + private pill (right) */}
+      <View style={styles.topRow}>
+        <Text style={[styles.name, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
+          {item.title}
         </Text>
-        {emoji ? (
-          <Text style={[styles.weather, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-            {emoji} {weatherLabel(item.weather, t)}
+        <View
+          style={[
+            styles.statusPill,
+            { backgroundColor: isPrivate ? hexToRgba(Colors.purple, 0.12) : 'rgba(74, 168, 104, 0.15)' },
+          ]}
+        >
+          <View style={[styles.statusDot, { backgroundColor: isPrivate ? Colors.purple : Colors.green }]} />
+          <Text style={[styles.statusText, { color: isPrivate ? Colors.purple : Colors.green, fontFamily: Fonts.semiBold }]}>
+            {isPrivate ? t('diary.private') : t('diary.public')}
           </Text>
-        ) : null}
+        </View>
       </View>
 
-      <Ionicons name="chevron-forward" size={16} color={hexToRgba(accent, 0.5)} />
+      {/* Middle: left image + right info */}
+      <View style={styles.middle}>
+        <View style={[styles.image, { backgroundColor: Colors.avatarBg, borderRadius: Radius.md }]}>
+          {hasImage ? (
+            <Image
+              source={{ uri: item.image }}
+              style={styles.imageInner}
+              contentFit="cover"
+              onError={() => setImageError(true)}
+            />
+          ) : (
+            <Ionicons name="book-outline" size={32} color={Colors.textSecondary} />
+          )}
+        </View>
+
+        <View style={styles.info}>
+          <Text style={[styles.dateText, { color: Colors.textPrimary, fontFamily: Fonts.bold }]} numberOfLines={1}>
+            {formatDisplay(item.date)}
+          </Text>
+          {emoji ? (
+            <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+              {emoji} {weatherLabel(item.weather, t)}
+            </Text>
+          ) : null}
+        </View>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -115,7 +112,7 @@ export default function DiaryList({ items = [], year, month, search = '', loadin
     <View>
       {filtered.length === 0 ? (
         <View style={styles.empty}>
-          <Ionicons name="book-outline" size={48} color={hexToRgba(ACCENT_CYCLE[0], 0.3)} />
+          <Ionicons name="book-outline" size={48} color={hexToRgba(Colors.orange, 0.3)} />
           <Text style={[styles.emptyText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
             {loading ? t('common.loading') : t('diary.empty')}
           </Text>
@@ -125,7 +122,6 @@ export default function DiaryList({ items = [], year, month, search = '', loadin
           <DiaryCard
             key={item.id}
             item={item}
-            index={i}
             isLast={i === filtered.length - 1}
             onPress={onPressItem}
           />
@@ -137,60 +133,71 @@ export default function DiaryList({ items = [], year, month, search = '', loadin
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 14,
-    paddingLeft: 16,
-    paddingRight: 12,
+    padding: 14,
     borderWidth: 1,
-    gap: 12,
+    gap: 10,
   },
   cardGap: {
     marginBottom: 16,
   },
-  bar: {
-    width: 3,
-    height: 48,
-    borderRadius: 2,
-  },
-  chip: {
-    width: 56,
-    aspectRatio: 3 / 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  chipImage: {
-    width: '100%',
-    height: '100%',
-  },
-  brokenHint: {
-    fontSize: 7,
-    maxWidth: 48,
-    textAlign: 'center',
-  },
-  body: {
-    flex: 1,
-    minWidth: 0,
-    gap: 2,
-  },
-  titleRow: {
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'space-between',
+    gap: 8,
   },
-  title: {
+  name: {
     fontSize: 14,
     lineHeight: 20,
     flexShrink: 1,
   },
-  date: {
-    fontSize: 12,
-    lineHeight: 17,
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 9999,
+    flexShrink: 0,
   },
-  weather: {
-    fontSize: 12,
-    lineHeight: 17,
+  statusDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 9999,
+  },
+  statusText: {
+    fontSize: 10,
+    lineHeight: 14,
+    letterSpacing: 0.6,
+  },
+  middle: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  image: {
+    width: 80,
+    height: 80,
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  imageInner: {
+    width: 80,
+    height: 80,
+  },
+  info: {
+    flex: 1,
+    justifyContent: 'center',
+    gap: 4,
+  },
+  dateText: {
+    fontSize: 20,
+    lineHeight: 26,
+  },
+  metaText: {
+    fontSize: 11,
+    lineHeight: 16,
+    letterSpacing: 0.4,
   },
   empty: {
     paddingVertical: 48,

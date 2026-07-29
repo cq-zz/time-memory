@@ -82,17 +82,22 @@ function ItemCard({ item, currency, isLast }) {
               : '--'}
           </Text>
           {lifespanDays ? (
-            <View style={[styles.track, { backgroundColor: Colors.avatarBg, borderRadius: Radius.pill }]}>
-              <View
-                style={[
-                  styles.fill,
-                  {
-                    backgroundColor: barColor,
-                    borderRadius: Radius.pill,
-                    width: `${(progress ?? 0) * 100}%`,
-                  },
-                ]}
-              />
+            <View style={styles.progressRow}>
+              <View style={[styles.track, { backgroundColor: Colors.avatarBg, borderRadius: Radius.pill }]}>
+                <View
+                  style={[
+                    styles.fill,
+                    {
+                      backgroundColor: barColor,
+                      borderRadius: Radius.pill,
+                      width: `${(progress ?? 0) * 100}%`,
+                    },
+                  ]}
+                />
+              </View>
+              <Text style={[styles.percentText, { color: barColor, fontFamily: Fonts.semiBold }]}>
+                {Math.round((progress ?? 0) * 100)}%
+              </Text>
             </View>
           ) : null}
         </View>
@@ -209,12 +214,22 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     letterSpacing: 0.4,
   },
+  progressRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
   track: {
+    flex: 1,
     height: 6,
     overflow: 'hidden',
   },
   fill: {
     height: 6,
+  },
+  percentText: {
+    fontSize: 10,
+    lineHeight: 14,
   },
   empty: {
     paddingVertical: 48,

@@ -8,12 +8,11 @@ import { hasPassword, setPassword, verifyPassword } from '../../utils/password';
 import { logPasswordAction } from '../../utils/passwordHistory';
 import { showToast } from './Toast';
 import FormInput from './FormInput';
-import FormKeyboardScrollView from './FormKeyboardScrollView';
 
 const MIN_LENGTH = 6;
 
 /**
- * Security bottom sheet — set or change the private-diary lock password.
+ * Security centered dialog — set or change the private-diary lock password.
  * Not set yet: new password + confirm. Already set: current + new + confirm
  * (current must verify). Only the SHA-256 hash is persisted.
  *
@@ -24,7 +23,7 @@ const MIN_LENGTH = 6;
  *   caller can refresh its hasPassword state
  */
 export default function SecurityModal({ visible, onClose, onChanged }) {
-  const { Colors, Radius, Fonts } = useTheme();
+  const { Colors, Radius, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
 
   const [pwdSet, setPwdSet] = useState(false);
@@ -81,15 +80,15 @@ export default function SecurityModal({ visible, onClose, onChanged }) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={styles.overlay} onPress={onClose}>
-        <KeyboardAvoidingView
-          automaticOffset
-          behavior="padding"
-          style={styles.keyboardAvoider}
-        >
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <KeyboardAvoidingView automaticOffset behavior="padding" style={styles.flex}>
+        <Pressable style={[styles.overlay, { backgroundColor: Colors.overlay }]} onPress={onClose}>
           <Pressable
-            style={[styles.sheet, { backgroundColor: Colors.card, borderRadius: Radius.xl }]}
+            style={[
+              styles.card,
+              { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.xl },
+              Shadows.dark,
+            ]}
             onPress={(e) => e.stopPropagation()}
           >
             <View style={styles.header}>
@@ -106,7 +105,7 @@ export default function SecurityModal({ visible, onClose, onChanged }) {
               </Pressable>
             </View>
 
-            <FormKeyboardScrollView contentContainerStyle={styles.content}>
+            <View style={styles.content}>
               {pwdSet ? (
                 <FormInput
                   label={t('settings.oldPassword')}
@@ -154,50 +153,49 @@ export default function SecurityModal({ visible, onClose, onChanged }) {
                   {t('settings.setPasswordNotice')}
                 </Text>
               </View>
-            </FormKeyboardScrollView>
-
-            <View style={styles.footer}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.saveBtn,
-                  { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl },
-                  pressed && { opacity: 0.85 },
-                  saving && { opacity: 0.6 },
-                ]}
-                onPress={handleSave}
-              >
-                <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
-                  {t('common.saveRecord')}
-                </Text>
-              </Pressable>
             </View>
+
+            <Pressable
+              style={({ pressed }) => [
+                styles.saveBtn,
+                { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl },
+                pressed && { opacity: 0.85 },
+                saving && { opacity: 0.6 },
+              ]}
+              onPress={handleSave}
+            >
+              <Text style={[styles.saveText, { color: Colors.white, fontFamily: Fonts.bold }]}>
+                {t('common.saveRecord')}
+              </Text>
+            </Pressable>
           </Pressable>
-        </KeyboardAvoidingView>
-      </Pressable>
+        </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
-    justifyContent: 'flex-end',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 24,
   },
-  keyboardAvoider: {
+  card: {
     width: '100%',
-  },
-  sheet: {
-    maxHeight: '85%',
-    paddingTop: 20,
-    paddingBottom: 24,
+    maxWidth: 340,
+    padding: 20,
+    gap: 16,
+    borderWidth: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingBottom: 16,
   },
   headerLeft: {
     flexDirection: 'row',
@@ -216,9 +214,7 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
   content: {
-    paddingHorizontal: 20,
-    gap: 16,
-    paddingBottom: 8,
+    gap: 14,
   },
   errorText: {
     fontSize: 13,
@@ -234,10 +230,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 12,
     lineHeight: 18,
-  },
-  footer: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
   },
   saveBtn: {
     height: 52,

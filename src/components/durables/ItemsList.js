@@ -197,12 +197,13 @@ const styles = StyleSheet.create({
   },
   info: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
     gap: 4,
   },
   price: {
     fontSize: 20,
-    lineHeight: 26,
+    lineHeight: 20,
+    includeFontPadding: false,
   },
   metaRow: {
     flexDirection: 'row',

@@ -1,32 +1,35 @@
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { KeyboardStickyView } from 'react-native-keyboard-controller';
 import { useTheme } from '../../utils/theme';
 
 export default function FormSaveFooter({ label, savingLabel, saving = false, onPress }) {
   const { Colors, Radius, Fonts } = useTheme();
 
   return (
-    <View style={styles.footer}>
-      <TouchableOpacity
-        accessibilityRole="button"
-        accessibilityState={{ disabled: saving, busy: saving }}
-        activeOpacity={0.8}
-        disabled={saving}
-        onPress={onPress}
-        style={[
-          styles.button,
-          {
-            backgroundColor: Colors.inkDeep,
-            borderRadius: Radius.xl,
-            opacity: saving ? 0.6 : 1,
-          },
-        ]}
-      >
-        {saving ? <ActivityIndicator size="small" color={Colors.white} /> : null}
-        <Text style={[styles.label, { color: Colors.white, fontFamily: Fonts.bold }]}>
-          {saving ? savingLabel : label}
-        </Text>
-      </TouchableOpacity>
-    </View>
+    <KeyboardStickyView>
+      <View style={styles.footer}>
+        <TouchableOpacity
+          accessibilityRole="button"
+          accessibilityState={{ disabled: saving, busy: saving }}
+          activeOpacity={0.8}
+          disabled={saving}
+          onPress={onPress}
+          style={[
+            styles.button,
+            {
+              backgroundColor: Colors.inkDeep,
+              borderRadius: Radius.xl,
+              opacity: saving ? 0.6 : 1,
+            },
+          ]}
+        >
+          {saving ? <ActivityIndicator size="small" color={Colors.white} /> : null}
+          <Text style={[styles.label, { color: Colors.white, fontFamily: Fonts.bold }]}>
+            {saving ? savingLabel : label}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </KeyboardStickyView>
   );
 }
 

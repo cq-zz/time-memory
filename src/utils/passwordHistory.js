@@ -36,7 +36,7 @@ export async function getPasswordHistory() {
 }
 
 /** Wipe all password operation records. */
-export async function clearPasswordHistory() {
+async function clearPasswordHistory() {
   try {
     await saveSettingRow(HISTORY_KEY, JSON.stringify([]));
   } catch (e) {

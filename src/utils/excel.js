@@ -33,9 +33,6 @@ export const isDurableSource = (s) => s === 'durable' || s === 'durable_link';
 /** True when source refers to an asset (auto or manual). */
 export const isAssetSource = (s) => s === 'asset' || s === 'asset_link';
 
-/** The db table name for the given source value. */
-export const sourceTable = (s) => (isAssetSource(s) ? 'assets' : 'durables');
-
 /** The base source type (strips the _link suffix). */
 export const sourceBase = (s) => (isAssetSource(s) ? 'asset' : 'durable');
 

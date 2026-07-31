@@ -38,12 +38,12 @@ export const MOODS = [
 export const moodMeta = (key) => MOODS.find((m) => m.key === key) || null;
 
 /** Calendar display enums (mood records month grid). */
-export const MONTH_NAMES = [
+const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December',
 ];
 
-export const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+const WEEKDAY_LABELS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
 // ══════════════════════════════════════════════════
 // Currency
@@ -89,7 +89,7 @@ export const MAX_YEAR_DEFAULT = new Date().getFullYear() + 10;
 // ══════════════════════════════════════════════════
 
 /** Built-in item (durable) categories. `icon` is an Ionicons name. */
-export const ITEM_CATEGORIES = [
+const ITEM_CATEGORIES = [
   { key: 'electronics', label: 'Electronics', icon: 'laptop-outline' },
   { key: 'appliance', label: 'Appliance', icon: 'tv-outline' },
   { key: 'home', label: 'Home', icon: 'home-outline' },
@@ -112,7 +112,7 @@ export const ITEM_CATEGORIES = [
 ];
 
 /** Built-in bill categories. */
-export const BILL_CATEGORIES = [
+const BILL_CATEGORIES = [
   { key: 'food', label: 'Food & Drink', icon: 'restaurant-outline' },
   { key: 'transport', label: 'Transport', icon: 'bus-outline' },
   { key: 'housing', label: 'Housing', icon: 'business-outline' },
@@ -125,7 +125,7 @@ export const BILL_CATEGORIES = [
 ];
 
 /** Built-in asset categories. */
-export const ASSET_CATEGORIES = [
+const ASSET_CATEGORIES = [
   { key: 'house', label: 'House', icon: 'home-outline' },
   { key: 'vehicle', label: 'Vehicle', icon: 'car-outline' },
   { key: 'gold', label: 'Gold', icon: 'cash-outline' },
@@ -140,12 +140,6 @@ export const CATEGORY_BUILTINS = {
   item: ITEM_CATEGORIES,
   bill: BILL_CATEGORIES,
   asset: ASSET_CATEGORIES,
-};
-
-export const CATEGORY_TYPE_LABELS = {
-  item: 'Item Categories',
-  bill: 'Bill Categories',
-  asset: 'Asset Categories',
 };
 
 /** Ionicons options offered by the custom-category icon picker. */

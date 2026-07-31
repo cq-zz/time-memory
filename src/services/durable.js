@@ -7,7 +7,7 @@
  */
 import { getAllRows, getRowById, insertRow, updateRow, deleteRow } from '../store/db';
 import { genId } from '../utils/id';
-import { todayStr, daysBetween, daysUntil, isPast } from '../utils/date';
+import { todayStr, daysBetween, isPast } from '../utils/date';
 import { inCurrentCurrency } from '../store/settings';
 
 const TABLE = 'durables';
@@ -205,5 +205,3 @@ export async function durableStats(currency) {
   });
   return { inUseValue, inUseCount, totalCount: rows.length, currency };
 }
-
-export { daysUntil };

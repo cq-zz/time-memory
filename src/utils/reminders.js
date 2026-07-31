@@ -197,7 +197,7 @@ export function reminderStatusText(item, t) {
       if (item.phase === 'upcoming') return t('reminder.startsIn', { count: item.daysLeft });
       if (item.expired) return t('reminder.overdueBy', { count: -item.daysLeft });
       if (item.daysLeft === 0) return t('reminder.dueToday');
-      return t('reminder.daysLeft', { count: item.daysLeft });
+      return t('reminder.endsIn', { count: item.daysLeft });
     }
     case 'durable': {
       if (item.expired) return t('reminder.expired');
@@ -223,7 +223,7 @@ export function reminderTimelineText(item, t) {
       if (item.expired) return t('home.overdue');
       if (item.daysLeft === 0) return t('home.todayDue');
       if (item.phase === 'upcoming') return t('home.startsIn', { count: item.daysLeft });
-      return t('home.inDaysShort', { count: item.daysLeft });
+      return t('home.endsIn', { count: item.daysLeft });
     }
     case 'durable': {
       if (item.expired) return t('home.expired');

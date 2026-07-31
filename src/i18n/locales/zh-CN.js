@@ -501,7 +501,7 @@ export default {
     moduleSchedule: "计划",
     moduleDiary: "日记",
     moduleImportantDate: "重要日子",
-    moduleBudget: "预算",
+    moduleBudget: "年度收支计划",
     moduleMood: "心情",
   },
   settings: {

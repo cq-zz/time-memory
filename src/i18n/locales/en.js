@@ -508,7 +508,7 @@ export default {
     moduleSchedule: "Schedules",
     moduleDiary: "Diary",
     moduleImportantDate: "Important Dates",
-    moduleBudget: "Budgets",
+    moduleBudget: "Annual Plan",
     moduleMood: "Mood",
   },
   settings: {

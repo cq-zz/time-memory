@@ -32,7 +32,9 @@ import {
 } from '../../utils/excel';
 import { showToast } from '../common/Toast';
 import ConfirmModal from '../common/ConfirmModal';
+import PasswordModal from '../common/PasswordModal';
 import useAlert from '../../hooks/useAlert';
+import { hasPassword } from '../../utils/password';
 import { syncBillForDurable } from '../../services/durable';
 import { syncBillForAsset } from '../../services/asset';
 import { sourceLink, isDurableSource, isAssetSource, sourceBase } from '../../utils/excel';
@@ -814,6 +816,22 @@ export default function DataManagement({ onDataChanged }) {
   const [importOpen, setImportOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [migrationOpen, setMigrationOpen] = useState(false);
+  const [pwdOpen, setPwdOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState(null);
+
+  const gatedOpen = (setter) => async () => {
+    try {
+      const hasPwd = await hasPassword();
+      if (hasPwd) {
+        setPendingAction(() => () => setter(true));
+        setPwdOpen(true);
+      } else {
+        setter(true);
+      }
+    } catch {
+      setter(true);
+    }
+  };
 
   const handleReset = async () => {
     setResetOpen(false);
@@ -831,6 +849,15 @@ export default function DataManagement({ onDataChanged }) {
     }
   };
 
+  const handlePasswordSuccess = () => {
+    setPwdOpen(false);
+    if (pendingAction) {
+      const action = pendingAction;
+      setPendingAction(null);
+      setTimeout(() => action(), 300);
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={[styles.heading, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
@@ -838,9 +865,9 @@ export default function DataManagement({ onDataChanged }) {
       </Text>
 
       <View style={styles.dataRow}>
-        <DataButton icon="download-outline" label={t('butler.importBtn')} onPress={() => setImportOpen(true)} />
-        <DataButton icon="cloud-upload-outline" label={t('butler.exportBtn')} onPress={() => setExportOpen(true)} />
-        <DataButton icon="trash-outline" label={t('butler.resetBtn')} danger onPress={() => setResetOpen(true)} />
+        <DataButton icon="download-outline" label={t('butler.importBtn')} onPress={gatedOpen(setImportOpen)} />
+        <DataButton icon="cloud-upload-outline" label={t('butler.exportBtn')} onPress={gatedOpen(setExportOpen)} />
+        <DataButton icon="trash-outline" label={t('butler.resetBtn')} danger onPress={gatedOpen(setResetOpen)} />
       </View>
 
       {Platform.OS !== 'web' && (
@@ -848,7 +875,7 @@ export default function DataManagement({ onDataChanged }) {
           <TouchableOpacity
             style={styles.migrationRow}
             activeOpacity={0.7}
-            onPress={() => setMigrationOpen(true)}
+            onPress={gatedOpen(setMigrationOpen)}
           >
             <View style={styles.rowLeft}>
               <Ionicons name="swap-horizontal-outline" size={18} color={Colors.textPrimary} />
@@ -874,6 +901,11 @@ export default function DataManagement({ onDataChanged }) {
         title={t('butler.resetAllTitle')}
         description={t('butler.resetAllDesc')}
         confirmText={t('butler.resetBtn')}
+      />
+      <PasswordModal
+        visible={pwdOpen}
+        onClose={() => setPwdOpen(false)}
+        onSuccess={handlePasswordSuccess}
       />
     </View>
   );

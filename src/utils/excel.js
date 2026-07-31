@@ -23,6 +23,28 @@ import {
 } from './constant';
 import { useCategoryStore, BUILTIN_NS } from '../store/categories';
 
+// ── Source value helpers (shared across bill / durable / asset modules) ──
+// Auto-generated bills use source = "durable" | "asset" (owned, deleted with item/asset).
+// Manually linked bills use source = "durable_link" | "asset_link" (only unlinked on delete).
+
+/** True when source refers to a durable (auto or manual). */
+export const isDurableSource = (s) => s === 'durable' || s === 'durable_link';
+
+/** True when source refers to an asset (auto or manual). */
+export const isAssetSource = (s) => s === 'asset' || s === 'asset_link';
+
+/** The db table name for the given source value. */
+export const sourceTable = (s) => (isAssetSource(s) ? 'assets' : 'durables');
+
+/** The base source type (strips the _link suffix). */
+export const sourceBase = (s) => (isAssetSource(s) ? 'asset' : 'durable');
+
+/** True when the source indicates an auto-generated (owned) bill. */
+export const isAutoSource = (s) => s === 'durable' || s === 'asset';
+
+/** The _link variant for a given base type, used for manual linking. */
+export const sourceLink = (base) => `${base}_link`;
+
 // ── Small helpers ─────────────────────────────────
 
 const pad2 = (n) => String(n).padStart(2, '0');
@@ -426,7 +448,7 @@ export const EXPORT_MODULES = [
     toRow: (item) => [
       safe(item.name), labelOf(BILL_TYPE_OPTIONS, item.bill_type), safe(item.amount ?? 0),
       localizedCategory('bills', item.category), safe(item.consumption_date), safe(item.currency),
-      safe(item.source === 'durable' ? localizedEnumText('Item') : item.source === 'asset' ? localizedEnumText('Asset') : ''),
+      safe(isDurableSource(item.source) ? localizedEnumText('Item') : isAssetSource(item.source) ? localizedEnumText('Asset') : ''),
       safe(item.source_name), exportImageUrl(item.receipt_image), safe(item.notes), safe(item.created_at),
     ],
     fromRow: (get) => {

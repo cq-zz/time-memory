@@ -5,6 +5,7 @@ import { useTheme } from '../../utils/theme';
 import { formatMoney } from '../../store/settings';
 import { useCategoryStore, resolveCategoryMeta } from '../../store/categories';
 import { formatDisplay } from '../../utils/date';
+import { isAutoSource } from '../../utils/excel';
 
 function sumAmount(bills) {
   return (bills || []).reduce((acc, b) => acc + (Number(b.amount) || 0), 0);
@@ -26,7 +27,7 @@ function BillRow({ bill, currency, amountColor }) {
     >
       <View style={styles.billLeft}>
         <View style={[styles.billIconBox, { backgroundColor: Colors.avatarBg, borderRadius: Radius.circle }]}>
-          <Ionicons name={cat.icon} size={18} color={Colors.textPrimary} />
+          <Ionicons name={cat.icon} size={14} color={Colors.textPrimary} />
         </View>
         <View style={styles.billTextCol}>
           <Text
@@ -48,7 +49,7 @@ function BillRow({ bill, currency, amountColor }) {
   );
 }
 
-function BillSection({ title, icon, bills, currency, amountColor, subtotalLabel }) {
+function BillSection({ title, icon, bills, currency, amountColor }) {
   const { Colors, Fonts } = useTheme();
 
   if (!bills || bills.length === 0) return null;
@@ -56,9 +57,12 @@ function BillSection({ title, icon, bills, currency, amountColor, subtotalLabel 
   return (
     <View style={styles.section}>
       <View style={styles.heading}>
-        <Ionicons name={icon} size={18} color={Colors.textPrimary} />
+        <Ionicons name={icon} size={16} color={Colors.textPrimary} />
         <Text style={[styles.headingText, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
           {title}
+        </Text>
+        <Text style={[styles.headingAmount, { color: amountColor, fontFamily: Fonts.semiBold }]}>
+          {formatMoney(sumAmount(bills), currency)}
         </Text>
       </View>
 
@@ -66,15 +70,6 @@ function BillSection({ title, icon, bills, currency, amountColor, subtotalLabel 
         {bills.map((bill) => (
           <BillRow key={bill.id} bill={bill} currency={currency} amountColor={amountColor} />
         ))}
-      </View>
-
-      <View style={styles.subtotalRow}>
-        <Text style={[styles.subtotalLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-          {subtotalLabel}
-        </Text>
-        <Text style={[styles.subtotalValue, { color: amountColor, fontFamily: Fonts.semiBold }]}>
-          {formatMoney(sumAmount(bills), currency)}
-        </Text>
       </View>
     </View>
   );
@@ -85,11 +80,13 @@ function BillSection({ title, icon, bills, currency, amountColor, subtotalLabel 
  * via source/source_id (first-version association model). Renders nothing when
  * there are no linked bills.
  */
-export default function RelatedBills({ bills, currency, expenseTitle, incomeTitle, subtotalLabel }) {
+export default function RelatedBills({ bills, currency, expenseTitle, incomeTitle }) {
   const { Colors } = useTheme();
 
-  const expenses = (bills || []).filter((b) => b.bill_type !== 'income');
-  const incomes = (bills || []).filter((b) => b.bill_type === 'income');
+  // Filter out auto-generated bills (the purchase bill itself)
+  const manualBills = (bills || []).filter((b) => !isAutoSource(b.source));
+  const expenses = manualBills.filter((b) => b.bill_type !== 'income');
+  const incomes = manualBills.filter((b) => b.bill_type === 'income');
   if (expenses.length === 0 && incomes.length === 0) return null;
 
   return (
@@ -99,8 +96,7 @@ export default function RelatedBills({ bills, currency, expenseTitle, incomeTitl
         icon="receipt-outline"
         bills={expenses}
         currency={currency}
-        amountColor={Colors.textPrimary}
-        subtotalLabel={subtotalLabel}
+        amountColor={Colors.rose}
       />
       <BillSection
         title={incomeTitle}
@@ -108,7 +104,6 @@ export default function RelatedBills({ bills, currency, expenseTitle, incomeTitl
         bills={incomes}
         currency={currency}
         amountColor={Colors.green}
-        subtotalLabel={subtotalLabel}
       />
     </View>
   );
@@ -128,8 +123,12 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headingText: {
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  headingAmount: {
+    fontSize: 14,
+    lineHeight: 20,
   },
   list: {
     gap: 12,
@@ -138,19 +137,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: 10,
     borderWidth: 1,
   },
   billLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 10,
     flex: 1,
     minWidth: 0,
   },
   billIconBox: {
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -159,33 +158,18 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   billTitle: {
-    fontSize: 16,
-    lineHeight: 28,
+    fontSize: 13,
+    lineHeight: 18,
   },
   billMeta: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
+    fontSize: 11,
+    lineHeight: 14,
+    letterSpacing: 0.4,
   },
   billAmount: {
-    fontSize: 16,
-    lineHeight: 28,
+    fontSize: 13,
+    lineHeight: 18,
     flexShrink: 0,
     marginLeft: 8,
-  },
-  subtotalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 4,
-  },
-  subtotalLabel: {
-    fontSize: 12,
-    lineHeight: 16,
-    letterSpacing: 0.6,
-  },
-  subtotalValue: {
-    fontSize: 16,
-    lineHeight: 24,
   },
 });

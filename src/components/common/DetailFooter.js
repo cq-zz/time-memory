@@ -9,12 +9,27 @@ import ConfirmModal from './ConfirmModal';
 /**
  * Shared detail-page bottom bar: delete (with confirm) + edit.
  * `editPath` is the full route to the module's form (e.g. `/durable/form?id=xxx`).
+ * When `readonly` is true, hides the edit/delete buttons and shows a source
+ * label instead (e.g. "数据来源于 物品「索尼耳机」").
  */
-export default function DetailFooter({ editPath, deleteConfirmText, onDelete }) {
+export default function DetailFooter({ editPath, deleteConfirmText, onDelete, readonly, sourceLabel, sourceName }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const [showDelete, setShowDelete] = useState(false);
+
+  if (readonly) {
+    return (
+      <View style={[styles.container, { backgroundColor: Colors.card, borderTopColor: Colors.cardBorder }]}>
+        <View style={styles.sourceRow}>
+          <Ionicons name="link-outline" size={14} color={Colors.textTertiary} />
+          <Text style={[styles.sourceText, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
+            {sourceLabel}{'「'}{sourceName}{'」'}
+          </Text>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.card, borderTopColor: Colors.cardBorder }]}>
@@ -78,6 +93,17 @@ const styles = StyleSheet.create({
   },
   editText: {
     fontSize: 14,
+    lineHeight: 20,
+  },
+  sourceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 4,
+  },
+  sourceText: {
+    fontSize: 13,
     lineHeight: 20,
   },
 });

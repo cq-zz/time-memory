@@ -79,7 +79,7 @@ export default function AssetDetailScreen() {
   const cat = resolveCategoryMeta(categoryState, 'asset', row.category, t);
   const status = effectiveStatus(row);
   const isActive = status === 'active';
-  const value = displayValue(row);
+  const purchaseValue = formatMoney(displayValue(row), currency);
   const days = companionDays(row);
   const priceText =
     row.purchase_price != null && row.purchase_price !== ''
@@ -95,7 +95,7 @@ export default function AssetDetailScreen() {
           title={row.name}
           statusText={isActive ? t('asset.active') : t('asset.disposed')}
           statusColor={isActive ? Colors.green : Colors.textSecondary}
-          currentValueText={formatMoney(value, currency)}
+          currentValueText={purchaseValue}
         />
         <View style={styles.sections}>
           <AssetStatsGrid
@@ -112,7 +112,6 @@ export default function AssetDetailScreen() {
             currency={currency}
             expenseTitle={t('asset.otherExpenses')}
             incomeTitle={t('asset.otherIncomes')}
-            subtotalLabel={t('asset.subtotal')}
           />
           <DetailTextSection title={t('asset.notes')} text={row.notes} />
         </View>

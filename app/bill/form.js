@@ -9,6 +9,7 @@ import { useSettingsStore, currencyMeta } from '../../src/store/settings';
 import { getBill, saveBill } from '../../src/services/bill';
 import { getDurable } from '../../src/services/durable';
 import { getAsset } from '../../src/services/asset';
+import { isAssetSource } from '../../src/utils/excel';
 import { showToast } from '../../src/components/common/Toast';
 import FormHeader from '../../src/components/common/FormHeader';
 import ImageUploadField from '../../src/components/common/ImageUploadField';
@@ -70,7 +71,7 @@ export default function BillFormScreen() {
         // Resolve the linked object's display name.
         if (row.source && row.source_id) {
           const linked =
-            row.source === 'asset' ? await getAsset(row.source_id) : await getDurable(row.source_id);
+            isAssetSource(row.source) ? await getAsset(row.source_id) : await getDurable(row.source_id);
           if (active) setSourceName(linked?.name || '');
         }
       } catch {

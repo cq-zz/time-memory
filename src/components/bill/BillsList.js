@@ -6,6 +6,7 @@ import { useTheme, hexToRgba } from '../../utils/theme';
 import { useSettingsStore, formatMoney } from '../../store/settings';
 import { useCategoryStore, resolveCategoryMeta } from '../../store/categories';
 import { formatDisplay } from '../../utils/date';
+import { isAutoSource, isAssetSource } from '../../utils/excel';
 
 function BillCard({ item, isLast }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
@@ -17,6 +18,13 @@ function BillCard({ item, isLast }) {
   const isIncome = item.bill_type === 'income';
   const cat = resolveCategoryMeta(categoryState, 'bill', item.category, t);
   const amountColor = isIncome ? Colors.green : Colors.rose;
+
+  // Auto-generated bills: override category to "来源于物品/资产"
+  const auto = isAutoSource(item.source);
+  const catLabel = auto
+    ? (isAssetSource(item.source) ? t('bills.autoSourceAsset') : t('bills.autoSourceDurable'))
+    : cat.label;
+  const catIcon = auto ? 'link-outline' : (cat.icon || 'pricetag-outline');
 
   return (
     <TouchableOpacity
@@ -45,7 +53,7 @@ function BillCard({ item, isLast }) {
       {/* Middle: left icon + right info */}
       <View style={styles.middle}>
         <View style={[styles.iconBox, { backgroundColor: hexToRgba(Colors.purple, 0.1), borderRadius: Radius.md }]}>
-          <Ionicons name={cat.icon || 'pricetag-outline'} size={28} color={Colors.purple} />
+          <Ionicons name={catIcon} size={28} color={Colors.purple} />
         </View>
 
         <View style={styles.info}>
@@ -53,9 +61,9 @@ function BillCard({ item, isLast }) {
             {isIncome ? '+' : '-'}{formatMoney(Number(item.amount) || 0, currency)}
           </Text>
           <View style={styles.metaRow}>
-            <Ionicons name={cat.icon} size={11} color={Colors.textSecondary} />
+            <Ionicons name={catIcon} size={11} color={Colors.textSecondary} />
             <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-              {cat.label}
+              {catLabel}
             </Text>
           </View>
           <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>

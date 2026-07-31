@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
+import { isAssetSource } from '../../utils/excel';
 
 export default function LinkedBillingObject({ source, sourceId, name }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
@@ -11,7 +12,7 @@ export default function LinkedBillingObject({ source, sourceId, name }) {
 
   if (!source || !sourceId) return null;
 
-  const isAsset = source === 'asset';
+  const isAsset = isAssetSource(source);
   const path = isAsset ? `/asset/${sourceId}` : `/durable/${sourceId}`;
 
   return (
@@ -48,16 +49,16 @@ export default function LinkedBillingObject({ source, sourceId, name }) {
 }
 
 const styles = StyleSheet.create({
-  container: { paddingHorizontal: 16, gap: 16 },
-  heading: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  headingText: { fontSize: 20, lineHeight: 28 },
+  container: { paddingHorizontal: 16, gap: 10 },
+  heading: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  headingText: { fontSize: 14, lineHeight: 20 },
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
-    padding: 16,
+    gap: 12,
+    padding: 10,
     borderWidth: 1,
   },
-  iconBox: { width: 64, height: 64, alignItems: 'center', justifyContent: 'center' },
-  name: { flex: 1, fontSize: 16, lineHeight: 22 },
+  iconBox: { width: 40, height: 40, alignItems: 'center', justifyContent: 'center' },
+  name: { flex: 1, fontSize: 14, lineHeight: 20 },
 });

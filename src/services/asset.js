@@ -96,11 +96,16 @@ export async function saveAsset(values, id) {
 }
 
 export async function removeAsset(id) {
-  // Also remove the linked bill when the asset is deleted
+  // Auto-linked bills (source = "asset"): delete them.
+  // Manual-linked bills (source = "asset_link"): disassociate.
   try {
     const allBills = await getAllRows('bills');
-    const linkedBill = allBills.find((b) => b.source === 'asset' && b.source_id === id);
-    if (linkedBill) await deleteRow('bills', linkedBill.id);
+    const autoBills = allBills.filter((b) => b.source === 'asset' && b.source_id === id);
+    const manualBills = allBills.filter((b) => b.source === 'asset_link' && b.source_id === id);
+    for (const b of autoBills) await deleteRow('bills', b.id);
+    for (const b of manualBills) {
+      await updateRow('bills', b.id, { source: null, source_id: null, updated_at: new Date().toISOString() });
+    }
   } catch { /* non-critical */ }
   return deleteRow(TABLE, id);
 }
@@ -131,6 +136,7 @@ export async function syncBillForAsset(asset) {
     source: 'asset',
     source_id: asset.id,
     notes: '',
+    is_auto: 1,
   };
 
   if (linkedBill) {

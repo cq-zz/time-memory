@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../utils/theme';
 import { listDurables, effectiveStatus as durableStatus } from '../../services/durable';
 import { listAssets, effectiveStatus as assetStatus } from '../../services/asset';
+import { sourceLink, isDurableSource, isAssetSource } from '../../utils/excel';
 
 /**
  * Optional "billing object" picker — links a bill to a durable or an asset
@@ -36,7 +37,7 @@ export default function BillingObjectPicker({ source, sourceId, sourceName, onCh
   const empty = durables.length === 0 && assets.length === 0;
 
   const pick = (src, row) => {
-    onChange({ source: src, sourceId: row.id, sourceName: row.name });
+    onChange({ source: sourceLink(src), sourceId: row.id, sourceName: row.name });
     setOpen(false);
   };
 
@@ -155,7 +156,7 @@ export default function BillingObjectPicker({ source, sourceId, sourceName, onCh
                           icon="cube-outline"
                           name={row.name}
                           meta={row.category ? t(`categories.${row.category}`, { defaultValue: row.category }) : ''}
-                          selected={source === 'durable' && sourceId === row.id}
+                          selected={isDurableSource(source) && sourceId === row.id}
                           onPress={() => pick('durable', row)}
                         />
                       ))}
@@ -173,7 +174,7 @@ export default function BillingObjectPicker({ source, sourceId, sourceName, onCh
                           icon="diamond-outline"
                           name={row.name}
                           meta={row.category ? t(`assetCategories.${row.category}`, { defaultValue: row.category }) : ''}
-                          selected={source === 'asset' && sourceId === row.id}
+                          selected={isAssetSource(source) && sourceId === row.id}
                           onPress={() => pick('asset', row)}
                         />
                       ))}

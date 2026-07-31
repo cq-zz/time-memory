@@ -66,13 +66,13 @@ export function companionDays(row) {
 }
 
 /**
- * Total cost spread over the days owned; null when not computable.
- * (purchase + linked expense bills − linked income bills) / daysOwned.
+ * Daily average value based on purchase_price only.
+ * purchase_price / daysOwned.
  */
-export function dailyAvg(row, relatedBills = []) {
+export function dailyAvg(row) {
   const days = companionDays(row);
   if (!days || days <= 0) return null;
-  return totalCost(row, relatedBills) / days;
+  return (Number(row.purchase_price) || 0) / days;
 }
 
 /**
@@ -102,11 +102,11 @@ export function expectedLifespanDays(row) {
   return Number.isFinite(n) && n > 0 ? Math.round(n * 365) : null;
 }
 
-/** Total cost spread over the expected lifespan; null when not derivable. */
-export function expectedDailyAvg(row, relatedBills = []) {
+/** Expected daily value based on purchase_price only; null when not derivable. */
+export function expectedDailyAvg(row) {
   const days = expectedLifespanDays(row);
   if (!days || days <= 0) return null;
-  return totalCost(row, relatedBills) / days;
+  return (Number(row.purchase_price) || 0) / days;
 }
 
 /** Companion progress against the expected lifespan, 0–100; null if unknown. */
@@ -159,11 +159,16 @@ export async function saveDurable(values, id) {
 }
 
 export async function removeDurable(id) {
-  // Also remove the linked bill when the durable is deleted
+  // Auto-linked bills (source = "durable"): delete them.
+  // Manual-linked bills (source = "durable_link"): disassociate.
   try {
     const allBills = await getAllRows('bills');
-    const linkedBill = allBills.find((b) => b.source === 'durable' && b.source_id === id);
-    if (linkedBill) await deleteRow('bills', linkedBill.id);
+    const autoBills = allBills.filter((b) => b.source === 'durable' && b.source_id === id);
+    const manualBills = allBills.filter((b) => b.source === 'durable_link' && b.source_id === id);
+    for (const b of autoBills) await deleteRow('bills', b.id);
+    for (const b of manualBills) {
+      await updateRow('bills', b.id, { source: null, source_id: null, updated_at: new Date().toISOString() });
+    }
   } catch { /* non-critical */ }
   return deleteRow(TABLE, id);
 }
@@ -194,6 +199,7 @@ export async function syncBillForDurable(durable) {
     source: 'durable',
     source_id: durable.id,
     notes: '',
+    is_auto: 1,
   };
 
   if (linkedBill) {

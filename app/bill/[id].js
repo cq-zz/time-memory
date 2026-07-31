@@ -11,6 +11,7 @@ import { useCategoryStore, resolveCategoryMeta } from '../../src/store/categorie
 import { getBill, removeBill } from '../../src/services/bill';
 import { getDurable } from '../../src/services/durable';
 import { getAsset } from '../../src/services/asset';
+import { isAssetSource, isAutoSource } from '../../src/utils/excel';
 import { formatDisplay } from '../../src/utils/date';
 import BillHero from '../../src/components/bill/BillHero';
 import BillStatsGrid from '../../src/components/bill/BillStatsGrid';
@@ -43,7 +44,7 @@ export default function BillDetailScreen() {
           let name = '';
           if (item?.source && item?.source_id) {
             const linked =
-              item.source === 'asset' ? await getAsset(item.source_id) : await getDurable(item.source_id);
+              isAssetSource(item.source) ? await getAsset(item.source_id) : await getDurable(item.source_id);
             name = linked?.name || '';
           }
           if (!active) return;
@@ -80,7 +81,20 @@ export default function BillDetailScreen() {
 
   const isIncome = row.bill_type === 'income';
   const amountColor = isIncome ? Colors.green : Colors.rose;
+  const isAuto = isAutoSource(row.source);
   const cat = resolveCategoryMeta(categoryState, 'bill', row.category, t);
+
+  // Auto-generated bills: override category display to "物品" / "资产"
+  const displayCategoryLabel = isAuto
+    ? (isAssetSource(row.source) ? t('bills.autoCategoryAsset') : t('bills.autoCategoryDurable'))
+    : cat.label;
+  const displayCategoryIcon = isAuto ? 'cube-outline' : cat.icon;
+
+  // Auto-generated bills: footer source label
+  const sourceLabel = isAuto
+    ? (isAssetSource(row.source) ? t('bills.autoSourceAsset') : t('bills.autoSourceDurable'))
+    : '';
+  const sourceName = isAuto ? linkedName : '';
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.card }]}>
@@ -89,15 +103,15 @@ export default function BillDetailScreen() {
           image={row.receipt_image || null}
           fallbackIcon={cat.icon}
           title={row.name}
-          amountLabel={t('bills.amountLabel', { type: isIncome ? t('bills.income') : t('bills.expense') })}
-          amountText={`${isIncome ? '+' : '-'}${formatMoney(Number(row.amount) || 0, row.currency || currency)}`}
+          amountLabel={t('bills.amount')}
+          amountText={formatMoney(Number(row.amount) || 0, row.currency || currency)}
           typeText={isIncome ? t('bills.income') : t('bills.expense')}
           typeColor={amountColor}
         />
         <View style={styles.sections}>
           <BillStatsGrid
-            categoryLabel={cat.label}
-            categoryIcon={cat.icon}
+            categoryLabel={displayCategoryLabel}
+            categoryIcon={displayCategoryIcon}
             dateText={formatDisplay(row.consumption_date)}
           />
           <LinkedBillingObject
@@ -125,6 +139,9 @@ export default function BillDetailScreen() {
             await removeBill(row.id);
             router.replace('/bill');
           }}
+          readonly={isAuto}
+          sourceLabel={sourceLabel}
+          sourceName={sourceName}
         />
       </View>
       <StatusBar style={darkMode ? 'light' : 'dark'} />

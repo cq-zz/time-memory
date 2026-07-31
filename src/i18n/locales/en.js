@@ -880,6 +880,7 @@ export default {
     income: "Income",
     transfer: "Transfer",
     amountLabel: "{{type}} Amount",
+    amount: "Amount",
     name: "Name",
     namePlaceholder: "e.g. Iced latte",
     time: "Date",
@@ -905,6 +906,10 @@ export default {
     selectItem: "Select",
     noItem: "None",
     noItemsAvailable: "No items available. Add items first.",
+    autoSourceDurable: "Data source: Item",
+    autoSourceAsset: "Data source: Asset",
+    autoCategoryDurable: "Item",
+    autoCategoryAsset: "Asset",
   },
   asset: {
     totalValue: "Total Active Asset Value",

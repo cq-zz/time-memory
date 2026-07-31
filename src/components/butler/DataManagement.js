@@ -35,6 +35,7 @@ import ConfirmModal from '../common/ConfirmModal';
 import useAlert from '../../hooks/useAlert';
 import { syncBillForDurable } from '../../services/durable';
 import { syncBillForAsset } from '../../services/asset';
+import { sourceLink, isDurableSource, isAssetSource, sourceBase } from '../../utils/excel';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const RESET_PRESERVED_SETTING_KEYS = ['profile.avatar', 'profile.nickname', 'darkMode', 'language'];
@@ -131,7 +132,7 @@ async function resolveImportedRelation(moduleId, data, alert, t) {
     const rows = await getAllRows(table);
     const source = rows.find((row) => String(row.name).trim().toLowerCase() === sourceName.toLowerCase());
     if (source) {
-      data.source = table === 'durables' ? 'durable' : 'asset';
+      data.source = table === 'durables' ? sourceLink('durable') : sourceLink('asset');
       data.source_id = source.id;
     } else if (!(await confirmDiscardMissingRelation(alert, t, sourceName))) {
       return false;
@@ -518,7 +519,7 @@ function ExportModal({ visible, onClose }) {
         rows = rows.map((row) => ({
           ...row,
           linked_asset_name: mod.id === 'durable' ? sourceMap.get(`asset:${row.linked_asset_id}`) || '' : undefined,
-          source_name: mod.id === 'bills' ? sourceMap.get(`${row.source}:${row.source_id}`) || '' : undefined,
+          source_name: mod.id === 'bills' ? sourceMap.get(`${sourceBase(row.source)}:${row.source_id}`) || '' : undefined,
         }));
       }
       const moduleName = t(MODULE_LABEL_KEYS[mod.id], { defaultValue: mod.label });

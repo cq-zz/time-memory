@@ -94,9 +94,10 @@ export default function DurableDetailScreen() {
   const status = effectiveStatus(row);
   const inUse = status === 'in_use';
   const cost = totalCost(row, relatedBills);
+  const purchaseValue = formatMoney(Number(row.purchase_price) || 0, currency);
   const days = companionDays(row);
-  const daily = dailyAvg(row, relatedBills);
-  const expDaily = expectedDailyAvg(row, relatedBills);
+  const daily = dailyAvg(row);
+const expDaily = expectedDailyAvg(row);
   const percent = lifespanPercent(row);
   const lifespanDays = expectedLifespanDays(row);
   const acquisitionText = row.acquisition_method
@@ -116,7 +117,7 @@ export default function DurableDetailScreen() {
           title={row.name}
           statusText={inUse ? t('durable.inUse') : t('durable.disposed')}
           statusColor={inUse ? Colors.green : Colors.textSecondary}
-          totalCostText={formatMoney(cost, currency)}
+          totalCostText={purchaseValue}
         />
         <View style={styles.sections}>
           <StatsGrid
@@ -140,7 +141,6 @@ export default function DurableDetailScreen() {
             currency={currency}
             expenseTitle={t('durable.otherExpenses')}
             incomeTitle={t('durable.otherIncomes')}
-            subtotalLabel={t('durable.subtotal')}
           />
 
           <DetailTextSection title={t('durable.notesLabel')} text={row.notes} />

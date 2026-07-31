@@ -155,7 +155,7 @@ let dbPromise = null;
  */
 const MIGRATION_COLUMNS = {
   durables: ['updated_at TEXT'],
-  bills: ['updated_at TEXT'],
+  bills: ['updated_at TEXT', 'is_auto INTEGER DEFAULT 0'],
   schedules: ['reminder_days_before INTEGER', 'updated_at TEXT'],
   diaries: ['is_private INTEGER DEFAULT 0', 'updated_at TEXT'],
   important_dates: [

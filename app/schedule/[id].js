@@ -12,15 +12,12 @@ import {
   removeSchedule,
   patchSchedule,
   effectiveStatus,
-  parseChecklist,
-  progress,
 } from '../../src/services/schedule';
-import { statusMeta, priorityMeta, dateRangeText } from '../../src/utils/scheduleMeta';
+import { statusMeta, priorityMeta } from '../../src/utils/scheduleMeta';
 import { daysUntil } from '../../src/utils/date';
 import ScheduleHero from '../../src/components/schedule-detail/ScheduleHero';
 import ScheduleStatsGrid from '../../src/components/schedule-detail/ScheduleStatsGrid';
 import QuickStatus from '../../src/components/schedule-detail/QuickStatus';
-import ChecklistSection from '../../src/components/schedule-detail/ChecklistSection';
 import DetailFooter from '../../src/components/common/DetailFooter';
 import DetailTextSection from '../../src/components/common/DetailTextSection';
 import ScreenState from '../../src/components/common/ScreenState';
@@ -85,8 +82,6 @@ export default function ScheduleDetailScreen() {
   const status = effectiveStatus(row);
   const sta = statusMeta(status, Colors, t);
   const pri = priorityMeta(row.priority, Colors, t);
-  const prog = progress(row);
-  const checklist = parseChecklist(row);
   const reminderOn = Number(row.reminder_enabled) === 1;
 
   const daysLeft = daysUntil(row.end_date);
@@ -118,12 +113,11 @@ export default function ScheduleDetailScreen() {
           <ScheduleStatsGrid
             priorityLabel={pri.label}
             priorityColor={pri.color}
-            dateRangeText={dateRangeText(row)}
-            checklistText={prog.total > 0 ? `${prog.done}/${prog.total}` : '--'}
+            startDate={row.start_date}
+            endDate={row.end_date}
             reminderOn={reminderOn}
           />
           <QuickStatus current={status} onSetStatus={setStatus} />
-          <ChecklistSection items={checklist} />
 
           <DetailTextSection title={t('schedule.notes')} text={row.notes} />
         </View>

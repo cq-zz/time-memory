@@ -910,6 +910,7 @@ export default {
     autoSourceAsset: "Data source: Asset",
     autoCategoryDurable: "Item",
     autoCategoryAsset: "Asset",
+    viewSource: "View Source",
   },
   asset: {
     totalValue: "Total Active Asset Value",

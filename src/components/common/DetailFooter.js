@@ -10,9 +10,9 @@ import ConfirmModal from './ConfirmModal';
  * Shared detail-page bottom bar: delete (with confirm) + edit.
  * `editPath` is the full route to the module's form (e.g. `/durable/form?id=xxx`).
  * When `readonly` is true, hides the edit/delete buttons and shows a source
- * label instead (e.g. "数据来源于 物品「索尼耳机」").
+ * label with an optional "查看源数据" link button.
  */
-export default function DetailFooter({ editPath, deleteConfirmText, onDelete, readonly, sourceLabel, sourceName }) {
+export default function DetailFooter({ editPath, deleteConfirmText, onDelete, readonly, sourceLabel, sourcePath }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
@@ -24,9 +24,21 @@ export default function DetailFooter({ editPath, deleteConfirmText, onDelete, re
         <View style={styles.sourceRow}>
           <Ionicons name="link-outline" size={14} color={Colors.textTertiary} />
           <Text style={[styles.sourceText, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
-            {sourceLabel}{'「'}{sourceName}{'」'}
+            {sourceLabel}
           </Text>
         </View>
+        {sourcePath ? (
+          <TouchableOpacity
+            activeOpacity={0.8}
+            style={[styles.sourceBtn, { backgroundColor: Colors.inkDeep, borderRadius: Radius.xl }]}
+            onPress={() => router.push(sourcePath)}
+          >
+            <Ionicons name="open-outline" size={16} color={Colors.white} />
+            <Text style={[styles.sourceBtnText, { color: Colors.white, fontFamily: Fonts.regular }]}>
+              {t('bills.viewSource')}
+            </Text>
+          </TouchableOpacity>
+        ) : null}
       </View>
     );
   }
@@ -98,11 +110,22 @@ const styles = StyleSheet.create({
   sourceRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: 6,
     paddingVertical: 4,
+    flex: 1,
   },
   sourceText: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  sourceBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    height: 36,
+    paddingHorizontal: 14,
+  },
+  sourceBtnText: {
     fontSize: 13,
     lineHeight: 20,
   },

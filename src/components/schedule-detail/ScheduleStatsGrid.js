@@ -2,6 +2,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
+import { formatDisplay } from '../../utils/date';
 
 function StatCard({ label, value, dotColor, icon }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
@@ -35,8 +36,8 @@ function StatCard({ label, value, dotColor, icon }) {
 export default function ScheduleStatsGrid({
   priorityLabel,
   priorityColor,
-  dateRangeText,
-  checklistText,
+  startDate,
+  endDate,
   reminderOn,
 }) {
   const { t } = useTranslation();
@@ -45,15 +46,15 @@ export default function ScheduleStatsGrid({
     <View style={styles.container}>
       <View style={styles.row}>
         <StatCard label={t('detail.priority')} value={priorityLabel} dotColor={priorityColor} />
-        <StatCard label={t('detail.dateRange')} value={dateRangeText} />
-      </View>
-      <View style={styles.row}>
-        <StatCard label={t('detail.checklist')} value={checklistText} />
         <StatCard
           label={t('detail.reminder')}
           value={reminderOn ? t('common.enable') : t('common.disabled')}
           icon={reminderOn ? 'notifications' : 'notifications-off-outline'}
         />
+      </View>
+      <View style={styles.row}>
+        <StatCard label={t('schedule.startDate')} value={formatDisplay(startDate)} />
+        <StatCard label={t('schedule.endDate')} value={formatDisplay(endDate)} />
       </View>
     </View>
   );

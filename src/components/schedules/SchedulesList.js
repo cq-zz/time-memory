@@ -1,9 +1,9 @@
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../utils/theme';
-import { effectiveStatus, progress, patchSchedule } from '../../services/schedule';
+import { effectiveStatus, patchSchedule } from '../../services/schedule';
 import { statusMeta, priorityMeta, nextStatus, dateRangeText } from '../../utils/scheduleMeta';
 
 const datePart = (value) => (typeof value === 'string' ? value.slice(0, 10) : '');
@@ -16,17 +16,10 @@ function ScheduleCard({ item, isLast, onChanged }) {
   const status = effectiveStatus(item);
   const sta = statusMeta(status, Colors, t);
   const pri = priorityMeta(item.priority, Colors, t);
-  const prog = progress(item);
   const reminderOn = Number(item.reminder_enabled) === 1;
-  const progPercent = prog.total > 0 ? prog.done / prog.total : 0;
 
   const cycleStatus = async () => {
     await patchSchedule(item.id, { status: nextStatus(status) });
-    onChanged();
-  };
-
-  const toggleReminder = async (value) => {
-    await patchSchedule(item.id, { reminder_enabled: value });
     onChanged();
   };
 
@@ -65,42 +58,26 @@ function ScheduleCard({ item, isLast, onChanged }) {
         </View>
 
         <View style={styles.info}>
-          <Text style={[styles.priorityLabel, { color: pri.color, fontFamily: Fonts.bold }]} numberOfLines={1}>
-            {pri.label}
-          </Text>
+          <View style={[styles.reminderBadge, { backgroundColor: reminderOn ? hexToRgba(Colors.purple, 0.12) : hexToRgba(Colors.textSecondary, 0.08) }]}>
+            <Ionicons name={reminderOn ? 'notifications' : 'notifications-off-outline'} size={11} color={reminderOn ? Colors.purple : Colors.textSecondary} />
+            <Text style={[styles.reminderText, { color: reminderOn ? Colors.purple : Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
+              {reminderOn ? t('common.enable') : t('common.disabled')}
+            </Text>
+          </View>
+          <View style={styles.metaRow}>
+            <Ionicons name="flash-outline" size={11} color={pri.color} />
+            <Text style={[styles.metaText, { color: pri.color, fontFamily: Fonts.bold }]} numberOfLines={1}>
+              {pri.label}
+            </Text>
+          </View>
           <View style={styles.metaRow}>
             <Ionicons name="calendar-outline" size={11} color={Colors.textSecondary} />
             <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]} numberOfLines={1}>
               {dateRangeText(item)}
             </Text>
           </View>
-          {prog.total > 0 ? (
-            <Text style={[styles.metaText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
-              {prog.done}/{prog.total} {t('schedule.checklist') || 'checklist'}
-            </Text>
-          ) : null}
         </View>
-
-        <Switch
-          value={reminderOn}
-          onValueChange={toggleReminder}
-          trackColor={{ false: Colors.lightGray, true: hexToRgba(Colors.purple, 0.4) }}
-          thumbColor={reminderOn ? Colors.purple : Colors.card}
-          style={styles.switch}
-        />
       </View>
-
-      {/* Bottom: checklist progress bar */}
-      {prog.total > 0 ? (
-        <View style={[styles.track, { backgroundColor: Colors.avatarBg, borderRadius: Radius.pill }]}>
-          <View
-            style={[
-              styles.fill,
-              { backgroundColor: sta.color, borderRadius: Radius.pill, width: `${progPercent * 100}%` },
-            ]}
-          />
-        </View>
-      ) : null}
     </TouchableOpacity>
   );
 }
@@ -204,9 +181,19 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 4,
   },
-  priorityLabel: {
-    fontSize: 20,
-    lineHeight: 26,
+  reminderBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 9999,
+  },
+  reminderText: {
+    fontSize: 11,
+    lineHeight: 16,
+    letterSpacing: 0.4,
   },
   metaRow: {
     flexDirection: 'row',
@@ -217,16 +204,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     lineHeight: 16,
     letterSpacing: 0.4,
-  },
-  switch: {
-    flexShrink: 0,
-  },
-  track: {
-    height: 6,
-    overflow: 'hidden',
-  },
-  fill: {
-    height: 6,
   },
   empty: {
     paddingVertical: 48,

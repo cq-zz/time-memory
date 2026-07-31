@@ -894,6 +894,7 @@ export default {
     autoSourceAsset: "数据来源于 资产",
     autoCategoryDurable: "物品",
     autoCategoryAsset: "资产",
+    viewSource: "查看源数据",
   },
   asset: {
     totalValue: "持有中资产总价值",

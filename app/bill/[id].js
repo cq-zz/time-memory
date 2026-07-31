@@ -90,11 +90,13 @@ export default function BillDetailScreen() {
     : cat.label;
   const displayCategoryIcon = isAuto ? 'cube-outline' : cat.icon;
 
-  // Auto-generated bills: footer source label
+  // Auto-generated bills: footer source label and path
   const sourceLabel = isAuto
     ? (isAssetSource(row.source) ? t('bills.autoSourceAsset') : t('bills.autoSourceDurable'))
     : '';
-  const sourceName = isAuto ? linkedName : '';
+  const sourcePath = isAuto && row.source_id
+    ? (isAssetSource(row.source) ? `/asset/${row.source_id}` : `/durable/${row.source_id}`)
+    : null;
 
   return (
     <View style={[styles.container, { backgroundColor: Colors.card }]}>
@@ -114,11 +116,13 @@ export default function BillDetailScreen() {
             categoryIcon={displayCategoryIcon}
             dateText={formatDisplay(row.consumption_date)}
           />
-          <LinkedBillingObject
-            source={row.source}
-            sourceId={row.source_id}
-            name={linkedName}
-          />
+          {!isAuto && (
+            <LinkedBillingObject
+              source={row.source}
+              sourceId={row.source_id}
+              name={linkedName}
+            />
+          )}
           <DetailTextSection title={t('bills.notes')} text={row.notes} />
         </View>
       </ScrollView>
@@ -141,7 +145,7 @@ export default function BillDetailScreen() {
           }}
           readonly={isAuto}
           sourceLabel={sourceLabel}
-          sourceName={sourceName}
+          sourcePath={sourcePath}
         />
       </View>
       <StatusBar style={darkMode ? 'light' : 'dark'} />

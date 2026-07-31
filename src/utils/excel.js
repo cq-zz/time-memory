@@ -446,8 +446,8 @@ export const EXPORT_MODULES = [
       safe(item.name), labelOf(BILL_TYPE_OPTIONS, item.bill_type), safe(item.amount ?? 0),
       isAutoSource(item.source) ? (isAssetSource(item.source) ? localizedEnumText('Asset') : localizedEnumText('Item')) : localizedCategory('bills', item.category),
       safe(item.consumption_date), safe(item.currency),
-      safe(isDurableSource(item.source) ? localizedEnumText('Item') : isAssetSource(item.source) ? localizedEnumText('Asset') : ''),
-      safe(item.source_name), exportImageUrl(item.receipt_image), safe(item.notes), safe(item.created_at),
+      isAutoSource(item.source) ? '' : safe(isDurableSource(item.source) ? localizedEnumText('Item') : isAssetSource(item.source) ? localizedEnumText('Asset') : ''),
+      isAutoSource(item.source) ? '' : safe(item.source_name), exportImageUrl(item.receipt_image), safe(item.notes), safe(item.created_at),
     ],
     fromRow: (get) => {
       const name = String(get('Name') ?? '').trim();
@@ -496,17 +496,17 @@ export const EXPORT_MODULES = [
     dateField: 'end_date',
     headers: [
       'Title', optionHeader('Priority', SCHEDULE_PRIORITIES), optionHeader('Status', SCHEDULE_STATUS_OPTIONS), 'Start Date', 'End Date',
-      YES_NO_HEADER, 'Days Before', 'Checklist', 'Image URL', 'Notes', 'Created At',
+      YES_NO_HEADER, 'Days Before', 'Image URL', 'Notes', 'Created At',
     ],
     example: [
       'Quarterly review', 'High', 'Not Started', '2025-07-10', '2025-07-15',
-      'Yes', '1', '1. Pending: Prepare slides', '', '', nowIso(),
+      'Yes', '1', '', '', nowIso(),
     ],
     toRow: (item) => [
         safe(item.title), labelOf(SCHEDULE_PRIORITIES, item.priority),
         labelOf(SCHEDULE_STATUS_OPTIONS, item.status), safe(item.start_date), safe(item.end_date),
         yesNo(item.reminder_enabled), safe(item.reminder_days_before),
-        formatChecklist(item.checklist), exportImageUrl(item.image), safe(item.notes), safe(item.created_at),
+        exportImageUrl(item.image), safe(item.notes), safe(item.created_at),
       ],
     fromRow: (get) => {
       const title = String(get('Title') ?? '').trim();
@@ -539,7 +539,7 @@ export const EXPORT_MODULES = [
           end_date: endDate || null,
           reminder_enabled: reminderEnabled,
           reminder_days_before: reminderDaysBefore,
-          checklist: JSON.stringify(parseImportedChecklist(get('Checklist'))),
+          checklist: '[]',
           image: image || null,
           notes: String(get('Notes') ?? '').trim(),
           created_at: importedTimestamp(get),

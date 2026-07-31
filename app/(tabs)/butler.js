@@ -26,7 +26,7 @@ export default function ButlerScreen() {
       >
         <MoodCheckIn key={`mood-${refreshKey}`} />
         <FinancialSummary key={`summary-${refreshKey}`} />
-        <FeatureGrid />
+        <FeatureGrid key={`feature-${refreshKey}`} />
         <ManagementSections onDataChanged={handleDataChanged} />
       </ScrollView>
     </SafeAreaView>

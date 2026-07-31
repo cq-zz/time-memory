@@ -141,6 +141,7 @@ const enumHeader = (title, values) => `${title} (${values.join('/')})`;
 const optionHeader = (title, options) => enumHeader(title, options.map((option) => option.label));
 const CURRENCY_HEADER = enumHeader('Currency', CURRENCIES.map((currency) => currency.code));
 const YES_NO_HEADER = enumHeader('Reminder', ['Yes', 'No']);
+const IS_PRIVATE_HEADER = enumHeader('Is Private', ['Yes', 'No']);
 const BILLING_OBJECT_TYPES = [
   { key: 'item', label: 'Item' },
   { key: 'asset', label: 'Asset' },
@@ -168,6 +169,7 @@ const HEADER_LABELS = {
   Year: { en: 'Year', 'zh-CN': '年份' }, 'Expense Budget': { en: 'Expense Budget', 'zh-CN': '支出预算' },
   'Income Target': { en: 'Income Target', 'zh-CN': '收入目标' }, Mood: { en: 'Mood', 'zh-CN': '心情' },
   Score: { en: 'Score', 'zh-CN': '分值' },
+  'Is Private': { en: 'Is Private', 'zh-CN': '是否私密' },
 };
 const LEGACY_HEADER_LABELS = {
   'Purchase Date': ['Purchase Date', '购买日期'],
@@ -552,14 +554,15 @@ export const EXPORT_MODULES = [
     label: 'Diary',
     table: 'diaries',
     dateField: 'date',
-    headers: ['Title', 'Date', optionHeader('Weather', WEATHER_OPTIONS), 'Content', 'Image URL', 'Created At'],
+    headers: ['Title', 'Date', optionHeader('Weather', WEATHER_OPTIONS), IS_PRIVATE_HEADER, 'Content', 'Image URL', 'Created At'],
     example: [
-      'A good start', '2025-07-01', 'Sunny', 'Feeling productive today.', '', nowIso(),
+      'A good start', '2025-07-01', 'Sunny', 'No', 'Feeling productive today.', '', nowIso(),
     ],
     toRow: (item) => {
       const weather = WEATHER_OPTIONS.find((w) => w.key === item.weather);
       return [
         safe(item.title), safe(item.date), weather ? localizedEnumText(weather.label) : safe(item.weather),
+        yesNo(Number(item.is_private) === 1),
         safe(item.content), exportImageUrl(item.image), safe(item.created_at),
       ];
     },
@@ -569,6 +572,8 @@ export const EXPORT_MODULES = [
       const weatherRaw = String(get('Weather') ?? '').trim();
       const weather = keyOf(WEATHER_OPTIONS, weatherRaw, null);
       if (weatherRaw && weather === null) return { error: `Invalid Weather "${weatherRaw}"` };
+      const isPrivateValue = booleanValue(get('Is Private'));
+      if (isPrivateValue === null) return { error: 'Is Private must be Yes or No' };
       const image = String(get('Image URL') ?? '').trim();
       if (!validUrl(image)) return { error: 'Image URL must start with http:// or https://' };
       return {
@@ -576,6 +581,7 @@ export const EXPORT_MODULES = [
           title: String(get('Title') ?? '').trim(),
           date: date || null,
           weather: weather || weatherRaw || null,
+          is_private: isPrivateValue,
           content: String(get('Content') ?? '').trim(),
           image: image || null,
           created_at: importedTimestamp(get),
@@ -589,14 +595,14 @@ export const EXPORT_MODULES = [
     table: 'important_dates',
     dateField: 'date',
     headers: [
-      'Name', 'Date', optionHeader('Type', IMPORTANT_DATE_TYPES), 'Category',
+      'Name', 'Date', optionHeader('Type', IMPORTANT_DATE_TYPES),
       optionHeader('Priority', SCHEDULE_PRIORITIES), YES_NO_HEADER,
       optionHeader('Reminder Type', REMINDER_TYPES), 'Days Before', 'Image URL', 'Notes', 'Created At',
     ],
-    example: ['Birthday', '2025-09-12', 'Birthday', 'family', 'High', 'Yes', 'Annual', '1', '', '', nowIso()],
+    example: ['Birthday', '2025-09-12', 'Birthday', 'High', 'Yes', 'Annual', '1', '', '', nowIso()],
     toRow: (item) => [
       safe(item.name), safe(item.date), labelOf(IMPORTANT_DATE_TYPES, item.type),
-      localizedCategory('important-date', item.category), labelOf(SCHEDULE_PRIORITIES, item.priority),
+      labelOf(SCHEDULE_PRIORITIES, item.priority),
       yesNo(item.reminder_enabled), labelOf(REMINDER_TYPES, item.reminder_type),
       safe(item.reminder_days_before), exportImageUrl(item.image), safe(item.notes), safe(item.created_at),
     ],
@@ -628,7 +634,6 @@ export const EXPORT_MODULES = [
           name,
           date: date || null,
           type,
-          category: String(get('Category') ?? '').trim(),
           priority,
           reminder_enabled: reminderEnabled,
           reminder_type: reminderType,

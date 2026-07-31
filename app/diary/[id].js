@@ -81,7 +81,6 @@ export default function DiaryDetailScreen() {
         <DiaryHero
           image={row.image || null}
           title={row.title}
-          dateText={formatDisplay(row.date)}
           privateText={privacyText}
           isPrivate={isPrivate}
         />
@@ -89,7 +88,6 @@ export default function DiaryDetailScreen() {
           <DiaryStatsGrid
             dateText={formatDisplay(row.date)}
             weatherText={weatherText}
-            privacyText={privacyText}
           />
           <DetailTextSection title={t('diary.content')} text={row.content} />
         </View>

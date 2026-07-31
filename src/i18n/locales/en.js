@@ -1188,6 +1188,8 @@ export default {
     deleteConfirm: "Delete this entry?",
     privateDiary: "Locked",
     publicDiary: "Public",
+    private: "Private",
+    public: "Public",
     totalEntries: "Total Entries",
     thisYearPill: "{{count}} This Year",
     privatePill: "{{count}} Private",
@@ -1195,7 +1197,8 @@ export default {
     entryType: "Entry Type",
     textEntry: "Text Entry",
     privateDiaryHint: "Locked. Enter your password to view.",
-    loadFailed: "Entry not found",
+    privateNoPasswordHint: "Set a private password in Settings first",
+    loadFailed: "Diary not found",
   },
   moodTrend: {
     title: "Mood Records",

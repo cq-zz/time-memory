@@ -207,33 +207,31 @@ export default function DiaryFormScreen() {
           multiline
         />
 
-        {/* Private toggle — only when a password is configured */}
-        {hasPwd ? (
-          <View
-            style={[
-              styles.privateCard,
-              { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.lg },
-            ]}
-          >
-            <View style={[styles.privateIconBox, { backgroundColor: hexToRgba(Colors.purple, 0.12) }]}>
-              <Ionicons name="lock-closed" size={20} color={Colors.purple} />
-            </View>
-            <View style={styles.privateInfo}>
-              <Text style={[styles.privateTitle, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-                {t('diary.privateDiary')}
-              </Text>
-              <Text style={[styles.privateSubtitle, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-                {t('diary.privateDiaryHint')}
-              </Text>
-            </View>
-            <Switch
-              value={isPrivate}
-              onValueChange={setIsPrivate}
-              trackColor={{ false: Colors.lightGray, true: hexToRgba(Colors.purple, 0.4) }}
-              thumbColor={isPrivate ? Colors.purple : Colors.card}
-            />
+        {/* Private toggle */}
+        <View
+          style={[
+            styles.privateCard,
+            { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.lg },
+          ]}
+        >
+          <View style={[styles.privateIconBox, { backgroundColor: hexToRgba(Colors.purple, 0.12) }]}>
+            <Ionicons name="lock-closed" size={20} color={Colors.purple} />
           </View>
-        ) : null}
+          <View style={styles.privateInfo}>
+            <Text style={[styles.privateTitle, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
+              {t('diary.privateDiary')}
+            </Text>
+            <Text style={[styles.privateSubtitle, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+              {hasPwd ? t('diary.privateDiaryHint') : t('diary.privateNoPasswordHint')}
+            </Text>
+          </View>
+          <Switch
+            value={isPrivate}
+            onValueChange={setIsPrivate}
+            trackColor={{ false: Colors.lightGray, true: hexToRgba(Colors.purple, 0.4) }}
+            thumbColor={isPrivate ? Colors.purple : Colors.card}
+          />
+        </View>
       </FormKeyboardScrollView>
 
       <FormSaveFooter

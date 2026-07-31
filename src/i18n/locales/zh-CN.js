@@ -1172,6 +1172,8 @@ export default {
     deleteConfirm: "确定删除此日记？此操作不可恢复。",
     privateDiary: "私密日记",
     publicDiary: "普通日记",
+    private: "私密",
+    public: "公开",
     totalEntries: "日记总数",
     thisYearPill: "今年 {{count}} 篇",
     privatePill: "私密 {{count}} 篇",
@@ -1179,6 +1181,7 @@ export default {
     entryType: "记录类型",
     textEntry: "文字日记",
     privateDiaryHint: "该日记已加密，请输入私密密码查看",
+    privateNoPasswordHint: "需先在设置中配置私密密码方可生效",
     loadFailed: "未找到该日记",
   },
   moodTrend: {

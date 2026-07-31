@@ -8,7 +8,7 @@ import ImagePreviewModal from '../common/ImagePreviewModal';
 
 const HERO_HEIGHT = Dimensions.get('window').width * 4 / 3;
 
-export default function DiaryHero({ image, title, dateText, privateText, isPrivate }) {
+export default function DiaryHero({ image, title, privateText, isPrivate }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
   const [imageError, setImageError] = useState(false);
@@ -42,18 +42,6 @@ export default function DiaryHero({ image, title, dateText, privateText, isPriva
           </View>
         )}
         <View style={styles.tags} pointerEvents="none">
-          <View style={styles.dateChip}>
-            <Text style={[styles.dateLabel, { color: 'rgba(255,255,255,0.7)', fontFamily: Fonts.bold }]}>
-              {t('detail.date')}
-            </Text>
-            <Text
-              style={[styles.dateText, { color: Colors.white, fontFamily: Fonts.bold }]}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-            >
-              {dateText}
-            </Text>
-          </View>
           <View
             style={[
               styles.privatePill,
@@ -80,23 +68,6 @@ const styles = StyleSheet.create({
   image: { width: '100%', height: '100%' },
   fallback: { width: '100%', height: '100%', alignItems: 'center', justifyContent: 'center' },
   tags: { position: 'absolute', left: 16, bottom: 16, alignItems: 'flex-start', gap: 8 },
-  dateChip: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
-    maxWidth: '92%',
-    paddingHorizontal: 12,
-    paddingLeft: 0,
-    paddingVertical: 6,
-    borderRadius: 9999,
-  },
-  dateLabel: {
-    fontSize: 10,
-    lineHeight: 14,
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
-  },
-  dateText: { fontSize: 32, lineHeight: 40, flexShrink: 1 },
   privatePill: {
     flexDirection: 'row',
     alignItems: 'center',

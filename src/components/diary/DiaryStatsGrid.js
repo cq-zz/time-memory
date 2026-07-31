@@ -28,7 +28,7 @@ function StatCard({ label, value, icon }) {
   );
 }
 
-export default function DiaryStatsGrid({ dateText, weatherText, privacyText }) {
+export default function DiaryStatsGrid({ dateText, weatherText }) {
   const { t } = useTranslation();
   return (
     <View style={styles.container}>
@@ -36,18 +36,6 @@ export default function DiaryStatsGrid({ dateText, weatherText, privacyText }) {
         <View style={styles.row}>
           <StatCard label={t('detail.date')} value={dateText} icon="calendar-outline" />
           <StatCard label={t('diary.weather')} value={weatherText || '--'} icon="partly-sunny-outline" />
-        </View>
-        <View style={styles.row}>
-          <StatCard
-            label={t('diary.privacy')}
-            value={privacyText}
-            icon="shield-checkmark-outline"
-          />
-          <StatCard
-            label={t('diary.entryType')}
-            value={t('diary.textEntry')}
-            icon="document-text-outline"
-          />
         </View>
       </View>
     </View>

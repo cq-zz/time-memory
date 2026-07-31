@@ -33,6 +33,8 @@ import {
 import { showToast } from '../common/Toast';
 import ConfirmModal from '../common/ConfirmModal';
 import useAlert from '../../hooks/useAlert';
+import { syncBillForDurable } from '../../services/durable';
+import { syncBillForAsset } from '../../services/asset';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const RESET_PRESERVED_SETTING_KEYS = ['profile.avatar', 'profile.nickname', 'darkMode', 'language'];
@@ -693,6 +695,11 @@ function ImportModal({ visible, onClose }) {
             ? result.data
             : { id: genId(), ...result.data };
           await insertRow(mod.table, rowToInsert);
+          // Auto-create or update the linked bill for durable/asset imports
+          try {
+            if (mod.id === 'durable') await syncBillForDurable(rowToInsert);
+            else if (mod.id === 'asset') await syncBillForAsset(rowToInsert);
+          } catch { /* non-critical — bill sync failure shouldn't block the import */ }
           seen.add(key);
           ok += 1;
         } catch (e) {

@@ -140,20 +140,69 @@ export async function getLinkedAsset(row) {
 /**
  * Insert (no id) or update (with id). `values` is a plain object of columns.
  * Timestamps are managed here so callers never set them.
+ * Automatically syncs a linked bill record for the durable.
  */
 export async function saveDurable(values, id) {
   const now = new Date().toISOString();
+  let savedId;
   if (id) {
     await updateRow(TABLE, id, { ...values, updated_at: now });
-    return id;
+    savedId = id;
+  } else {
+    const newId = genId();
+    await insertRow(TABLE, { id: newId, ...values, created_at: now, updated_at: now });
+    savedId = newId;
   }
-  const newId = genId();
-  await insertRow(TABLE, { id: newId, ...values, created_at: now, updated_at: now });
-  return newId;
+  // Sync linked bill — fire-and-forget (don't block the save)
+  syncBillForDurable({ id: savedId, ...values }).catch(() => {});
+  return savedId;
 }
 
 export async function removeDurable(id) {
+  // Also remove the linked bill when the durable is deleted
+  try {
+    const allBills = await getAllRows('bills');
+    const linkedBill = allBills.find((b) => b.source === 'durable' && b.source_id === id);
+    if (linkedBill) await deleteRow('bills', linkedBill.id);
+  } catch { /* non-critical */ }
   return deleteRow(TABLE, id);
+}
+
+/**
+ * Create or update the bill record that is auto-linked to a durable.
+ * The bill records the purchase as an expense — amount = purchase_price,
+ * date = purchase_date. If purchase_price is 0 the bill is removed.
+ * Exported so the import flow in DataManagement can call it too.
+ */
+export async function syncBillForDurable(durable) {
+  const purchasePrice = Number(durable.purchase_price) || 0;
+  const allBills = await getAllRows('bills');
+  const linkedBill = allBills.find((b) => b.source === 'durable' && b.source_id === durable.id);
+
+  if (purchasePrice <= 0) {
+    if (linkedBill) await deleteRow('bills', linkedBill.id);
+    return;
+  }
+
+  const billData = {
+    name: durable.name,
+    bill_type: 'expense',
+    amount: purchasePrice,
+    category: durable.category || '',
+    consumption_date: durable.purchase_date || '',
+    currency: durable.currency || '',
+    source: 'durable',
+    source_id: durable.id,
+    notes: '',
+  };
+
+  if (linkedBill) {
+    await updateRow('bills', linkedBill.id, { ...billData, updated_at: new Date().toISOString() });
+  } else {
+    const newId = genId();
+    const now = new Date().toISOString();
+    await insertRow('bills', { id: newId, ...billData, created_at: now, updated_at: now });
+  }
 }
 
 /** Aggregate for the list stats card: in-use value, in-use count, total count (current currency only). */

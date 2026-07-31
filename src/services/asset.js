@@ -77,20 +77,69 @@ export async function getAsset(id) {
 /**
  * Insert (no id) or update (with id). `values` is a plain object of columns.
  * Timestamps are managed here so callers never set them.
+ * Automatically syncs a linked bill record for the asset.
  */
 export async function saveAsset(values, id) {
   const now = new Date().toISOString();
+  let savedId;
   if (id) {
     await updateRow(TABLE, id, { ...values, updated_at: now });
-    return id;
+    savedId = id;
+  } else {
+    const newId = genId();
+    await insertRow(TABLE, { id: newId, ...values, created_at: now, updated_at: now });
+    savedId = newId;
   }
-  const newId = genId();
-  await insertRow(TABLE, { id: newId, ...values, created_at: now, updated_at: now });
-  return newId;
+  // Sync linked bill — fire-and-forget (don't block the save)
+  syncBillForAsset({ id: savedId, ...values }).catch(() => {});
+  return savedId;
 }
 
 export async function removeAsset(id) {
+  // Also remove the linked bill when the asset is deleted
+  try {
+    const allBills = await getAllRows('bills');
+    const linkedBill = allBills.find((b) => b.source === 'asset' && b.source_id === id);
+    if (linkedBill) await deleteRow('bills', linkedBill.id);
+  } catch { /* non-critical */ }
   return deleteRow(TABLE, id);
+}
+
+/**
+ * Create or update the bill record that is auto-linked to an asset.
+ * The bill records the purchase as an expense — amount = purchase_price,
+ * date = purchase_date. If purchase_price is 0 the bill is removed.
+ * Exported so the import flow in DataManagement can call it too.
+ */
+export async function syncBillForAsset(asset) {
+  const purchasePrice = Number(asset.purchase_price) || 0;
+  const allBills = await getAllRows('bills');
+  const linkedBill = allBills.find((b) => b.source === 'asset' && b.source_id === asset.id);
+
+  if (purchasePrice <= 0) {
+    if (linkedBill) await deleteRow('bills', linkedBill.id);
+    return;
+  }
+
+  const billData = {
+    name: asset.name,
+    bill_type: 'expense',
+    amount: purchasePrice,
+    category: asset.category || '',
+    consumption_date: asset.purchase_date || '',
+    currency: asset.currency || '',
+    source: 'asset',
+    source_id: asset.id,
+    notes: '',
+  };
+
+  if (linkedBill) {
+    await updateRow('bills', linkedBill.id, { ...billData, updated_at: new Date().toISOString() });
+  } else {
+    const newId = genId();
+    const now = new Date().toISOString();
+    await insertRow('bills', { id: newId, ...billData, created_at: now, updated_at: now });
+  }
 }
 
 /** Aggregate for the list stats card: total current value of active assets + counts (current currency only). */

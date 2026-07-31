@@ -2,7 +2,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
-import { reminderModuleMeta } from '../../utils/reminders';
+import { reminderModuleMeta, reminderTimelineText } from '../../utils/reminders';
 import { formatDisplay } from '../../utils/date';
 
 const MAX_ITEMS = 5;
@@ -128,11 +128,7 @@ export default function RemindersTimeline({ reminders = [], onPressItem, onViewA
           {items.map((item, i) => {
             const meta = reminderModuleMeta(item.module, Colors, t);
             const isLast = i === items.length - 1;
-            const time = item.expired
-              ? t('home.overdue')
-              : item.daysLeft === 0
-                ? t('home.todayDue')
-                : t('home.inDaysShort', { count: item.daysLeft });
+            const time = reminderTimelineText(item, t);
             const timeColor = item.expired
               ? Colors.orange
               : item.daysLeft === 0

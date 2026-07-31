@@ -1,3 +1,4 @@
+import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/utils/theme';
@@ -9,6 +10,11 @@ import ManagementSections from '../../src/components/butler/ManagementSections';
 
 export default function ButlerScreen() {
   const { Colors } = useTheme();
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleDataChanged = useCallback(() => {
+    setRefreshKey((k) => k + 1);
+  }, []);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top']}>
@@ -18,10 +24,10 @@ export default function ButlerScreen() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        <MoodCheckIn />
-        <FinancialSummary />
+        <MoodCheckIn key={`mood-${refreshKey}`} />
+        <FinancialSummary key={`summary-${refreshKey}`} />
         <FeatureGrid />
-        <ManagementSections />
+        <ManagementSections onDataChanged={handleDataChanged} />
       </ScrollView>
     </SafeAreaView>
   );

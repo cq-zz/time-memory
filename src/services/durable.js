@@ -12,25 +12,7 @@ import { inCurrentCurrency } from '../store/settings';
 
 const TABLE = 'durables';
 
-// ── repair_record (JSON text column) ──────────────
-// Shape: { expenses: [{name,cost,category,date}], incomes: [...], transferAmount }
-// A legacy plain array is treated as expenses.
 
-export function parseRepairRecord(raw) {
-  const empty = { expenses: [], incomes: [], transferAmount: 0 };
-  if (!raw) return empty;
-  try {
-    const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    if (Array.isArray(parsed)) return { ...empty, expenses: parsed };
-    return {
-      expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
-      incomes: Array.isArray(parsed.incomes) ? parsed.incomes : [],
-      transferAmount: parsed.transferAmount || 0,
-    };
-  } catch {
-    return empty;
-  }
-}
 
 const sumBillAmount = (bills) =>
   (bills || []).reduce((acc, b) => acc + (Number(b.amount) || 0), 0);
@@ -77,8 +59,7 @@ export function dailyAvg(row) {
 
 /**
  * purchase_price + linked expense bills − linked income bills.
- * Related expenses/incomes are bills associated via source/source_id
- * (first-version model; no repair_record write-back).
+ * Related expenses/incomes are bills associated via source/source_id.
  */
 export function totalCost(row, relatedBills = []) {
   const expenses = relatedBills.filter((b) => b.bill_type !== 'income');

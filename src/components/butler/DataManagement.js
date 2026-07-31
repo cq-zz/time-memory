@@ -49,7 +49,7 @@ const fileDate = () => {
 const CATEGORY_TYPES = { durable: 'item', asset: 'asset', bills: 'bill' };
 
 function duplicateKey(moduleId, row) {
-  const name = row.name ?? row.title ?? '';
+  const name = String(row.name ?? row.title ?? '').trim().toLowerCase();
   const dateField = {
     durable: 'purchase_date',
     asset: 'purchase_date',
@@ -60,7 +60,20 @@ function duplicateKey(moduleId, row) {
     mood: 'check_date',
     budget: 'year',
   }[moduleId];
-  return `${String(name).trim().toLowerCase()}|${String(row[dateField] ?? '').trim()}`;
+  const date = String(row[dateField] ?? '').trim();
+
+  if (moduleId === 'durable' || moduleId === 'asset') {
+    const method = String(row.acquisition_method ?? '').trim().toLowerCase();
+    const price = Number(row.purchase_price) || 0;
+    const currency = String(row.currency ?? '').trim().toLowerCase();
+    return `${name}|${date}|${method}|${price}|${currency}`;
+  }
+  if (moduleId === 'bills') {
+    const amount = Number(row.amount) || 0;
+    const currency = String(row.currency ?? '').trim().toLowerCase();
+    return `${name}|${date}|${amount}|${currency}`;
+  }
+  return `${name}|${date}`;
 }
 
 const IMPORTANT_DATE_CATEGORY_KEYS = ['family', 'friend', 'birthday', 'wedding', 'holiday', 'work', 'other'];
@@ -356,7 +369,7 @@ async function pickDbFileNative() {
   return { name: asset.name, bytes };
 }
 
-function MigrationModal({ visible, onClose }) {
+function MigrationModal({ visible, onClose, onDataChanged }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
   const { alert } = useAlert();
@@ -403,6 +416,7 @@ function MigrationModal({ visible, onClose }) {
         useProfileStore.getState().loadProfile(),
       ]);
       showToast(t('butler.importDbSuccess'));
+      onDataChanged?.();
       onClose();
     } catch (e) {
       alert(
@@ -607,7 +621,7 @@ function ExportModal({ visible, onClose }) {
 
 // ── Import modal ──────────────────────────────────
 
-function ImportModal({ visible, onClose }) {
+function ImportModal({ visible, onClose, onDataChanged }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
   const { alert } = useAlert();
@@ -717,6 +731,7 @@ function ImportModal({ visible, onClose }) {
         if (ok > 0) {
           showToast(t('butler.importedRows', { count: ok, module: moduleName }) +
             (skipped ? `，${t('butler.importSkippedDuplicates', { count: skipped })}` : ''));
+          onDataChanged?.();
         }
         const shown = errors.slice(0, 5).join('\n');
         const more = errors.length > 5 ? `\n${t('butler.moreErrors', { count: errors.length - 5 })}` : '';
@@ -726,12 +741,14 @@ function ImportModal({ visible, onClose }) {
         );
       } else if (ok === 0 && skipped > 0) {
         showToast(t('butler.importSkippedDuplicates', { count: skipped }));
+        onDataChanged?.();
         onClose();
       } else if (ok === 0) {
         alert(t('butler.nothingImportedTitle'), t('butler.nothingImportedDesc'));
       } else {
         showToast(t('butler.importedRows', { count: ok, module: moduleName }) +
           (skipped ? `，${t('butler.importSkippedDuplicates', { count: skipped })}` : ''));
+        onDataChanged?.();
         onClose();
       }
     } catch (e) {
@@ -790,7 +807,7 @@ function ImportModal({ visible, onClose }) {
 
 // ── Section ───────────────────────────────────────
 
-export default function DataManagement() {
+export default function DataManagement({ onDataChanged }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
   const [exportOpen, setExportOpen] = useState(false);
@@ -808,6 +825,7 @@ export default function DataManagement() {
         useCategoryStore.getState().loadCategories(),
       ]);
       showToast(t('butler.allDataCleared'));
+      onDataChanged?.();
     } catch (e) {
       showToast(t('butler.resetFailedDesc'));
     }
@@ -846,8 +864,8 @@ export default function DataManagement() {
       )}
 
       <ExportModal visible={exportOpen} onClose={() => setExportOpen(false)} />
-      <ImportModal visible={importOpen} onClose={() => setImportOpen(false)} />
-      <MigrationModal visible={migrationOpen} onClose={() => setMigrationOpen(false)} />
+      <ImportModal visible={importOpen} onClose={() => setImportOpen(false)} onDataChanged={onDataChanged} />
+      <MigrationModal visible={migrationOpen} onClose={() => setMigrationOpen(false)} onDataChanged={onDataChanged} />
       <ConfirmModal
         visible={resetOpen}
         onClose={() => setResetOpen(false)}

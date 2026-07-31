@@ -1,9 +1,8 @@
 /**
  * Bills (账单) domain layer.
  * Bills associate with durables/assets through the `source` / `source_id`
- * columns (no repair_record write-back in the first version). The durable /
- * asset detail pages read their related expenses & incomes via
- * `listBillsBySource`.
+ * columns. The durable / asset detail pages read their related expenses &
+ * incomes via `listBillsBySource`.
  */
 import { getAllRows, getRowById, insertRow, updateRow, deleteRow } from '../store/db';
 import { genId } from '../utils/id';

@@ -101,7 +101,7 @@ function StepperRow({ label, value, min, max, onChange, showBorder }) {
   );
 }
 
-export default function ManagementSections() {
+export default function ManagementSections({ onDataChanged }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
@@ -186,7 +186,7 @@ export default function ManagementSections() {
       </View>
 
       {/* Data management */}
-      <DataManagement />
+      <DataManagement onDataChanged={onDataChanged} />
 
       <CurrencyModal visible={currencyOpen} onClose={() => setCurrencyOpen(false)} />
       <YearRangeModal visible={yearRangeOpen} onClose={() => setYearRangeOpen(false)} />

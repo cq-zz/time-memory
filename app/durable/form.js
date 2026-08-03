@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../src/utils/theme';
+import { useTheme, hexToRgba } from '../../src/utils/theme';
 import { useSettingsStore, currencyMeta } from '../../src/store/settings';
+import { Ionicons } from '@expo/vector-icons';
 import { getDurable, saveDurable } from '../../src/services/durable';
 import { DURABLE_STATUS_OPTIONS } from '../../src/utils/constant';
 import { showToast } from '../../src/components/common/Toast';
@@ -91,6 +92,15 @@ export default function DurableFormScreen() {
     const priceNum = Number(price);
     if (price.trim() === '' || Number.isNaN(priceNum) || priceNum < 0) {
       showToast(t('durable.purchasePriceRequired'));
+      return;
+    }
+    // Expected end date & expiry date must not be before purchase date
+    if (expectedLifespan && expectedLifespan < purchaseDate) {
+      showToast(t('durable.expectedEndDateBeforePurchase'));
+      return;
+    }
+    if (expiryDate && expiryDate < purchaseDate) {
+      showToast(t('durable.expiryDateBeforePurchase'));
       return;
     }
     const values = {
@@ -231,6 +241,14 @@ export default function DurableFormScreen() {
           onChangeText={setNotes}
           multiline
         />
+
+        {/* Hint: auto-generated bill */}
+        <View style={[styles.billHint, { backgroundColor: hexToRgba(Colors.purple, 0.06), borderColor: hexToRgba(Colors.purple, 0.15), borderRadius: Radius.md }]}>
+          <Ionicons name="information-circle-outline" size={16} color={Colors.purple} />
+          <Text style={[styles.hintText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+            {t('durable.autoBillHint')}
+          </Text>
+        </View>
       </FormKeyboardScrollView>
 
       <FormSaveFooter
@@ -278,5 +296,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+  },
+  billHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    borderWidth: 1,
+  },
+  hintText: {
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
   },
 });

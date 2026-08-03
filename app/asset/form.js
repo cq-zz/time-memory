@@ -3,8 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '../../src/utils/theme';
+import { useTheme, hexToRgba } from '../../src/utils/theme';
 import { useSettingsStore, currencyMeta } from '../../src/store/settings';
+import { Ionicons } from '@expo/vector-icons';
 import { getAsset, saveAsset } from '../../src/services/asset';
 import { ASSET_STATUS_OPTIONS } from '../../src/utils/constant';
 import { showToast } from '../../src/components/common/Toast';
@@ -97,6 +98,11 @@ export default function AssetFormScreen() {
     const curNum = Number(currentPrice);
     if (currentPrice.trim() === '' || Number.isNaN(curNum) || curNum < 0) {
       showToast(t('asset.currentPriceRequired'));
+      return;
+    }
+    // Expiry date must not be before purchase date
+    if (expiryDate && expiryDate < purchaseDate) {
+      showToast(t('asset.expiryDateBeforePurchase'));
       return;
     }
     const values = {
@@ -238,6 +244,14 @@ export default function AssetFormScreen() {
           onChangeText={setNotes}
           multiline
         />
+
+        {/* Hint: auto-generated bill */}
+        <View style={[styles.billHint, { backgroundColor: hexToRgba(Colors.purple, 0.06), borderColor: hexToRgba(Colors.purple, 0.15), borderRadius: Radius.md }]}>
+          <Ionicons name="information-circle-outline" size={16} color={Colors.purple} />
+          <Text style={[styles.hintText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+            {t('asset.autoBillHint')}
+          </Text>
+        </View>
       </FormKeyboardScrollView>
 
       <FormSaveFooter
@@ -285,5 +299,17 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
+  },
+  billHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 12,
+    borderWidth: 1,
+  },
+  hintText: {
+    fontSize: 12,
+    lineHeight: 18,
+    flex: 1,
   },
 });

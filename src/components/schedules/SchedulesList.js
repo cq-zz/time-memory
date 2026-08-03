@@ -82,31 +82,33 @@ function ScheduleCard({ item, isLast, onChanged }) {
   );
 }
 
-export default function SchedulesList({ items, year, month, search, filter, loading, onChanged }) {
+const pad = (n) => String(n).padStart(2, '0');
+
+function inScheduleRange(item, startYear, startMonth, endYear, endMonth) {
+  if (startYear == null && endYear == null) return true;
+  const sStart = datePart(item.start_date || item.end_date);
+  const sEnd = datePart(item.end_date || item.start_date);
+
+  if (startYear != null && startMonth != null) {
+    const periodStart = `${startYear}-${pad(startMonth)}-01`;
+    if (sEnd && sEnd < periodStart) return false;
+  }
+  if (endYear != null && endMonth != null) {
+    const periodEndExclusive = endMonth === 12
+      ? `${endYear + 1}-01-01`
+      : `${endYear}-${pad(endMonth + 1)}-01`;
+    if (sStart && sStart >= periodEndExclusive) return false;
+  }
+  return true;
+}
+
+export default function SchedulesList({ items, startYear, startMonth, endYear, endMonth, search, filter, loading, onChanged }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
   const filtered = items.filter((item) => {
     if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
-    if (year != null) {
-      const periodStart = month
-        ? `${year}-${String(month).padStart(2, '0')}-01`
-        : `${year}-01-01`;
-      const periodEndExclusive = month
-        ? month === 12
-          ? `${year + 1}-01-01`
-          : `${year}-${String(month + 1).padStart(2, '0')}-01`
-        : `${year + 1}-01-01`;
-      const scheduleStart = datePart(item.start_date || item.end_date);
-      const scheduleEnd = datePart(item.end_date || item.start_date);
-      if (
-        scheduleStart &&
-        scheduleEnd &&
-        (scheduleStart >= periodEndExclusive || scheduleEnd < periodStart)
-      ) {
-        return false;
-      }
-    }
+    if (!inScheduleRange(item, startYear, startMonth, endYear, endMonth)) return false;
     if (search && !(item.title || '').toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });

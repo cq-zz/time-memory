@@ -8,7 +8,7 @@ import { useTheme } from '../../src/utils/theme';
 import { listDiaries } from '../../src/services/diary';
 import { hasPassword } from '../../src/utils/password';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
-import YearMonthPicker from '../../src/components/common/YearMonthPicker';
+import MonthRangePicker from '../../src/components/common/MonthRangePicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import DiaryList from '../../src/components/diary/DiaryList';
 import DiaryStats from '../../src/components/diary/DiaryStats';
@@ -22,8 +22,10 @@ export default function DiaryScreen() {
   const now = new Date();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(null);
+  const [startYear, setStartYear] = useState(now.getFullYear());
+  const [startMonth, setStartMonth] = useState(1);
+  const [endYear, setEndYear] = useState(now.getFullYear());
+  const [endMonth, setEndMonth] = useState(now.getMonth() + 1);
   const [search, setSearch] = useState('');
   const [hasPwd, setHasPwd] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
@@ -48,9 +50,6 @@ export default function DiaryScreen() {
   const stats = useMemo(() => {
     const query = search.trim().toLowerCase();
     const filtered = items.filter((item) => {
-      const itemDate = typeof item?.date === 'string' ? item.date : '';
-      if (year != null && itemDate && Number(itemDate.slice(0, 4)) !== year) return false;
-      if (month != null && itemDate && Number(itemDate.slice(5, 7)) !== month) return false;
       if (
         query &&
         !String(item?.title || '').toLowerCase().includes(query) &&
@@ -66,7 +65,7 @@ export default function DiaryScreen() {
       currentYearCount: filtered.filter((item) => String(item?.date || '').startsWith(currentYear)).length,
       privateCount: filtered.filter((item) => Number(item?.is_private) === 1).length,
     };
-  }, [items, year, month, search]);
+  }, [items, search]);
 
   const handlePressItem = (item) => {
     if (Number(item.is_private) === 1 && hasPwd) {
@@ -82,13 +81,17 @@ export default function DiaryScreen() {
       <ModuleHeader title={t('nav.diary')} />
 
       <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
-        <YearMonthPicker
-          year={year}
-          month={month}
+        <MonthRangePicker
+          startYear={startYear}
+          startMonth={startMonth}
+          endYear={endYear}
+          endMonth={endMonth}
           style={styles.dateFilter}
-          onChange={({ year: y, month: m }) => {
-            setYear(y);
-            setMonth(m);
+          onChange={({ startYear: sy, startMonth: sm, endYear: ey, endMonth: em }) => {
+            setStartYear(sy);
+            setStartMonth(sm);
+            setEndYear(ey);
+            setEndMonth(em);
           }}
         />
         <SearchFilterBar
@@ -113,8 +116,10 @@ export default function DiaryScreen() {
         <View style={styles.listSection}>
           <DiaryList
             items={items}
-            year={year}
-            month={month}
+            startYear={startYear}
+            startMonth={startMonth}
+            endYear={endYear}
+            endMonth={endMonth}
             search={search}
             loading={loading}
             onPressItem={handlePressItem}

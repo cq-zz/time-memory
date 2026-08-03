@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../src/utils/theme';
 import { useSettingsStore, formatMoney } from '../../src/store/settings';
-import { useCategoryStore, resolveCategoryMeta } from '../../src/store/categories';
+import { useCategoryStore, resolveCategoryMeta, resolveCategoryMetaAll } from '../../src/store/categories';
 import { getBill, removeBill } from '../../src/services/bill';
 import { getDurable } from '../../src/services/durable';
 import { getAsset } from '../../src/services/asset';
@@ -32,6 +32,7 @@ export default function BillDetailScreen() {
 
   const [row, setRow] = useState(null);
   const [linkedName, setLinkedName] = useState('');
+  const [sourceImage, setSourceImage] = useState('');
   const [loading, setLoading] = useState(true);
 
   useFocusEffect(
@@ -42,18 +43,22 @@ export default function BillDetailScreen() {
         try {
           const item = id ? await getBill(id) : null;
           let name = '';
+          let srcImage = '';
           if (item?.source && item?.source_id) {
             const linked =
               isAssetSource(item.source) ? await getAsset(item.source_id) : await getDurable(item.source_id);
             name = linked?.name || '';
+            srcImage = linked?.image || '';
           }
           if (!active) return;
           setRow(item);
           setLinkedName(name);
+          setSourceImage(srcImage);
         } catch {
           if (!active) return;
           setRow(null);
           setLinkedName('');
+          setSourceImage('');
         } finally {
           if (active) setLoading(false);
         }
@@ -82,15 +87,17 @@ export default function BillDetailScreen() {
   const isIncome = row.bill_type === 'income';
   const amountColor = isIncome ? Colors.green : Colors.rose;
   const isAuto = isAutoSource(row.source);
-  const cat = resolveCategoryMeta(categoryState, 'bill', row.category, t);
 
-  // Auto-generated bills: override category display to "物品" / "资产"
-  const displayCategoryLabel = isAuto
-    ? (isAssetSource(row.source) ? t('bills.autoCategoryAsset') : t('bills.autoCategoryDurable'))
-    : cat.label;
-  const displayCategoryIcon = isAuto ? 'cube-outline' : cat.icon;
+  // Auto-generated bills: resolve category across all types (item/bill/asset)
+  // because the category may come from the originating item/asset.
+  const cat = isAuto
+    ? resolveCategoryMetaAll(categoryState, row.category, t)
+    : resolveCategoryMeta(categoryState, 'bill', row.category, t);
+  const displayCategoryLabel = cat.label;
+  const displayCategoryIcon = cat.icon || 'pricetag-outline';
 
-  // Auto-generated bills: footer source label and path
+  // Auto-generated bills: show source item/asset image instead of bill image
+  const displayImage = isAuto ? (sourceImage || row.receipt_image || null) : (row.receipt_image || null);
   const sourceLabel = isAuto
     ? (isAssetSource(row.source) ? t('bills.autoSourceAsset') : t('bills.autoSourceDurable'))
     : '';
@@ -102,7 +109,7 @@ export default function BillDetailScreen() {
     <View style={[styles.container, { backgroundColor: Colors.card }]}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <BillHero
-          image={row.receipt_image || null}
+          image={displayImage}
           fallbackIcon={cat.icon}
           title={row.name}
           amountLabel={t('bills.amount')}

@@ -10,7 +10,7 @@ import { displayValue, effectiveStatus, listAssets } from '../../src/services/as
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import ModuleOverviewCard from '../../src/components/common/ModuleOverviewCard';
 import AssetsStats from '../../src/components/assets/AssetsStats';
-import YearMonthPicker from '../../src/components/common/YearMonthPicker';
+import MonthRangePicker from '../../src/components/common/MonthRangePicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import AssetsList from '../../src/components/assets/AssetsList';
 
@@ -27,8 +27,10 @@ export default function AssetsScreen() {
   const currency = useSettingsStore((s) => s.settings.currency);
 
   const [items, setItems] = useState([]);
-  const [year, setYear] = useState(null);
-  const [month, setMonth] = useState(null);
+  const [startYear, setStartYear] = useState(null);
+  const [startMonth, setStartMonth] = useState(null);
+  const [endYear, setEndYear] = useState(null);
+  const [endMonth, setEndMonth] = useState(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -52,8 +54,6 @@ export default function AssetsScreen() {
     const query = search.trim().toLowerCase();
     const filtered = items.filter((item) => {
       if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
-      if (year != null && item.purchase_date && Number(item.purchase_date.slice(0, 4)) !== year) return false;
-      if (month != null && item.purchase_date && Number(item.purchase_date.slice(5, 7)) !== month) return false;
       if (query && !(item.name || '').toLowerCase().includes(query)) return false;
       return true;
     });
@@ -63,7 +63,7 @@ export default function AssetsScreen() {
       activeCount: active.length,
       totalCount: filtered.length,
     };
-  }, [items, year, month, search, filter]);
+  }, [items, search, filter]);
 
   const allStats = useMemo(() => {
     const activeCount = items.filter((item) => effectiveStatus(item) === 'active').length;
@@ -93,14 +93,17 @@ export default function AssetsScreen() {
       </View>
 
       <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
-        <YearMonthPicker
-          year={year}
-          month={month}
-          showAllOption
+        <MonthRangePicker
+          startYear={startYear}
+          startMonth={startMonth}
+          endYear={endYear}
+          endMonth={endMonth}
           style={styles.dateFilter}
-          onChange={({ year: y, month: m }) => {
-            setYear(y);
-            setMonth(m);
+          onChange={({ startYear: sy, startMonth: sm, endYear: ey, endMonth: em }) => {
+            setStartYear(sy);
+            setStartMonth(sm);
+            setEndYear(ey);
+            setEndMonth(em);
           }}
         />
         <SearchFilterBar
@@ -125,8 +128,10 @@ export default function AssetsScreen() {
         <View style={styles.listSection}>
           <AssetsList
             items={items}
-            year={year}
-            month={month}
+            startYear={startYear}
+            startMonth={startMonth}
+            endYear={endYear}
+            endMonth={endMonth}
             search={search}
             filter={filter}
             currency={currency}

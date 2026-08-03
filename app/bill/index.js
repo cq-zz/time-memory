@@ -9,7 +9,7 @@ import { useSettingsStore, formatMoney } from '../../src/store/settings';
 import { listBills, billSummary } from '../../src/services/bill';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import ModuleStatsCard from '../../src/components/common/ModuleStatsCard';
-import YearMonthPicker from '../../src/components/common/YearMonthPicker';
+import MonthRangePicker from '../../src/components/common/MonthRangePicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import BillsList from '../../src/components/bill/BillsList';
 
@@ -28,8 +28,10 @@ export default function BillsScreen() {
   const now = new Date();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [year, setYear] = useState(now.getFullYear());
-  const [month, setMonth] = useState(null);
+  const [startYear, setStartYear] = useState(now.getFullYear());
+  const [startMonth, setStartMonth] = useState(1);
+  const [endYear, setEndYear] = useState(now.getFullYear());
+  const [endMonth, setEndMonth] = useState(now.getMonth() + 1);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
 
@@ -47,31 +49,32 @@ export default function BillsScreen() {
     }, [load])
   );
 
-  // Summary reflects the same period, search, and type filters as the list.
   const summary = useMemo(() => {
     const query = search.trim().toLowerCase();
     const filteredBills = items.filter((b) => {
-      if (year != null && b.consumption_date && Number(b.consumption_date.slice(0, 4)) !== year) return false;
-      if (month != null && b.consumption_date && Number(b.consumption_date.slice(5, 7)) !== month) return false;
       if (filter !== 'all' && b.bill_type !== filter) return false;
       if (query && !(b.name || '').toLowerCase().includes(query)) return false;
       return true;
     });
     return billSummary(filteredBills);
-  }, [items, year, month, search, filter]);
+  }, [items, search, filter]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
       <ModuleHeader title={t('nav.bills')} />
 
       <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
-        <YearMonthPicker
-          year={year}
-          month={month}
+        <MonthRangePicker
+          startYear={startYear}
+          startMonth={startMonth}
+          endYear={endYear}
+          endMonth={endMonth}
           style={styles.dateFilter}
-          onChange={({ year: y, month: m }) => {
-            setYear(y);
-            setMonth(m);
+          onChange={({ startYear: sy, startMonth: sm, endYear: ey, endMonth: em }) => {
+            setStartYear(sy);
+            setStartMonth(sm);
+            setEndYear(ey);
+            setEndMonth(em);
           }}
         />
         <SearchFilterBar
@@ -109,7 +112,16 @@ export default function BillsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.listSection}>
-          <BillsList items={items} year={year} month={month} search={search} filter={filter} loading={loading} />
+          <BillsList
+            items={items}
+            startYear={startYear}
+            startMonth={startMonth}
+            endYear={endYear}
+            endMonth={endMonth}
+            search={search}
+            filter={filter}
+            loading={loading}
+          />
         </View>
       </ScrollView>
 

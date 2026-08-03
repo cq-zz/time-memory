@@ -88,7 +88,6 @@ export default function FeatureGrid() {
     useCallback(() => {
       let active = true;
       const year = String(new Date().getFullYear());
-      const monthKey = `${year}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
       Promise.all([
         listDurables(),
         listAssets(),
@@ -103,7 +102,7 @@ export default function FeatureGrid() {
           setStats({
             durables: t('home.featureItems', { count: durables.filter((d) => durableStatus(d) === 'in_use').length }),
             assets: t('home.featurePortfolios', { count: assets.filter((a) => assetStatus(a) === 'active').length }),
-            bills: t('home.featureBills', { count: bills.filter((b) => (b.consumption_date || '').slice(0, 7) === monthKey).length }),
+            bills: t('home.featureBills', { count: bills.length }),
             schedules: t('home.featureActive', {
               count: schedules.filter((s) => {
                 const st = scheduleStatus(s);

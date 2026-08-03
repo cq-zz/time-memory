@@ -108,14 +108,24 @@ function ItemCard({ item, currency, isLast }) {
 
 const pad = (n) => String(n).padStart(2, '0');
 
-export default function ItemsList({ items, year, month, search, filter, currency, loading }) {
+function inMonthRange(dateStr, startYear, startMonth, endYear, endMonth) {
+  if (startYear == null && endYear == null) return true;
+  const prefix = (dateStr || '').slice(0, 7);
+  if (startYear != null && startMonth != null) {
+    if (prefix < `${startYear}-${pad(startMonth)}`) return false;
+  }
+  if (endYear != null && endMonth != null) {
+    if (prefix > `${endYear}-${pad(endMonth)}`) return false;
+  }
+  return true;
+}
+
+export default function ItemsList({ items, startYear, startMonth, endYear, endMonth, search, filter, currency, loading }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
-  const datePrefix = year != null ? (month != null ? `${year}-${pad(month)}` : `${year}`) : null;
-
   const filtered = items.filter((item) => {
-    if (datePrefix && !(item.purchase_date || '').startsWith(datePrefix)) return false;
+    if (!inMonthRange(item.purchase_date, startYear, startMonth, endYear, endMonth)) return false;
     if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
     if (search && !(item.name || '').toLowerCase().includes(search.toLowerCase())) return false;
     return true;

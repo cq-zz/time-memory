@@ -1,77 +1,84 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
 import useAlert from '../../hooks/useAlert';
 
+const pad = (n) => String(n).padStart(2, '0');
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
-const fmtYm = (y, m) => `${y}-${String(m).padStart(2, '0')}`;
+const fmtYm = (y, m) => `${y}/${pad(m)}`;
 
 /**
- * Start ~ end range picker for charts (bottom sheet).
- * yearOnly=true renders two year columns; otherwise two month columns.
- * Year range follows the global Year Range setting.
+ * Month-range picker (bottom sheet) — follows ChartRangePicker month-mode style.
+ * Always shows dual-column start/end with year nav + month grid.
+ * Supports clear-to-null for "query all".
  */
-export default function ChartRangePicker({
+export default function MonthRangePicker({
   startYear,
   startMonth,
   endYear,
   endMonth,
-  yearOnly = false,
-  onConfirm,
+  onChange,
+  style,
 }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
   const { alert } = useAlert();
   const [open, setOpen] = useState(false);
 
-  const [locStartYear, setLocStartYear] = useState(startYear);
-  const [locStartMonth, setLocStartMonth] = useState(startMonth);
-  const [locEndYear, setLocEndYear] = useState(endYear);
-  const [locEndMonth, setLocEndMonth] = useState(endMonth);
+  const hasStart = startYear != null && startMonth != null;
+  const hasEnd = endYear != null && endMonth != null;
+  const hasRange = hasStart || hasEnd;
 
   const displayText = useMemo(() => {
-    if (yearOnly) return `${startYear} - ${endYear}`;
-    return `${fmtYm(startYear, startMonth)} ~ ${fmtYm(endYear, endMonth)}`;
-  }, [startYear, startMonth, endYear, endMonth, yearOnly]);
+    if (!hasRange) return t('common.all');
+    const startStr = hasStart ? fmtYm(startYear, startMonth) : '';
+    const endStr = hasEnd ? fmtYm(endYear, endMonth) : '';
+    if (hasStart && hasEnd) return `${startStr} ~ ${endStr}`;
+    if (hasStart) return `${startStr} ${t('common.dateRangeFrom')}`;
+    return `${t('common.dateRangeTo')} ${endStr}`;
+  }, [hasStart, hasEnd, startYear, startMonth, endYear, endMonth, t]);
 
   const handleOpen = useCallback(() => {
-    setLocStartYear(startYear);
-    setLocStartMonth(startMonth);
-    setLocEndYear(endYear);
-    setLocEndMonth(endMonth);
     setOpen(true);
-  }, [startYear, startMonth, endYear, endMonth]);
+  }, []);
 
-  const handleConfirm = useCallback(() => {
-    const sy = locStartYear, ey = locEndYear;
-    const sm = yearOnly ? null : locStartMonth;
-    const em = yearOnly ? null : locEndMonth;
-    if (ey < sy || (!yearOnly && ey === sy && (em || 0) < (sm || 1))) {
-      alert(t('common.tip'), t('common.dateRangeInvalid'));
-      return;
-    }
-    onConfirm({ startYear: sy, startMonth: sm, endYear: ey, endMonth: em });
+  const handleConfirm = useCallback((result) => {
+    onChange(result);
     setOpen(false);
-  }, [locStartYear, locStartMonth, locEndYear, locEndMonth, yearOnly, onConfirm, alert]);
+  }, [onChange]);
 
   return (
-    <View style={styles.wrap}>
-      <Pressable
-        style={({ pressed }) => [
-          styles.trigger,
-          { backgroundColor: Colors.purpleTint, borderRadius: Radius.pill },
-          pressed && { opacity: 0.8 },
-        ]}
-        onPress={handleOpen}
-      >
-        <Ionicons name="calendar-outline" size={16} color={Colors.purple} />
-        <Text style={[styles.triggerText, { color: Colors.purple, fontFamily: Fonts.bold }]} numberOfLines={1}>
-          {displayText}
-        </Text>
-      </Pressable>
+    <View style={[styles.wrap, style]}>
+      <View style={styles.triggerRow}>
+        <Pressable
+          style={({ pressed }) => [
+            styles.trigger,
+            { backgroundColor: Colors.purpleTint, borderRadius: Radius.pill },
+            pressed && { opacity: 0.8 },
+          ]}
+          onPress={handleOpen}
+        >
+          <Ionicons name="calendar-outline" size={16} color={Colors.purple} />
+          <Text style={[styles.triggerText, { color: Colors.purple, fontFamily: Fonts.bold }]} numberOfLines={1}>
+            {displayText}
+          </Text>
+        </Pressable>
+        {hasRange && (
+          <Pressable
+            style={({ pressed }) => [
+              styles.clearBtn,
+              { backgroundColor: Colors.purpleTint, borderRadius: Radius.pill },
+              pressed && { opacity: 0.8 },
+            ]}
+            onPress={() => onChange({ startYear: null, startMonth: null, endYear: null, endMonth: null })}
+          >
+            <Ionicons name="close-circle" size={18} color={Colors.purple} />
+          </Pressable>
+        )}
+      </View>
 
       {open && (
         <Modal visible transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -85,57 +92,24 @@ export default function ChartRangePicker({
                   </Text>
                 </Pressable>
                 <Text style={[styles.panelTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-                  {t('common.selectPeriod')}
+                  {t('common.selectDateRange')}
                 </Text>
-                <Pressable onPress={handleConfirm}>
+                <Pressable onPress={() => handleConfirm({ startYear: startYear, startMonth: startMonth, endYear: endYear, endMonth: endMonth })}>
                   <Text style={[styles.headerBtnConfirm, { color: Colors.purple, fontFamily: Fonts.bold }]}>
                     {t('common.confirm')}
                   </Text>
                 </Pressable>
               </View>
 
-              {yearOnly ? (
-                <YearRangePicker
-                  startYear={locStartYear}
-                  endYear={locEndYear}
-                  onStartChange={setLocStartYear}
-                  onEndChange={setLocEndYear}
+              <View style={styles.body}>
+                <PickerPanel
+                  startYear={startYear}
+                  startMonth={startMonth}
+                  endYear={endYear}
+                  endMonth={endMonth}
+                  onConfirm={handleConfirm}
                 />
-              ) : (
-                <View style={styles.body}>
-                  <View style={styles.dualCol}>
-                    <View style={styles.colHalf}>
-                      <MonthRangeColumn
-                        label={t('common.startDate')}
-                        year={locStartYear}
-                        month={locStartMonth}
-                        onYearChange={setLocStartYear}
-                        onMonthChange={(m) => {
-                          setLocStartMonth(m);
-                          if (locStartYear === locEndYear && m > locEndMonth) setLocEndMonth(m);
-                        }}
-                        clampMaxYear={locEndYear}
-                        clampMaxMonth={locEndMonth}
-                      />
-                    </View>
-                    <View style={[styles.colDivider, { backgroundColor: Colors.cardBorder }]} />
-                    <View style={styles.colHalf}>
-                      <MonthRangeColumn
-                        label={t('common.endDate')}
-                        year={locEndYear}
-                        month={locEndMonth}
-                        onYearChange={setLocEndYear}
-                        onMonthChange={(m) => {
-                          setLocEndMonth(m);
-                          if (locStartYear === locEndYear && m < locStartMonth) setLocStartMonth(m);
-                        }}
-                        clampMinYear={locStartYear}
-                        clampMinMonth={locStartMonth}
-                      />
-                    </View>
-                  </View>
-                </View>
-              )}
+              </View>
             </View>
           </View>
         </Modal>
@@ -144,112 +118,82 @@ export default function ChartRangePicker({
   );
 }
 
-const YEAR_CHIP_H = 36; // 20 (lineHeight) + 8*2 (paddingVertical) + 4 (marginBottom) / 2
-
-function YearRangePicker({ startYear, endYear, onStartChange, onEndChange }) {
+function PickerPanel({ startYear, startMonth, endYear, endMonth, onConfirm }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
   const yearStart = useSettingsStore((s) => s.settings.yearStart);
   const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
-  const startScrollRef = useRef(null);
-  const endScrollRef = useRef(null);
 
-  const years = [];
-  for (let y = yearStart; y <= yearEnd; y++) years.push(y);
+  const now = new Date();
+  const curYear = now.getFullYear();
+  const curMonth = now.getMonth() + 1;
 
-  const handleStartTap = (y) => {
-    onStartChange(y);
-    if (endYear < y) onEndChange(y);
-  };
+  const [locStartYear, setLocStartYear] = useState(startYear ?? curYear);
+  const [locStartMonth, setLocStartMonth] = useState(startMonth ?? curMonth);
+  const [locEndYear, setLocEndYear] = useState(endYear ?? curYear);
+  const [locEndMonth, setLocEndMonth] = useState(endMonth ?? curMonth);
 
-  const handleEndTap = (y) => {
-    onEndChange(y);
-    if (startYear > y) onStartChange(y);
-  };
+  const handleClear = useCallback(() => {
+    onConfirm({ startYear: null, startMonth: null, endYear: null, endMonth: null });
+  }, [onConfirm]);
 
-  const startYears = years.filter((y) => endYear === null || y <= endYear);
-  const endYears = years.filter((y) => startYear === null || y >= startYear);
-
-  // Scroll to show selected year in visible area
-  useEffect(() => {
-    const startIdx = startYears.indexOf(startYear);
-    const endIdx = endYears.indexOf(endYear);
-    if (startIdx >= 0) {
-      const offset = Math.max(0, startIdx * YEAR_CHIP_H - YEAR_CHIP_H);
-      startScrollRef.current?.scrollTo({ y: offset, animated: false });
-    }
-    if (endIdx >= 0) {
-      const offset = Math.max(0, endIdx * YEAR_CHIP_H - YEAR_CHIP_H);
-      endScrollRef.current?.scrollTo({ y: offset, animated: false });
-    }
-  }, []);
+  const handleConfirm = useCallback(() => {
+    onConfirm({
+      startYear: locStartYear,
+      startMonth: locStartMonth,
+      endYear: locEndYear,
+      endMonth: locEndMonth,
+    });
+  }, [locStartYear, locStartMonth, locEndYear, locEndMonth, onConfirm]);
 
   return (
-    <View style={styles.body}>
+    <>
       <View style={styles.dualCol}>
         <View style={styles.colHalf}>
-          <Text style={[styles.colHalfLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-            {t('common.startYear')}
-          </Text>
-          <ScrollView ref={startScrollRef} style={styles.yearColScroll} showsVerticalScrollIndicator={false} bounces={false}>
-            {startYears.map((y) => (
-              <Pressable
-                key={y}
-                style={[
-                  styles.yearColChip,
-                  {
-                    backgroundColor: startYear === y ? Colors.purple : Colors.iconBg,
-                    borderColor: startYear === y ? Colors.purple : Colors.cardBorder,
-                    borderRadius: Radius.md,
-                  },
-                ]}
-                onPress={() => handleStartTap(y)}
-              >
-                <Text
-                  style={[
-                    styles.yearColChipText,
-                    { color: startYear === y ? Colors.white : Colors.textSecondary, fontFamily: Fonts.semiBold },
-                  ]}
-                >
-                  {y}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+          <MonthRangeColumn
+            label={t('common.startDate')}
+            year={locStartYear}
+            month={locStartMonth}
+            onYearChange={setLocStartYear}
+            onMonthChange={(m) => {
+              setLocStartMonth(m);
+              if (locStartYear === locEndYear && m > locEndMonth) setLocEndMonth(m);
+            }}
+            clampMaxYear={locEndYear}
+            clampMaxMonth={locEndMonth}
+          />
         </View>
         <View style={[styles.colDivider, { backgroundColor: Colors.cardBorder }]} />
         <View style={styles.colHalf}>
-          <Text style={[styles.colHalfLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-            {t('common.endYear')}
-          </Text>
-          <ScrollView ref={endScrollRef} style={styles.yearColScroll} showsVerticalScrollIndicator={false} bounces={false}>
-            {endYears.map((y) => (
-              <Pressable
-                key={y}
-                style={[
-                  styles.yearColChip,
-                  {
-                    backgroundColor: endYear === y ? Colors.purple : Colors.iconBg,
-                    borderColor: endYear === y ? Colors.purple : Colors.cardBorder,
-                    borderRadius: Radius.md,
-                  },
-                ]}
-                onPress={() => handleEndTap(y)}
-              >
-                <Text
-                  style={[
-                    styles.yearColChipText,
-                    { color: endYear === y ? Colors.white : Colors.textSecondary, fontFamily: Fonts.semiBold },
-                  ]}
-                >
-                  {y}
-                </Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+          <MonthRangeColumn
+            label={t('common.endDate')}
+            year={locEndYear}
+            month={locEndMonth}
+            onYearChange={setLocEndYear}
+            onMonthChange={(m) => {
+              setLocEndMonth(m);
+              if (locStartYear === locEndYear && m < locStartMonth) setLocStartMonth(m);
+            }}
+            clampMinYear={locStartYear}
+            clampMinMonth={locStartMonth}
+          />
         </View>
       </View>
-    </View>
+
+      <Pressable
+        style={({ pressed }) => [
+          styles.clearBtn2,
+          { borderColor: Colors.cardBorder, borderRadius: Radius.pill },
+          pressed && { opacity: 0.7 },
+        ]}
+        onPress={handleClear}
+      >
+        <Ionicons name="close-circle-outline" size={18} color={Colors.textSecondary} />
+        <Text style={[styles.clearBtnText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+          {t('common.clearFilter')}
+        </Text>
+      </Pressable>
+    </>
   );
 }
 
@@ -355,7 +299,12 @@ function MonthRangeColumn({ label, year, month, onYearChange, onMonthChange, cla
 
 const styles = StyleSheet.create({
   wrap: {
-    alignSelf: 'stretch',
+    alignSelf: 'flex-start',
+  },
+  triggerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   trigger: {
     flexDirection: 'row',
@@ -369,6 +318,11 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     letterSpacing: 0.3,
   },
+  clearBtn: {
+    padding: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalRoot: {
     flex: 1,
     justifyContent: 'flex-end',
@@ -380,7 +334,6 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingBottom: Platform.OS === 'ios' ? 34 : 20,
-    maxHeight: '80%',
   },
   panelHeader: {
     flexDirection: 'row',
@@ -408,6 +361,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingTop: 16,
     paddingBottom: 8,
+  },
+  dualCol: {
+    flexDirection: 'row',
+    minHeight: 260,
+  },
+  colHalf: {
+    flex: 1,
+  },
+  colDivider: {
+    width: 1,
+    marginHorizontal: 12,
   },
   colHalfInner: {
     paddingTop: 8,
@@ -438,7 +402,6 @@ const styles = StyleSheet.create({
   },
   monthGrid: {
     gap: 6,
-    marginBottom: 8,
   },
   monthRow: {
     flexDirection: 'row',
@@ -458,29 +421,17 @@ const styles = StyleSheet.create({
   monthCellEmpty: {
     flex: 1,
   },
-  dualCol: {
+  clearBtn2: {
     flexDirection: 'row',
-    minHeight: 260,
-    maxHeight: 420,
-  },
-  colHalf: {
-    flex: 1,
-  },
-  colDivider: {
-    width: 1,
-    marginHorizontal: 12,
-  },
-  yearColScroll: {
-    flex: 1,
-  },
-  yearColChip: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 8,
-    marginBottom: 4,
+    gap: 6,
+    marginTop: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
     borderWidth: 1,
   },
-  yearColChipText: {
+  clearBtnText: {
     fontSize: 14,
     lineHeight: 20,
   },

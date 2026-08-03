@@ -102,6 +102,11 @@ export default function ScheduleFormScreen() {
       showToast(t('schedule.startDate') + ' *');
       return;
     }
+    // End date must not be before start date
+    if (endDate && endDate < startDate) {
+      showToast(t('schedule.endDateBeforeStart'));
+      return;
+    }
     const daysText = reminderDaysBefore.trim();
     const daysNum = Number(daysText);
     if (

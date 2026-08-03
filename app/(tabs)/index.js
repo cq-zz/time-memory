@@ -15,8 +15,7 @@ import HeroCard from '../../src/components/home/HeroCard';
 import StatsGrid from '../../src/components/home/StatsGrid';
 import AssetBalanceCard from '../../src/components/home/AssetBalanceCard';
 import BudgetCard from '../../src/components/home/BudgetCard';
-import TrendsCard from '../../src/components/home/TrendsCard';
-import CategoryBreakdown from '../../src/components/home/CategoryBreakdown';
+import SpendingAnalysis from '../../src/components/home/SpendingAnalysis';
 import RemindersTimeline from '../../src/components/home/RemindersTimeline';
 import MoodTrend from '../../src/components/home/MoodTrend';
 
@@ -64,8 +63,7 @@ export default function HomeScreen() {
         <StatsGrid durables={data.durables} schedules={data.schedules} assets={data.assets} />
         <AssetBalanceCard durables={data.durables} assets={data.assets} />
         <BudgetCard budget={data.budget} bills={data.bills} />
-        <TrendsCard bills={data.bills} />
-        <CategoryBreakdown bills={data.bills} />
+        <SpendingAnalysis bills={data.bills} />
         <RemindersTimeline
           reminders={data.reminders}
           onPressItem={(item) => router.push(item.route)}

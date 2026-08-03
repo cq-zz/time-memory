@@ -1,0 +1,557 @@
+import { useCallback, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '../../utils/theme';
+import { useSettingsStore, formatMoney } from '../../store/settings';
+import { useCategoryStore, getMergedCategories, BUILTIN_NS } from '../../store/categories';
+import Svg, { Circle, Path } from 'react-native-svg';
+import DimensionRangePicker from '../common/DimensionRangePicker';
+
+/* ── Chart constants ── */
+const CHART_W = 264;
+const AXIS_W = 30;
+const CHART_H = 112;
+const PAD_Y = 12;
+const Y_TICKS = 4;
+const DONUT_SIZE = 70;
+const DONUT_STROKE = 8;
+const DONUT_R = (DONUT_SIZE - DONUT_STROKE) / 2;
+const DONUT_C = 2 * Math.PI * DONUT_R;
+const PALETTE = ['#A05C82', '#F28B50', '#4AA868', '#E86B6B', '#4A90D9', '#8B7AE8', '#E8B830', '#6BAA90', '#D94452', '#4A90D9'];
+
+/* ── Helpers ── */
+const pad = (n) => String(n).padStart(2, '0');
+const monthKey = (y, m) => `${y}-${pad(m)}`;
+
+function formatAxisValue(val) {
+  if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+  if (val >= 1000) return (val / 1000).toFixed(1) + 'k';
+  return Math.round(val).toString();
+}
+
+function filterBills(bills, dim, start, end) {
+  return (bills || []).filter((b) => {
+    const d = (b.consumption_date || '').slice(0, dim === 'year' ? 4 : 7);
+    return d >= start && d <= end;
+  });
+}
+
+function buildTrendSeries(bills, dim, start, end) {
+  const series = [];
+  if (dim === 'year') {
+    const sy = parseInt(start, 10);
+    const ey = parseInt(end, 10);
+    for (let y = sy; y <= ey; y++) {
+      series.push({ key: String(y), label: String(y), income: 0, expense: 0 });
+    }
+    const idx = new Map(series.map((s) => [s.key, s]));
+    bills.forEach((b) => {
+      const y = (b.consumption_date || '').slice(0, 4);
+      const s = idx.get(y);
+      if (!s) return;
+      const amt = Number(b.amount) || 0;
+      if (b.bill_type === 'income') s.income += amt;
+      else s.expense += amt;
+    });
+  } else {
+    const [sy, sm] = start.split('-').map(Number);
+    const [ey, em] = end.split('-').map(Number);
+    let y = sy, m = sm;
+    while (y < ey || (y === ey && m <= em)) {
+      const key = monthKey(y, m);
+      series.push({ key, label: `${y}/${m}`, income: 0, expense: 0 });
+      m++;
+      if (m > 12) { m = 1; y++; }
+    }
+    const idx = new Map(series.map((s) => [s.key, s]));
+    bills.forEach((b) => {
+      const s = idx.get((b.consumption_date || '').slice(0, 7));
+      if (!s) return;
+      const amt = Number(b.amount) || 0;
+      if (b.bill_type === 'income') s.income += amt;
+      else s.expense += amt;
+    });
+  }
+  return series;
+}
+
+function buildPath(values, max) {
+  const step = CHART_W / (values.length - 1);
+  const pts = values.map((v, i) => ({
+    x: i * step,
+    y: max > 0 ? CHART_H - PAD_Y - (v / max) * (CHART_H - PAD_Y * 2) : CHART_H - PAD_Y,
+  }));
+  let d = `M${pts[0].x} ${pts[0].y}`;
+  for (let i = 1; i < pts.length; i++) {
+    const prev = pts[i - 1];
+    const cur = pts[i];
+    const cx = (prev.x + cur.x) / 2;
+    d += ` C ${cx} ${prev.y}, ${cx} ${cur.y}, ${cur.x} ${cur.y}`;
+  }
+  return d;
+}
+
+/**
+ * Pick which indices to show X-axis labels for.
+ * Always shows first; evenly distributes the rest at a fixed interval.
+ */
+function tickIndices(total, maxTicks = 6) {
+  if (total <= maxTicks) return Array.from({ length: total }, (_, i) => i);
+  const step = Math.ceil((total - 1) / (maxTicks - 1));
+  const indices = [];
+  for (let i = 0; i < total; i += step) {
+    indices.push(i);
+  }
+  return indices;
+}
+
+function categoryTotals(bills, billType) {
+  const totals = new Map();
+  let sum = 0;
+  bills.forEach((b) => {
+    if (b.bill_type !== billType) return;
+    const amt = Number(b.amount) || 0;
+    const cat = b.category || 'other';
+    totals.set(cat, (totals.get(cat) || 0) + amt);
+    sum += amt;
+  });
+  return { totals, sum };
+}
+
+function buildSegments(bills, billType, labelOf) {
+  const { totals, sum } = categoryTotals(bills, billType);
+  if (!sum) return [];
+  return [...totals.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .map(([cat, amount], i) => ({
+      name: labelOf(cat),
+      pct: parseFloat(((amount / sum) * 100).toFixed(2)),
+      amount,
+      color: PALETTE[i % PALETTE.length],
+    }));
+}
+
+/* ── Trend Chart ── */
+function TrendChart({ series }) {
+  const { Colors, Fonts } = useTheme();
+  const max = Math.max(...series.map((s) => s.income), ...series.map((s) => s.expense));
+
+  const ticks = [];
+  for (let i = 0; i <= Y_TICKS; i++) {
+    const val = max > 0 ? (max / Y_TICKS) * i : 0;
+    ticks.push({ value: val, y: max > 0 ? CHART_H - PAD_Y - (val / max) * (CHART_H - PAD_Y * 2) : CHART_H - PAD_Y });
+  }
+  ticks.reverse();
+
+  return (
+    <View style={{ flexDirection: 'row', height: CHART_H }}>
+      <View style={{ width: AXIS_W, height: CHART_H }}>
+        {ticks.map((tick, i) => (
+          <Text key={i} style={[styles.axisLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold, top: tick.y - 6 }]}>
+            {formatAxisValue(tick.value)}
+          </Text>
+        ))}
+      </View>
+      <View style={{ flex: 1 }}>
+        <Svg width="100%" height={CHART_H} viewBox={`0 0 ${CHART_W} ${CHART_H}`} fill="none">
+          {ticks.map((tick, i) => (
+            <Path key={`g-${i}`} d={`M 0 ${tick.y} L ${CHART_W} ${tick.y}`} stroke={Colors.iconBg} strokeWidth="1" strokeDasharray="3 3" />
+          ))}
+          <Path d={buildPath(series.map((s) => s.income), max)} stroke={Colors.green} strokeWidth="2.5" strokeLinecap="round" />
+          <Path d={buildPath(series.map((s) => s.expense), max)} stroke={Colors.rose} strokeWidth="2.5" strokeLinecap="round" />
+        </Svg>
+      </View>
+    </View>
+  );
+}
+
+/* ── Donut Chart ── */
+function DonutChart({ segments, centerLabel }) {
+  const { Colors, Fonts } = useTheme();
+  let acc = 0;
+  return (
+    <View style={styles.donutWrap}>
+      <Svg width={DONUT_SIZE} height={DONUT_SIZE} viewBox={`0 0 ${DONUT_SIZE} ${DONUT_SIZE}`}>
+        <Circle cx={DONUT_SIZE / 2} cy={DONUT_SIZE / 2} r={DONUT_R} stroke={Colors.iconBg} strokeWidth={DONUT_STROKE} fill="none" />
+        {segments.map((seg, i) => {
+          const dash = (seg.pct / 100) * DONUT_C;
+          const off = -((acc / 100) * DONUT_C);
+          acc += seg.pct;
+          return (
+            <Circle key={i} cx={DONUT_SIZE / 2} cy={DONUT_SIZE / 2} r={DONUT_R} stroke={seg.color} strokeWidth={DONUT_STROKE} fill="none"
+              strokeDasharray={`${dash} ${DONUT_C}`} strokeDashoffset={off} strokeLinecap="butt"
+              transform={`rotate(-90 ${DONUT_SIZE / 2} ${DONUT_SIZE / 2})`} />
+          );
+        })}
+      </Svg>
+      <View style={styles.donutCenter}>
+        <Text style={[styles.donutLabel, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>{centerLabel}</Text>
+      </View>
+    </View>
+  );
+}
+
+/* ── Main Component ── */
+export default function SpendingAnalysis({ bills = [] }) {
+  const { Colors, Fonts, Radius, Shadows } = useTheme();
+  const { t } = useTranslation();
+  const currency = useSettingsStore((s) => s.settings.currency);
+  const categoryState = useCategoryStore();
+
+  // Merge all three category types (item/bill/asset) for label lookup,
+  // because bills can include auto-generated records from items/assets.
+  const allCategories = useMemo(() => {
+    const map = new Map();
+    const types = ['item', 'bill', 'asset'];
+    types.forEach((type) => {
+      const cats = getMergedCategories(categoryState, type);
+      cats.forEach((c) => {
+        if (!map.has(c.key)) map.set(c.key, { ...c, _type: type });
+      });
+    });
+    return map;
+  }, [categoryState]);
+
+  const now = new Date();
+  const curYear = now.getFullYear();
+  const curMonth = now.getMonth() + 1;
+
+  // Default: last 6 months
+  const defaultStart = useMemo(() => {
+    const d = new Date(curYear, curMonth - 6, 1);
+    return { year: d.getFullYear(), month: d.getMonth() + 1 };
+  }, []);
+  const defaultEnd = useMemo(() => ({ year: curYear, month: curMonth }), []);
+
+  const [dimension, setDimension] = useState('month');
+  const [range, setRange] = useState({
+    startYear: defaultStart.year,
+    startMonth: defaultStart.month,
+    endYear: defaultEnd.year,
+    endMonth: defaultEnd.month,
+  });
+  const handleDimensionChange = useCallback((dim) => {
+    setDimension(dim);
+    if (dim === 'year') {
+      setRange({ startYear: curYear, startMonth: null, endYear: curYear, endMonth: null });
+    } else {
+      setRange({ startYear: defaultStart.year, startMonth: defaultStart.month, endYear: defaultEnd.year, endMonth: defaultEnd.month });
+    }
+  }, [defaultStart, defaultEnd]);
+
+  const handleRangeChange = useCallback((r) => {
+    setRange(r);
+  }, []);
+
+  // Convert range to internal format
+  const rangeStart = dimension === 'year' ? String(range.startYear) : monthKey(range.startYear, range.startMonth);
+  const rangeEnd = dimension === 'year' ? String(range.endYear) : monthKey(range.endYear, range.endMonth);
+
+  const labelOf = useCallback((key) => {
+    if (key === '__other__') return t('home.otherSegment');
+    const cat = allCategories.get(key);
+    if (!cat) return key;
+    return cat.isBuiltin ? t(`${BUILTIN_NS[cat._type]}.${key}`) : cat.name;
+  }, [allCategories, t]);
+
+  const filtered = useMemo(() => filterBills(bills, dimension, rangeStart, rangeEnd), [bills, dimension, rangeStart, rangeEnd]);
+
+  const summary = useMemo(() => {
+    let incomeTotal = 0, expenseTotal = 0;
+    filtered.forEach((b) => {
+      const amt = Number(b.amount) || 0;
+      if (b.bill_type === 'income') incomeTotal += amt;
+      else expenseTotal += amt;
+    });
+    let months = 1;
+    if (dimension === 'year') {
+      months = (range.endYear - range.startYear + 1) * 12;
+    } else {
+      months = (range.endYear - range.startYear) * 12 + (range.endMonth - range.startMonth) + 1;
+    }
+    const ratio = incomeTotal > 0 ? parseFloat(((expenseTotal / incomeTotal) * 100).toFixed(1)) : null;
+    return { incomeTotal, expenseTotal, monthlyAvg: months > 0 ? expenseTotal / months : 0, months, ratio };
+  }, [filtered, dimension, range]);
+
+  const trendSeries = useMemo(() => buildTrendSeries(filtered, dimension, rangeStart, rangeEnd), [filtered, dimension, rangeStart, rangeEnd]);
+  const showIndices = tickIndices(trendSeries.length, dimension === 'month' ? 4 : 6);
+
+  const incomeSegments = useMemo(() => buildSegments(filtered, 'income', labelOf), [filtered, labelOf]);
+  const expenseSegments = useMemo(() => buildSegments(filtered, 'expense', labelOf), [filtered, labelOf]);
+
+  return (
+    <View style={styles.section}>
+      <Text style={[styles.sectionTitle, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
+        {t('butler.spendingAnalysis')}
+      </Text>
+
+      <DimensionRangePicker
+        dimension={dimension}
+        startYear={range.startYear}
+        startMonth={range.startMonth}
+        endYear={range.endYear}
+        endMonth={range.endMonth}
+        onDimensionChange={handleDimensionChange}
+        onRangeChange={handleRangeChange}
+      />
+
+      {/* Summary cards 2x2 */}
+      {filtered.length > 0 && (
+        <View style={styles.statsGrid}>
+          <View style={[styles.statCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.md }, Shadows.card]}>
+            <Text style={[styles.statLabel, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{t('butler.totalIncome')}</Text>
+            <Text style={[styles.statValue, { color: Colors.green, fontFamily: Fonts.bold }]}>{formatMoney(summary.incomeTotal, currency)}</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.md }, Shadows.card]}>
+            <Text style={[styles.statLabel, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{t('butler.totalExpense')}</Text>
+            <Text style={[styles.statValue, { color: Colors.rose, fontFamily: Fonts.bold }]}>{formatMoney(summary.expenseTotal, currency)}</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.md }, Shadows.card]}>
+            <Text style={[styles.statLabel, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{t('butler.monthlyAvgExpense')}</Text>
+            <Text style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>{formatMoney(summary.monthlyAvg, currency)}</Text>
+          </View>
+          <View style={[styles.statCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.md }, Shadows.card]}>
+            <Text style={[styles.statLabel, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{t('butler.incomeExpenseRatio')}</Text>
+            <Text style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
+              {summary.ratio != null ? `${summary.ratio}%` : '--'}
+            </Text>
+          </View>
+        </View>
+      )}
+
+      {/* Trends chart */}
+      {filtered.length > 0 && trendSeries.length > 1 && (
+        <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.lg }, Shadows.card]}>
+          <Text style={[styles.chartTitle, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+            {t('butler.incomeExpenseTrend')}
+          </Text>
+          <View style={styles.legendRow}>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: Colors.green }]} />
+              <Text style={[styles.legendText, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>{t('home.income')}</Text>
+            </View>
+            <View style={styles.legendItem}>
+              <View style={[styles.legendDot, { backgroundColor: Colors.rose }]} />
+              <Text style={[styles.legendText, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>{t('home.expense')}</Text>
+            </View>
+          </View>
+          <View style={{ height: CHART_H, justifyContent: 'center' }}>
+            <TrendChart series={trendSeries} />
+          </View>
+          <View style={[styles.monthsRow, { paddingLeft: AXIS_W }]}>
+            {trendSeries.map((s, i) => (
+              <Text key={s.key} style={[styles.monthLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+                {showIndices.includes(i) ? s.label : ''}
+              </Text>
+            ))}
+          </View>
+        </View>
+      )}
+
+      {/* Category breakdown */}
+      {filtered.length > 0 && (
+        <View style={styles.donutCards}>
+          <View style={[styles.donutCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.lg }, Shadows.card]}>
+            <Text style={[styles.chartTitle, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>{t('butler.expenseCategoryBreakdown')}</Text>
+            <View style={styles.donutRow}>
+              <DonutChart segments={expenseSegments} centerLabel={t('home.expenseDonut')} />
+              <ScrollView style={styles.donutLegend} nestedScrollEnabled showsVerticalScrollIndicator={expenseSegments.length > 4}>
+                {expenseSegments.length > 0 ? expenseSegments.map((seg) => (
+                  <View key={seg.name} style={styles.donutLegendRow}>
+                    <View style={styles.donutLegendLeft}>
+                      <View style={[styles.dot, { backgroundColor: seg.color }]} />
+                      <Text numberOfLines={1} style={[styles.donutLegendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{seg.name}</Text>
+                    </View>
+                    <Text style={[styles.donutLegendPct, { color: Colors.textDark, fontFamily: Fonts.bold }]}>{seg.pct}%</Text>
+                  </View>
+                )) : (
+                  <Text style={[styles.donutLegendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{t('home.noChartData')}</Text>
+                )}
+              </ScrollView>
+            </View>
+          </View>
+          <View style={[styles.donutCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.lg }, Shadows.card]}>
+            <Text style={[styles.chartTitle, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>{t('butler.incomeCategoryBreakdown')}</Text>
+            <View style={styles.donutRow}>
+              <DonutChart segments={incomeSegments} centerLabel={t('home.incomeDonut')} />
+              <ScrollView style={styles.donutLegend} nestedScrollEnabled showsVerticalScrollIndicator={incomeSegments.length > 4}>
+                {incomeSegments.length > 0 ? incomeSegments.map((seg) => (
+                  <View key={seg.name} style={styles.donutLegendRow}>
+                    <View style={styles.donutLegendLeft}>
+                      <View style={[styles.dot, { backgroundColor: seg.color }]} />
+                      <Text numberOfLines={1} style={[styles.donutLegendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{seg.name}</Text>
+                    </View>
+                    <Text style={[styles.donutLegendPct, { color: Colors.textDark, fontFamily: Fonts.bold }]}>{seg.pct}%</Text>
+                  </View>
+                )) : (
+                  <Text style={[styles.donutLegendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{t('home.noChartData')}</Text>
+                )}
+              </ScrollView>
+            </View>
+          </View>
+        </View>
+      )}
+
+      {filtered.length === 0 && (
+        <View style={[styles.empty, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.lg }]}>
+          <Text style={[styles.emptyText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+            {t('butler.noSpendingData', { range: '' })}
+          </Text>
+        </View>
+      )}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  section: {
+    gap: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    lineHeight: 24,
+  },
+  card: {
+    padding: 16,
+    borderWidth: 1,
+    gap: 12,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  statCard: {
+    width: '48%',
+    flexGrow: 1,
+    flexBasis: '45%',
+    padding: 12,
+    borderWidth: 1,
+    gap: 4,
+  },
+  statLabel: {
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  statValue: {
+    fontSize: 16,
+    lineHeight: 22,
+  },
+  chartTitle: {
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.6,
+  },
+  legendRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+  },
+  legendItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  legendDot: {
+    width: 12,
+    height: 4,
+    borderRadius: 9999,
+  },
+  legendText: {
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: 0.6,
+  },
+  axisLabel: {
+    position: 'absolute',
+    right: 4,
+    fontSize: 9,
+    lineHeight: 12,
+    letterSpacing: 0.3,
+    textAlign: 'right',
+  },
+  monthsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingRight: 4,
+  },
+  monthLabel: {
+    fontSize: 11,
+    lineHeight: 14,
+    textAlign: 'center',
+    flex: 1,
+  },
+  donutCards: {
+    gap: 12,
+  },
+  donutCard: {
+    padding: 16,
+    borderWidth: 1,
+    gap: 10,
+  },
+  donutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  donutWrap: {
+    width: DONUT_SIZE,
+    height: DONUT_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  donutCenter: {
+    position: 'absolute',
+    width: DONUT_SIZE,
+    height: DONUT_SIZE,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  donutLabel: {
+    fontSize: 10,
+    lineHeight: 14,
+    letterSpacing: 0.5,
+    textAlign: 'center',
+  },
+  donutLegend: {
+    flex: 1,
+    maxHeight: 100,
+  },
+  donutLegendRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 2,
+  },
+  donutLegendLeft: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 9999,
+  },
+  donutLegendName: {
+    flexShrink: 1,
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  donutLegendPct: {
+    fontSize: 11,
+    lineHeight: 16,
+  },
+  empty: {
+    padding: 24,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  emptyText: {
+    fontSize: 13,
+    lineHeight: 20,
+    textAlign: 'center',
+  },
+});

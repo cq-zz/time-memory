@@ -119,6 +119,26 @@ const localizedCategory = (moduleId, key) => {
   return key;
 };
 
+/**
+ * Translate a stored category key to its localized display label for export,
+ * searching across all three types (item, bill, asset).
+ * Used for auto-generated bills whose category may originate from the item or asset module.
+ */
+const localizedCategoryAll = (key) => {
+  if (!key) return '';
+  const types = ['item', 'bill', 'asset'];
+  for (const type of types) {
+    const builtin = (CATEGORY_BUILTINS[type] || []).find((c) => c.key === key);
+    if (builtin) {
+      const translated = i18n.t(`${BUILTIN_NS[type]}.${key}`);
+      return translated !== `${BUILTIN_NS[type]}.${key}` ? translated : builtin.label;
+    }
+    const custom = (useCategoryStore.getState().custom[type] || []).find((c) => c.key === key);
+    if (custom) return custom.name;
+  }
+  return key;
+};
+
 /** Case-insensitive label-or-key lookup. Returns fallback when empty, null when invalid. */
 const keyOf = (options, raw, fallback) => {
   const t = String(raw ?? '').trim().toLowerCase();
@@ -443,7 +463,7 @@ export const EXPORT_MODULES = [
     ],
     toRow: (item) => [
       safe(item.name), labelOf(BILL_TYPE_OPTIONS, item.bill_type), safe(item.amount ?? 0),
-      isAutoSource(item.source) ? (isAssetSource(item.source) ? localizedEnumText('Asset') : localizedEnumText('Item')) : localizedCategory('bills', item.category),
+      isAutoSource(item.source) ? localizedCategoryAll(item.category) : localizedCategory('bills', item.category),
       safe(item.consumption_date), safe(item.currency),
       isAutoSource(item.source) ? '' : safe(isDurableSource(item.source) ? localizedEnumText('Item') : isAssetSource(item.source) ? localizedEnumText('Asset') : ''),
       isAutoSource(item.source) ? '' : safe(item.source_name), exportImageUrl(item.receipt_image), safe(item.notes), safe(item.created_at),

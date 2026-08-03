@@ -85,12 +85,26 @@ function DiaryCard({ item, isLast, onPress }) {
   );
 }
 
+const pad = (n) => String(n).padStart(2, '0');
+
+function inMonthRange(dateStr, startYear, startMonth, endYear, endMonth) {
+  if (startYear == null && endYear == null) return true;
+  const prefix = (dateStr || '').slice(0, 7);
+  if (startYear != null && startMonth != null) {
+    if (prefix < `${startYear}-${pad(startMonth)}`) return false;
+  }
+  if (endYear != null && endMonth != null) {
+    if (prefix > `${endYear}-${pad(endMonth)}`) return false;
+  }
+  return true;
+}
+
 /**
- * Diary list with year/month filtering.
+ * Diary list with month-range filtering.
  * Tapping a card calls onPressItem(item) — the page decides whether to
  * gate private entries behind the password modal.
  */
-export default function DiaryList({ items = [], year, month, search = '', loading, onPressItem = () => {} }) {
+export default function DiaryList({ items = [], startYear, startMonth, endYear, endMonth, search = '', loading, onPressItem = () => {} }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
@@ -98,8 +112,7 @@ export default function DiaryList({ items = [], year, month, search = '', loadin
   const query = String(search || '').trim().toLowerCase();
   const filtered = safeItems.filter((item) => {
     const itemDate = typeof item?.date === 'string' ? item.date : '';
-    if (year != null && itemDate && Number(itemDate.slice(0, 4)) !== year) return false;
-    if (month != null && itemDate && Number(itemDate.slice(5, 7)) !== month) return false;
+    if (!inMonthRange(itemDate, startYear, startMonth, endYear, endMonth)) return false;
     if (
       query &&
       !String(item?.title || '').toLowerCase().includes(query) &&

@@ -4,7 +4,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../src/utils/theme';
 import HomeHeader from '../../src/components/home/HomeHeader';
 import MoodCheckIn from '../../src/components/butler/MoodCheckIn';
-import FinancialSummary from '../../src/components/butler/FinancialSummary';
 import FeatureGrid from '../../src/components/butler/FeatureGrid';
 import ManagementSections from '../../src/components/butler/ManagementSections';
 
@@ -25,7 +24,6 @@ export default function ButlerScreen() {
         showsVerticalScrollIndicator={false}
       >
         <MoodCheckIn key={`mood-${refreshKey}`} />
-        <FinancialSummary key={`summary-${refreshKey}`} />
         <FeatureGrid key={`feature-${refreshKey}`} />
         <ManagementSections onDataChanged={handleDataChanged} />
       </ScrollView>

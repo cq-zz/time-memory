@@ -10,7 +10,7 @@ import { effectiveStatus, listDurables } from '../../src/services/durable';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import ModuleOverviewCard from '../../src/components/common/ModuleOverviewCard';
 import DurablesStats from '../../src/components/durables/DurablesStats';
-import YearMonthPicker from '../../src/components/common/YearMonthPicker';
+import MonthRangePicker from '../../src/components/common/MonthRangePicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import ItemsList from '../../src/components/durables/ItemsList';
 
@@ -27,8 +27,10 @@ export default function DurablesScreen() {
   const currency = useSettingsStore((s) => s.settings.currency);
 
   const [items, setItems] = useState([]);
-  const [year, setYear] = useState(null); // null = All
-  const [month, setMonth] = useState(null); // null = full year
+  const [startYear, setStartYear] = useState(null);
+  const [startMonth, setStartMonth] = useState(null);
+  const [endYear, setEndYear] = useState(null);
+  const [endMonth, setEndMonth] = useState(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -49,14 +51,8 @@ export default function DurablesScreen() {
   );
 
   const stats = useMemo(() => {
-    const datePrefix = year != null
-      ? month != null
-        ? `${year}-${String(month).padStart(2, '0')}`
-        : String(year)
-      : '';
     const query = search.trim().toLowerCase();
     const filtered = items.filter((item) => {
-      if (datePrefix && !(item.purchase_date || '').startsWith(datePrefix)) return false;
       if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
       if (query && !(item.name || '').toLowerCase().includes(query)) return false;
       return true;
@@ -67,7 +63,7 @@ export default function DurablesScreen() {
       inUseCount: inUse.length,
       totalCount: filtered.length,
     };
-  }, [items, year, month, search, filter]);
+  }, [items, search, filter]);
 
   const allStats = useMemo(() => {
     const inUseCount = items.filter((item) => effectiveStatus(item) === 'in_use').length;
@@ -99,14 +95,17 @@ export default function DurablesScreen() {
       </View>
 
       <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
-        <YearMonthPicker
-          year={year}
-          month={month}
-          showAllOption
+        <MonthRangePicker
+          startYear={startYear}
+          startMonth={startMonth}
+          endYear={endYear}
+          endMonth={endMonth}
           style={styles.dateFilter}
-          onChange={({ year: y, month: m }) => {
-            setYear(y);
-            setMonth(m);
+          onChange={({ startYear: sy, startMonth: sm, endYear: ey, endMonth: em }) => {
+            setStartYear(sy);
+            setStartMonth(sm);
+            setEndYear(ey);
+            setEndMonth(em);
           }}
         />
         <SearchFilterBar
@@ -131,8 +130,10 @@ export default function DurablesScreen() {
         <View style={styles.listSection}>
           <ItemsList
             items={items}
-            year={year}
-            month={month}
+            startYear={startYear}
+            startMonth={startMonth}
+            endYear={endYear}
+            endMonth={endMonth}
             search={search}
             filter={filter}
             currency={currency}

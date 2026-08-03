@@ -101,14 +101,27 @@ function AssetCard({ item, currency, isLast }) {
   );
 }
 
-export default function AssetsList({ items, year, month, search, filter, currency, loading }) {
+const pad = (n) => String(n).padStart(2, '0');
+
+function inMonthRange(dateStr, startYear, startMonth, endYear, endMonth) {
+  if (startYear == null && endYear == null) return true;
+  const prefix = (dateStr || '').slice(0, 7);
+  if (startYear != null && startMonth != null) {
+    if (prefix < `${startYear}-${pad(startMonth)}`) return false;
+  }
+  if (endYear != null && endMonth != null) {
+    if (prefix > `${endYear}-${pad(endMonth)}`) return false;
+  }
+  return true;
+}
+
+export default function AssetsList({ items, startYear, startMonth, endYear, endMonth, search, filter, currency, loading }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
   const filtered = items.filter((item) => {
     if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
-    if (year != null && item.purchase_date && Number(item.purchase_date.slice(0, 4)) !== year) return false;
-    if (month != null && item.purchase_date && Number(item.purchase_date.slice(5, 7)) !== month) return false;
+    if (!inMonthRange(item.purchase_date, startYear, startMonth, endYear, endMonth)) return false;
     if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });

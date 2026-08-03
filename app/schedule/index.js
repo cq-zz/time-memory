@@ -8,7 +8,7 @@ import { useTheme } from '../../src/utils/theme';
 import { effectiveStatus, listSchedules } from '../../src/services/schedule';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import ModuleStatsCard from '../../src/components/common/ModuleStatsCard';
-import YearMonthPicker from '../../src/components/common/YearMonthPicker';
+import MonthRangePicker from '../../src/components/common/MonthRangePicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import SchedulesList from '../../src/components/schedules/SchedulesList';
 
@@ -25,9 +25,12 @@ export default function SchedulesScreen() {
   const { t } = useTranslation();
   const router = useRouter();
 
+  const now = new Date();
   const [items, setItems] = useState([]);
-  const [year, setYear] = useState(null);
-  const [month, setMonth] = useState(null);
+  const [startYear, setStartYear] = useState(now.getFullYear());
+  const [startMonth, setStartMonth] = useState(1);
+  const [endYear, setEndYear] = useState(now.getFullYear());
+  const [endMonth, setEndMonth] = useState(now.getMonth() + 1);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -36,29 +39,10 @@ export default function SchedulesScreen() {
     const query = search.trim().toLowerCase();
     return items.filter((item) => {
       if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
-      if (year != null) {
-        const periodStart = month
-          ? `${year}-${String(month).padStart(2, '0')}-01`
-          : `${year}-01-01`;
-        const periodEndExclusive = month
-          ? month === 12
-            ? `${year + 1}-01-01`
-            : `${year}-${String(month + 1).padStart(2, '0')}-01`
-          : `${year + 1}-01-01`;
-        const scheduleStart = String(item.start_date || item.end_date || '').slice(0, 10);
-        const scheduleEnd = String(item.end_date || item.start_date || '').slice(0, 10);
-        if (
-          scheduleStart &&
-          scheduleEnd &&
-          (scheduleStart >= periodEndExclusive || scheduleEnd < periodStart)
-        ) {
-          return false;
-        }
-      }
       if (query && !(item.title || '').toLowerCase().includes(query)) return false;
       return true;
     });
-  }, [items, year, month, search, filter]);
+  }, [items, search, filter]);
 
   const inProgressCount = filteredItems.filter((item) => effectiveStatus(item) === 'in_progress').length;
   const doneCount = filteredItems.filter((item) => effectiveStatus(item) === 'done').length;
@@ -87,14 +71,17 @@ export default function SchedulesScreen() {
       <ModuleHeader title={t('nav.schedule')} />
 
       <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
-        <YearMonthPicker
-          year={year}
-          month={month}
-          showAllOption
+        <MonthRangePicker
+          startYear={startYear}
+          startMonth={startMonth}
+          endYear={endYear}
+          endMonth={endMonth}
           style={styles.dateFilter}
-          onChange={({ year: y, month: m }) => {
-            setYear(y);
-            setMonth(m);
+          onChange={({ startYear: sy, startMonth: sm, endYear: ey, endMonth: em }) => {
+            setStartYear(sy);
+            setStartMonth(sm);
+            setEndYear(ey);
+            setEndMonth(em);
           }}
         />
         <SearchFilterBar
@@ -142,8 +129,10 @@ export default function SchedulesScreen() {
         <View style={styles.listSection}>
           <SchedulesList
             items={items}
-            year={year}
-            month={month}
+            startYear={startYear}
+            startMonth={startMonth}
+            endYear={endYear}
+            endMonth={endMonth}
             search={search}
             filter={filter}
             loading={loading}

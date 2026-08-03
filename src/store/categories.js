@@ -119,3 +119,25 @@ export function resolveCategoryMeta(state, type, key, t) {
   if (custom) return { key, label: custom.name, icon: custom.icon || 'pricetag-outline' };
   return { key, label: key || '--', icon: 'pricetag-outline' };
 }
+
+/**
+ * Resolve a category key across all three types (item, bill, asset).
+ * Useful for auto-generated bills whose category may belong to item or asset types.
+ * Searches in order: item → bill → asset.
+ */
+export function resolveCategoryMetaAll(state, key, t) {
+  const types = ['item', 'bill', 'asset'];
+  for (const type of types) {
+    const builtin = (CATEGORY_BUILTINS[type] || []).find((c) => c.key === key);
+    if (builtin) {
+      return {
+        key,
+        label: t ? t(`${BUILTIN_NS[type]}.${key}`) : builtin.label,
+        icon: builtin.icon,
+      };
+    }
+    const custom = (state.custom[type] || []).find((c) => c.key === key);
+    if (custom) return { key, label: custom.name, icon: custom.icon || 'pricetag-outline' };
+  }
+  return { key, label: key || '--', icon: 'pricetag-outline' };
+}

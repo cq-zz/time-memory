@@ -1,12 +1,16 @@
+import { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { useTheme, hexToRgba } from '../../utils/theme';
 import { useSettingsStore, formatMoney } from '../../store/settings';
-import { useCategoryStore, resolveCategoryMeta } from '../../store/categories';
+import { useCategoryStore, resolveCategoryMeta, resolveCategoryMetaAll } from '../../store/categories';
 import { formatDisplay } from '../../utils/date';
 import { isAutoSource, isAssetSource } from '../../utils/excel';
+import { getDurable } from '../../services/durable';
+import { getAsset } from '../../services/asset';
 
 function BillCard({ item, isLast }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
@@ -16,15 +20,33 @@ function BillCard({ item, isLast }) {
   const currency = useSettingsStore((s) => s.settings.currency);
 
   const isIncome = item.bill_type === 'income';
-  const cat = resolveCategoryMeta(categoryState, 'bill', item.category, t);
   const amountColor = isIncome ? Colors.green : Colors.rose;
 
-  // Auto-generated bills: override category to "来源于物品/资产"
+  // Auto-generated bills: resolve category across all types (item/bill/asset)
+  // because the category may come from the originating item/asset.
   const auto = isAutoSource(item.source);
-  const catLabel = auto
-    ? (isAssetSource(item.source) ? t('bills.autoSourceAsset') : t('bills.autoSourceDurable'))
-    : cat.label;
-  const catIcon = auto ? 'link-outline' : (cat.icon || 'pricetag-outline');
+  const cat = auto
+    ? resolveCategoryMetaAll(categoryState, item.category, t)
+    : resolveCategoryMeta(categoryState, 'bill', item.category, t);
+  const catLabel = cat.label;
+  const catIcon = cat.icon || 'pricetag-outline';
+
+  // Fetch source image for auto-generated bills
+  const [sourceImage, setSourceImage] = useState('');
+  useEffect(() => {
+    if (!auto || !item.source_id) return;
+    let active = true;
+    const fetchImage = async () => {
+      try {
+        const src = isAssetSource(item.source) ? await getAsset(item.source_id) : await getDurable(item.source_id);
+        if (active && src?.image) setSourceImage(src.image);
+      } catch { /* ignore */ }
+    };
+    fetchImage();
+    return () => { active = false; };
+  }, [auto, item.source, item.source_id]);
+
+  const hasSourceImage = auto && Boolean(sourceImage);
 
   return (
     <TouchableOpacity
@@ -50,10 +72,14 @@ function BillCard({ item, isLast }) {
         </View>
       </View>
 
-      {/* Middle: left icon + right info */}
+      {/* Middle: left icon/image + right info */}
       <View style={styles.middle}>
         <View style={[styles.iconBox, { backgroundColor: hexToRgba(Colors.purple, 0.1), borderRadius: Radius.md }]}>
-          <Ionicons name={catIcon} size={28} color={Colors.purple} />
+          {hasSourceImage ? (
+            <Image source={{ uri: sourceImage }} style={styles.iconImage} contentFit="cover" />
+          ) : (
+            <Ionicons name={catIcon} size={28} color={Colors.purple} />
+          )}
         </View>
 
         <View style={styles.info}>
@@ -75,18 +101,31 @@ function BillCard({ item, isLast }) {
   );
 }
 
+const pad = (n) => String(n).padStart(2, '0');
+
+function inMonthRange(dateStr, startYear, startMonth, endYear, endMonth) {
+  if (startYear == null && endYear == null) return true;
+  const prefix = (dateStr || '').slice(0, 7);
+  if (startYear != null && startMonth != null) {
+    if (prefix < `${startYear}-${pad(startMonth)}`) return false;
+  }
+  if (endYear != null && endMonth != null) {
+    if (prefix > `${endYear}-${pad(endMonth)}`) return false;
+  }
+  return true;
+}
+
 /**
- * Bill list with year/month + search + type filtering.
+ * Bill list with month-range + search + type filtering.
  * `filter` is 'all' | 'expense' | 'income'.
  */
-export default function BillsList({ items, year, month, search, filter, loading }) {
+export default function BillsList({ items, startYear, startMonth, endYear, endMonth, search, filter, loading }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
   const filtered = items.filter((item) => {
     if (filter !== 'all' && item.bill_type !== filter) return false;
-    if (year != null && item.consumption_date && Number(item.consumption_date.slice(0, 4)) !== year) return false;
-    if (month != null && item.consumption_date && Number(item.consumption_date.slice(5, 7)) !== month) return false;
+    if (!inMonthRange(item.consumption_date, startYear, startMonth, endYear, endMonth)) return false;
     if (search && !(item.name || '').toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });
@@ -155,6 +194,11 @@ const styles = StyleSheet.create({
     height: 80,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  iconImage: {
+    width: 80,
+    height: 80,
   },
   info: {
     flex: 1,

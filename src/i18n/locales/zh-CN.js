@@ -1297,7 +1297,7 @@ export default {
     books: "图书文具",
     sports: "运动户外",
     daily: "日用品",
-    food: "食品饮品",
+    food: "餐饮",
     toys: "玩具",
     tools: "工具五金",
     pet: "宠物用品",

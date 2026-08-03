@@ -362,7 +362,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 5,
   },
   triggerText: {
     fontSize: 14,

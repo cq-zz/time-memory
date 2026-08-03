@@ -1145,6 +1145,17 @@ export default {
     deleteConfirm: "Delete this plan?",
     loadFailed: "Failed to load plans",
   },
+  spendingDetail: {
+    title: "Income & Expense",
+    expenseTitle: "Expense Detail",
+    incomeTitle: "Income Detail",
+    category: "Category",
+    amount: "Amount",
+    yoy: "YoY",
+    mom: "MoM",
+    total: "Total",
+    noData: "No Data",
+  },
   importantDate: {
     name: "Name",
     namePlaceholder: "Event name",

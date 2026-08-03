@@ -30,6 +30,7 @@ function formatAxisValue(val) {
 }
 
 function filterBills(bills, dim, start, end) {
+  if (dim === 'all') return bills || [];
   return (bills || []).filter((b) => {
     const d = (b.consumption_date || '').slice(0, dim === 'year' ? 4 : 7);
     return d >= start && d <= end;
@@ -234,20 +235,22 @@ export default function SpendingAnalysis({ bills = [] }) {
   });
   const handleDimensionChange = useCallback((dim) => {
     setDimension(dim);
-    if (dim === 'year') {
+    if (dim === 'all') {
+      setRange({ startYear: null, startMonth: null, endYear: null, endMonth: null });
+    } else if (dim === 'year') {
       setRange({ startYear: curYear, startMonth: null, endYear: curYear, endMonth: null });
     } else {
       setRange({ startYear: defaultStart.year, startMonth: defaultStart.month, endYear: defaultEnd.year, endMonth: defaultEnd.month });
     }
-  }, [defaultStart, defaultEnd]);
+  }, [defaultStart, defaultEnd, curYear]);
 
   const handleRangeChange = useCallback((r) => {
     setRange(r);
   }, []);
 
-  // Convert range to internal format
-  const rangeStart = dimension === 'year' ? String(range.startYear) : monthKey(range.startYear, range.startMonth);
-  const rangeEnd = dimension === 'year' ? String(range.endYear) : monthKey(range.endYear, range.endMonth);
+  // Convert range to internal format. For 'all' dimension, compute effective range from data.
+  const rangeStart = dimension === 'all' ? '' : (dimension === 'year' ? String(range.startYear) : monthKey(range.startYear, range.startMonth));
+  const rangeEnd = dimension === 'all' ? '' : (dimension === 'year' ? String(range.endYear) : monthKey(range.endYear, range.endMonth));
 
   const labelOf = useCallback((key) => {
     if (key === '__other__') return t('home.otherSegment');
@@ -258,6 +261,17 @@ export default function SpendingAnalysis({ bills = [] }) {
 
   const filtered = useMemo(() => filterBills(bills, dimension, rangeStart, rangeEnd), [bills, dimension, rangeStart, rangeEnd]);
 
+  // Compute effective trend dimension & range for 'all' mode (use year dimension)
+  const trendDim = dimension === 'all' ? 'year' : dimension;
+  const { trendStart, trendEnd } = useMemo(() => {
+    if (dimension !== 'all') return { trendStart: rangeStart, trendEnd: rangeEnd };
+    if (filtered.length === 0) return { trendStart: String(curYear), trendEnd: String(curYear) };
+    const dates = filtered.map((b) => b.consumption_date || '').filter((d) => d).sort();
+    const first = dates[0]?.slice(0, 4) || String(curYear);
+    const last = dates[dates.length - 1]?.slice(0, 4) || String(curYear);
+    return { trendStart: first, trendEnd: last };
+  }, [dimension, rangeStart, rangeEnd, filtered, curYear]);
+
   const summary = useMemo(() => {
     let incomeTotal = 0, expenseTotal = 0;
     filtered.forEach((b) => {
@@ -266,7 +280,19 @@ export default function SpendingAnalysis({ bills = [] }) {
       else expenseTotal += amt;
     });
     let months = 1;
-    if (dimension === 'year') {
+    if (dimension === 'all') {
+      // Compute total months from actual data range
+      if (filtered.length > 0) {
+        const dates = filtered.map((b) => b.consumption_date || '').filter((d) => d).sort();
+        const first = dates[0]?.slice(0, 7);
+        const last = dates[dates.length - 1]?.slice(0, 7);
+        if (first && last) {
+          const [fy, fm] = first.split('-').map(Number);
+          const [ly, lm] = last.split('-').map(Number);
+          months = (ly - fy) * 12 + (lm - fm) + 1;
+        }
+      }
+    } else if (dimension === 'year') {
       months = (range.endYear - range.startYear + 1) * 12;
     } else {
       months = (range.endYear - range.startYear) * 12 + (range.endMonth - range.startMonth) + 1;
@@ -275,8 +301,8 @@ export default function SpendingAnalysis({ bills = [] }) {
     return { incomeTotal, expenseTotal, monthlyAvg: months > 0 ? expenseTotal / months : 0, months, ratio };
   }, [filtered, dimension, range]);
 
-  const trendSeries = useMemo(() => buildTrendSeries(filtered, dimension, rangeStart, rangeEnd), [filtered, dimension, rangeStart, rangeEnd]);
-  const showIndices = tickIndices(trendSeries.length, dimension === 'month' ? 4 : 6);
+  const trendSeries = useMemo(() => buildTrendSeries(filtered, trendDim, trendStart, trendEnd), [filtered, trendDim, trendStart, trendEnd]);
+  const showIndices = tickIndices(trendSeries.length, trendDim === 'month' ? 4 : 6);
 
   const incomeSegments = useMemo(() => buildSegments(filtered, 'income', labelOf), [filtered, labelOf]);
   const expenseSegments = useMemo(() => buildSegments(filtered, 'expense', labelOf), [filtered, labelOf]);

@@ -1129,6 +1129,17 @@ export default {
     empty: "还没有计划哦~\n+ 创建你的第一个日程吧",
     loadFailed: "加载日程列表失败",
   },
+  spendingDetail: {
+    title: "收支明细",
+    expenseTitle: "支出明细",
+    incomeTitle: "收入明细",
+    category: "类别",
+    amount: "金额",
+    yoy: "同比",
+    mom: "环比",
+    total: "合计",
+    noData: "暂无数据",
+  },
   importantDate: {
     name: "名称",
     namePlaceholder: "输入名称",

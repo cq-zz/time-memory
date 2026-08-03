@@ -24,7 +24,7 @@ export default function DimensionRangePicker({
     <View style={styles.wrap}>
       {/* Dimension toggle */}
       <View style={[styles.segmented, { backgroundColor: Colors.iconBg, borderRadius: Radius.pill }]}>
-        {['year', 'month'].map((dim) => {
+        {['all', 'year', 'month'].map((dim) => {
           const active = dimension === dim;
           return (
             <Pressable
@@ -44,22 +44,24 @@ export default function DimensionRangePicker({
                   },
                 ]}
               >
-                {dim === 'month' ? t('home.monthDimension') : t('home.yearDimension')}
+                {dim === 'all' ? t('common.all') : dim === 'month' ? t('home.monthDimension') : t('home.yearDimension')}
               </Text>
             </Pressable>
           );
         })}
       </View>
 
-      {/* Date range picker */}
-      <ChartRangePicker
-        startYear={startYear}
-        startMonth={startMonth}
-        endYear={endYear}
-        endMonth={endMonth}
-        yearOnly={dimension === 'year'}
-        onConfirm={onRangeChange}
-      />
+      {/* Date range picker — hidden when "all" is selected */}
+      {dimension !== 'all' && (
+        <ChartRangePicker
+          startYear={startYear}
+          startMonth={startMonth}
+          endYear={endYear}
+          endMonth={endMonth}
+          yearOnly={dimension === 'year'}
+          onConfirm={onRangeChange}
+        />
+      )}
     </View>
   );
 }
@@ -72,12 +74,12 @@ const styles = StyleSheet.create({
   },
   segmented: {
     flexDirection: 'row',
-    padding: 2,
+    padding: 0,
     gap: 2,
   },
   segBtn: {
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   segBtnText: {
     fontSize: 12,

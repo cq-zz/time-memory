@@ -28,7 +28,7 @@ export const MOODS = [
   { emoji: '😐', key: 'neutral', label: 'Neutral', score: 3 },
   { emoji: '😴', key: 'sleepy', label: 'Sleepy', score: 2 },
   { emoji: '😰', key: 'anxious', label: 'Anxious', score: 2 },
-  { emoji: '😞', key: 'disappointed', label: 'Let down', score: 2 },
+  { emoji: '😞', key: 'disappointed', label: 'Disappointed', score: 2 },
   { emoji: '😣', key: 'stressed', label: 'Stressed', score: 1 },
   { emoji: '😢', key: 'sad', label: 'Sad', score: 1 },
   { emoji: '😤', key: 'angry', label: 'Angry', score: 1 },
@@ -91,7 +91,7 @@ export const MAX_YEAR_DEFAULT = new Date().getFullYear() + 10;
 /** Built-in item (durable) categories. `icon` is an Ionicons name. */
 const ITEM_CATEGORIES = [
   { key: 'electronics', label: 'Electronics', icon: 'laptop-outline' },
-  { key: 'appliance', label: 'Appliance', icon: 'tv-outline' },
+  { key: 'appliance', label: 'Appliances', icon: 'tv-outline' },
   { key: 'home', label: 'Home', icon: 'home-outline' },
   { key: 'furniture', label: 'Furniture', icon: 'bed-outline' },
   { key: 'kitchen', label: 'Kitchen', icon: 'restaurant-outline' },

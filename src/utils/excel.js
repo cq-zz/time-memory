@@ -312,7 +312,7 @@ function parseImportedChecklist(raw) {
 export const EXPORT_MODULES = [
   {
     id: 'durable',
-    label: 'Durables',
+    label: 'Items',
     table: 'durables',
     dateField: 'purchase_date',
     headers: [
@@ -490,7 +490,7 @@ export const EXPORT_MODULES = [
   },
   {
     id: 'schedule',
-    label: 'Schedules',
+    label: 'Plans',
     table: 'schedules',
     dateField: 'end_date',
     headers: [
@@ -548,7 +548,7 @@ export const EXPORT_MODULES = [
   },
   {
     id: 'diary',
-    label: 'Diary',
+    label: 'Journal',
     table: 'diaries',
     dateField: 'date',
     headers: ['Title', 'Date', optionHeader('Weather', WEATHER_OPTIONS), IS_PRIVATE_HEADER, 'Content', 'Image URL', 'Created At'],
@@ -588,7 +588,7 @@ export const EXPORT_MODULES = [
   },
   {
     id: 'important-date',
-    label: 'Important Dates',
+    label: 'Events',
     table: 'important_dates',
     dateField: 'date',
     headers: [
@@ -644,7 +644,7 @@ export const EXPORT_MODULES = [
   },
   {
     id: 'budget',
-    label: 'Budgets',
+    label: 'Annual Plans',
     table: 'budgets',
     dateField: 'year',
     headers: ['Year', 'Expense Budget', 'Income Target', CURRENCY_HEADER, 'Created At', 'Updated At'],
@@ -678,7 +678,7 @@ export const EXPORT_MODULES = [
   },
   {
     id: 'mood',
-    label: 'Mood Records',
+    label: 'Mood',
     table: 'check_ins',
     dateField: 'check_date',
     headers: ['Date', enumHeader('Mood', MOODS.map((mood) => mood.label)), 'Score', 'Created At'],

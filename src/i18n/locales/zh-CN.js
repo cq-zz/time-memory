@@ -975,6 +975,7 @@ export default {
     transport: "交通",
     housing: "住房",
     telecom: "通讯网络",
+    utility: "生活缴费",
     entertainment: "娱乐",
     gifts: "礼物人情",
     medical: "医疗",

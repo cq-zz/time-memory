@@ -991,6 +991,7 @@ export default {
     transport: "Transport",
     housing: "Housing",
     telecom: "Phone/Internet",
+    utility: "Utilities",
     entertainment: "Fun",
     gifts: "Gifts",
     medical: "Healthcare",

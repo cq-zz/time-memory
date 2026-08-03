@@ -380,12 +380,12 @@ const styles = StyleSheet.create({
   },
   segmented: {
     flexDirection: 'row',
-    padding: 2,
+    padding: 0,
     gap: 2,
   },
   segBtn: {
     paddingHorizontal: 12,
-    paddingVertical: 4,
+    paddingVertical: 6,
   },
   segBtnText: {
     fontSize: 12,

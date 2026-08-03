@@ -117,6 +117,7 @@ const BILL_CATEGORIES = [
   { key: 'transport', label: 'Transport', icon: 'bus-outline' },
   { key: 'housing', label: 'Housing', icon: 'business-outline' },
   { key: 'telecom', label: 'Telecom', icon: 'wifi-outline' },
+  { key: 'utility', label: 'Utilities', icon: 'flash-outline' },
   { key: 'entertainment', label: 'Entertainment', icon: 'game-controller-outline' },
   { key: 'gifts', label: 'Gifts', icon: 'gift-outline' },
   { key: 'medical', label: 'Medical', icon: 'pulse-outline' },

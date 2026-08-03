@@ -115,19 +115,19 @@ const styles = StyleSheet.create({
   chip: {
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 2,
-    paddingVertical: 10,
-    paddingHorizontal: 10,
-    minWidth: 64,
+    gap: 4,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    minWidth: 80,
   },
   emoji: {
-    fontSize: 24,
-    lineHeight: 30,
+    fontSize: 32,
+    lineHeight: 38,
     textAlign: 'center',
   },
   emojiActive: {
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 40,
+    lineHeight: 46,
   },
   label: {
     fontSize: 10,

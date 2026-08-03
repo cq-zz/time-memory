@@ -283,7 +283,7 @@ const styles = StyleSheet.create({
   },
   cell: {
     width: `${100 / 7}%`,
-    height: 44,
+    height: 50,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -296,8 +296,8 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   dayEmoji: {
-    fontSize: 12,
-    lineHeight: 14,
+    fontSize: 18,
+    lineHeight: 20,
     marginTop: 1,
   },
   addBadge: {

@@ -198,11 +198,13 @@ export default function SpendingAnalysis({ bills = [] }) {
   const currency = useSettingsStore((s) => s.settings.currency);
   const categoryState = useCategoryStore();
 
-  // Merge all three category types (item/bill/asset) for label lookup,
+  // Merge all three category types (bill/item/asset) for label lookup,
   // because bills can include auto-generated records from items/assets.
+  // Bill namespace takes priority so that shared keys (e.g. "food") resolve
+  // to bill-category labels (e.g. "餐饮") rather than item-category labels.
   const allCategories = useMemo(() => {
     const map = new Map();
-    const types = ['item', 'bill', 'asset'];
+    const types = ['bill', 'item', 'asset'];
     types.forEach((type) => {
       const cats = getMergedCategories(categoryState, type);
       cats.forEach((c) => {
@@ -362,7 +364,9 @@ export default function SpendingAnalysis({ bills = [] }) {
                       <View style={[styles.dot, { backgroundColor: seg.color }]} />
                       <Text numberOfLines={1} style={[styles.donutLegendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{seg.name}</Text>
                     </View>
-                    <Text style={[styles.donutLegendPct, { color: Colors.textDark, fontFamily: Fonts.bold }]}>{seg.pct}%</Text>
+                    <Text style={[styles.donutLegendPct, { color: Colors.textDark, fontFamily: Fonts.bold }]}>
+                      <Text style={[styles.donutLegendAmt, { color: Colors.textSecondary }]}>{formatMoney(seg.amount, currency)}</Text>  {seg.pct}%
+                    </Text>
                   </View>
                 )) : (
                   <Text style={[styles.donutLegendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{t('home.noChartData')}</Text>
@@ -381,7 +385,9 @@ export default function SpendingAnalysis({ bills = [] }) {
                       <View style={[styles.dot, { backgroundColor: seg.color }]} />
                       <Text numberOfLines={1} style={[styles.donutLegendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{seg.name}</Text>
                     </View>
-                    <Text style={[styles.donutLegendPct, { color: Colors.textDark, fontFamily: Fonts.bold }]}>{seg.pct}%</Text>
+                    <Text style={[styles.donutLegendPct, { color: Colors.textDark, fontFamily: Fonts.bold }]}>
+                      <Text style={[styles.donutLegendAmt, { color: Colors.textSecondary }]}>{formatMoney(seg.amount, currency)}</Text>  {seg.pct}%
+                    </Text>
                   </View>
                 )) : (
                   <Text style={[styles.donutLegendName, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{t('home.noChartData')}</Text>
@@ -543,6 +549,10 @@ const styles = StyleSheet.create({
   donutLegendPct: {
     fontSize: 11,
     lineHeight: 16,
+  },
+  donutLegendAmt: {
+    fontSize: 10,
+    lineHeight: 14,
   },
   empty: {
     padding: 24,

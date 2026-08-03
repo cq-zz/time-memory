@@ -4,7 +4,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
-import useAlert from '../../hooks/useAlert';
 
 const pad = (n) => String(n).padStart(2, '0');
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -25,8 +24,19 @@ export default function MonthRangePicker({
 }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
-  const { alert } = useAlert();
+  const yearStart = useSettingsStore((s) => s.settings.yearStart);
+  const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
   const [open, setOpen] = useState(false);
+
+  const now = new Date();
+  const curYear = now.getFullYear();
+  const curMonth = now.getMonth() + 1;
+
+  // Local state for the picker — lifted here so the header confirm button can access it
+  const [locStartYear, setLocStartYear] = useState(startYear ?? curYear);
+  const [locStartMonth, setLocStartMonth] = useState(startMonth);
+  const [locEndYear, setLocEndYear] = useState(endYear ?? curYear);
+  const [locEndMonth, setLocEndMonth] = useState(endMonth);
 
   const hasStart = startYear != null && startMonth != null;
   const hasEnd = endYear != null && endMonth != null;
@@ -42,12 +52,31 @@ export default function MonthRangePicker({
   }, [hasStart, hasEnd, startYear, startMonth, endYear, endMonth, t]);
 
   const handleOpen = useCallback(() => {
+    setLocStartYear(startYear ?? curYear);
+    setLocStartMonth(startMonth);
+    setLocEndYear(endYear ?? curYear);
+    setLocEndMonth(endMonth);
     setOpen(true);
-  }, []);
+  }, [startYear, startMonth, endYear, endMonth, curYear]);
 
-  const handleConfirm = useCallback((result) => {
-    onChange(result);
+  const handleConfirm = useCallback(() => {
+    // If no month selected on either side, treat as "all" (clear)
+    if (locStartMonth == null && locEndMonth == null) {
+      onChange({ startYear: null, startMonth: null, endYear: null, endMonth: null });
+      setOpen(false);
+      return;
+    }
+    onChange({
+      startYear: locStartYear,
+      startMonth: locStartMonth,
+      endYear: locEndYear,
+      endMonth: locEndMonth,
+    });
     setOpen(false);
+  }, [onChange, locStartYear, locStartMonth, locEndYear, locEndMonth]);
+
+  const handleClear = useCallback(() => {
+    onChange({ startYear: null, startMonth: null, endYear: null, endMonth: null });
   }, [onChange]);
 
   return (
@@ -73,7 +102,7 @@ export default function MonthRangePicker({
               { backgroundColor: Colors.purpleTint, borderRadius: Radius.pill },
               pressed && { opacity: 0.8 },
             ]}
-            onPress={() => onChange({ startYear: null, startMonth: null, endYear: null, endMonth: null })}
+            onPress={handleClear}
           >
             <Ionicons name="close-circle" size={18} color={Colors.purple} />
           </Pressable>
@@ -94,7 +123,7 @@ export default function MonthRangePicker({
                 <Text style={[styles.panelTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
                   {t('common.selectDateRange')}
                 </Text>
-                <Pressable onPress={() => handleConfirm({ startYear: startYear, startMonth: startMonth, endYear: endYear, endMonth: endMonth })}>
+                <Pressable onPress={handleConfirm}>
                   <Text style={[styles.headerBtnConfirm, { color: Colors.purple, fontFamily: Fonts.bold }]}>
                     {t('common.confirm')}
                   </Text>
@@ -102,98 +131,44 @@ export default function MonthRangePicker({
               </View>
 
               <View style={styles.body}>
-                <PickerPanel
-                  startYear={startYear}
-                  startMonth={startMonth}
-                  endYear={endYear}
-                  endMonth={endMonth}
-                  onConfirm={handleConfirm}
-                />
+                <View style={styles.dualCol}>
+                  <View style={styles.colHalf}>
+                    <MonthRangeColumn
+                      label={t('common.startDate')}
+                      year={locStartYear}
+                      month={locStartMonth}
+                      onYearChange={setLocStartYear}
+                      onMonthChange={(m) => {
+                        setLocStartMonth(m);
+                        if (locStartYear === locEndYear && m > locEndMonth) setLocEndMonth(m);
+                      }}
+                      clampMaxYear={locEndYear}
+                      clampMaxMonth={locEndMonth}
+                    />
+                  </View>
+                  <View style={[styles.colDivider, { backgroundColor: Colors.cardBorder }]} />
+                  <View style={styles.colHalf}>
+                    <MonthRangeColumn
+                      label={t('common.endDate')}
+                      year={locEndYear}
+                      month={locEndMonth}
+                      onYearChange={setLocEndYear}
+                      onMonthChange={(m) => {
+                        setLocEndMonth(m);
+                        if (locStartYear === locEndYear && m < locStartMonth) setLocStartMonth(m);
+                      }}
+                      clampMinYear={locStartYear}
+                      clampMinMonth={locStartMonth}
+                    />
+                  </View>
+                </View>
+
               </View>
             </View>
           </View>
         </Modal>
       )}
     </View>
-  );
-}
-
-function PickerPanel({ startYear, startMonth, endYear, endMonth, onConfirm }) {
-  const { Colors, Radius, Fonts } = useTheme();
-  const { t } = useTranslation();
-  const yearStart = useSettingsStore((s) => s.settings.yearStart);
-  const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
-
-  const now = new Date();
-  const curYear = now.getFullYear();
-  const curMonth = now.getMonth() + 1;
-
-  const [locStartYear, setLocStartYear] = useState(startYear ?? curYear);
-  const [locStartMonth, setLocStartMonth] = useState(startMonth ?? curMonth);
-  const [locEndYear, setLocEndYear] = useState(endYear ?? curYear);
-  const [locEndMonth, setLocEndMonth] = useState(endMonth ?? curMonth);
-
-  const handleClear = useCallback(() => {
-    onConfirm({ startYear: null, startMonth: null, endYear: null, endMonth: null });
-  }, [onConfirm]);
-
-  const handleConfirm = useCallback(() => {
-    onConfirm({
-      startYear: locStartYear,
-      startMonth: locStartMonth,
-      endYear: locEndYear,
-      endMonth: locEndMonth,
-    });
-  }, [locStartYear, locStartMonth, locEndYear, locEndMonth, onConfirm]);
-
-  return (
-    <>
-      <View style={styles.dualCol}>
-        <View style={styles.colHalf}>
-          <MonthRangeColumn
-            label={t('common.startDate')}
-            year={locStartYear}
-            month={locStartMonth}
-            onYearChange={setLocStartYear}
-            onMonthChange={(m) => {
-              setLocStartMonth(m);
-              if (locStartYear === locEndYear && m > locEndMonth) setLocEndMonth(m);
-            }}
-            clampMaxYear={locEndYear}
-            clampMaxMonth={locEndMonth}
-          />
-        </View>
-        <View style={[styles.colDivider, { backgroundColor: Colors.cardBorder }]} />
-        <View style={styles.colHalf}>
-          <MonthRangeColumn
-            label={t('common.endDate')}
-            year={locEndYear}
-            month={locEndMonth}
-            onYearChange={setLocEndYear}
-            onMonthChange={(m) => {
-              setLocEndMonth(m);
-              if (locStartYear === locEndYear && m < locStartMonth) setLocStartMonth(m);
-            }}
-            clampMinYear={locStartYear}
-            clampMinMonth={locStartMonth}
-          />
-        </View>
-      </View>
-
-      <Pressable
-        style={({ pressed }) => [
-          styles.clearBtn2,
-          { borderColor: Colors.cardBorder, borderRadius: Radius.pill },
-          pressed && { opacity: 0.7 },
-        ]}
-        onPress={handleClear}
-      >
-        <Ionicons name="close-circle-outline" size={18} color={Colors.textSecondary} />
-        <Text style={[styles.clearBtnText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-          {t('common.clearFilter')}
-        </Text>
-      </Pressable>
-    </>
   );
 }
 
@@ -420,19 +395,5 @@ const styles = StyleSheet.create({
   },
   monthCellEmpty: {
     flex: 1,
-  },
-  clearBtn2: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderWidth: 1,
-  },
-  clearBtnText: {
-    fontSize: 14,
-    lineHeight: 20,
   },
 });

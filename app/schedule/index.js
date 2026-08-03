@@ -12,6 +12,27 @@ import MonthRangePicker from '../../src/components/common/MonthRangePicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import SchedulesList from '../../src/components/schedules/SchedulesList';
 
+const pad = (n) => String(n).padStart(2, '0');
+const datePart = (value) => (typeof value === 'string' ? value.slice(0, 10) : '');
+
+function inScheduleRange(item, startYear, startMonth, endYear, endMonth) {
+  if (startYear == null && endYear == null) return true;
+  const sStart = datePart(item.start_date || item.end_date);
+  const sEnd = datePart(item.end_date || item.start_date);
+
+  if (startYear != null && startMonth != null) {
+    const periodStart = `${startYear}-${pad(startMonth)}-01`;
+    if (sEnd && sEnd < periodStart) return false;
+  }
+  if (endYear != null && endMonth != null) {
+    const periodEndExclusive = endMonth === 12
+      ? `${endYear + 1}-01-01`
+      : `${endYear}-${pad(endMonth + 1)}-01`;
+    if (sStart && sStart >= periodEndExclusive) return false;
+  }
+  return true;
+}
+
 const SCHEDULE_FILTERS = [
   { key: 'all', labelKey: 'common.all' },
   { key: 'not_started', labelKey: 'schedule.notStarted' },
@@ -38,11 +59,12 @@ export default function SchedulesScreen() {
   const filteredItems = useMemo(() => {
     const query = search.trim().toLowerCase();
     return items.filter((item) => {
+      if (!inScheduleRange(item, startYear, startMonth, endYear, endMonth)) return false;
       if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
       if (query && !(item.title || '').toLowerCase().includes(query)) return false;
       return true;
     });
-  }, [items, search, filter]);
+  }, [items, search, filter, startYear, startMonth, endYear, endMonth]);
 
   const inProgressCount = filteredItems.filter((item) => effectiveStatus(item) === 'in_progress').length;
   const doneCount = filteredItems.filter((item) => effectiveStatus(item) === 'done').length;

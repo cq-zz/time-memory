@@ -22,7 +22,7 @@ function BudgetSection({
 }) {
   const hasTarget = target > 0;
   const ratio = hasTarget ? actual / target : 0;
-  const percentage = hasTarget ? Math.round(ratio * 100) : null;
+  const percentage = hasTarget ? parseFloat((ratio * 100).toFixed(2)) : null;
   const targetMinor = Math.round(target * 100);
   const actualMinor = Math.round(actual * 100);
   const differenceMinor = targetMinor - actualMinor;

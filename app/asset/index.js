@@ -14,6 +14,20 @@ import MonthRangePicker from '../../src/components/common/MonthRangePicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import AssetsList from '../../src/components/assets/AssetsList';
 
+const pad = (n) => String(n).padStart(2, '0');
+
+function inMonthRange(dateStr, startYear, startMonth, endYear, endMonth) {
+  if (startYear == null && endYear == null) return true;
+  const prefix = (dateStr || '').slice(0, 7);
+  if (startYear != null && startMonth != null) {
+    if (prefix < `${startYear}-${pad(startMonth)}`) return false;
+  }
+  if (endYear != null && endMonth != null) {
+    if (prefix > `${endYear}-${pad(endMonth)}`) return false;
+  }
+  return true;
+}
+
 const ASSET_FILTERS = [
   { key: 'all', labelKey: 'common.all' },
   { key: 'active', labelKey: 'asset.active' },
@@ -53,6 +67,7 @@ export default function AssetsScreen() {
   const stats = useMemo(() => {
     const query = search.trim().toLowerCase();
     const filtered = items.filter((item) => {
+      if (!inMonthRange(item.purchase_date, startYear, startMonth, endYear, endMonth)) return false;
       if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
       if (query && !(item.name || '').toLowerCase().includes(query)) return false;
       return true;
@@ -63,7 +78,7 @@ export default function AssetsScreen() {
       activeCount: active.length,
       totalCount: filtered.length,
     };
-  }, [items, search, filter]);
+  }, [items, search, filter, startYear, startMonth, endYear, endMonth]);
 
   const allStats = useMemo(() => {
     const activeCount = items.filter((item) => effectiveStatus(item) === 'active').length;

@@ -13,6 +13,20 @@ import MonthRangePicker from '../../src/components/common/MonthRangePicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import BillsList from '../../src/components/bill/BillsList';
 
+const pad = (n) => String(n).padStart(2, '0');
+
+function inMonthRange(dateStr, startYear, startMonth, endYear, endMonth) {
+  if (startYear == null && endYear == null) return true;
+  const prefix = (dateStr || '').slice(0, 7);
+  if (startYear != null && startMonth != null) {
+    if (prefix < `${startYear}-${pad(startMonth)}`) return false;
+  }
+  if (endYear != null && endMonth != null) {
+    if (prefix > `${endYear}-${pad(endMonth)}`) return false;
+  }
+  return true;
+}
+
 const BILL_FILTERS = [
   { key: 'all', labelKey: 'common.all' },
   { key: 'expense', labelKey: 'bills.expense' },
@@ -52,12 +66,13 @@ export default function BillsScreen() {
   const summary = useMemo(() => {
     const query = search.trim().toLowerCase();
     const filteredBills = items.filter((b) => {
+      if (!inMonthRange(b.consumption_date, startYear, startMonth, endYear, endMonth)) return false;
       if (filter !== 'all' && b.bill_type !== filter) return false;
       if (query && !(b.name || '').toLowerCase().includes(query)) return false;
       return true;
     });
     return billSummary(filteredBills);
-  }, [items, search, filter]);
+  }, [items, search, filter, startYear, startMonth, endYear, endMonth]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>

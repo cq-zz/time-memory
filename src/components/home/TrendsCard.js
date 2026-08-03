@@ -3,12 +3,21 @@ import Svg, { Path } from 'react-native-svg';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 
-const W = 294;
+const CHART_W = 264;
+const AXIS_W = 30;
 const H = 112;
 const PAD_Y = 12;
+const Y_TICKS = 4;
 const MONTHS = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'];
 
-/** Last 6 months (oldest → newest) as { key, label, income, expense }. */
+/** Abbreviate large numbers for Y-axis labels. */
+function formatAxisValue(val) {
+  if (val >= 1000000) return (val / 1000000).toFixed(1) + 'M';
+  if (val >= 1000) return (val / 1000).toFixed(1) + 'k';
+  return Math.round(val).toString();
+}
+
+/** Last N months (oldest → newest) as { key, label, income, expense }. */
 function monthlySeries(bills, months = 6, monthLabels = MONTHS) {
   const now = new Date();
   const buckets = [];
@@ -30,7 +39,7 @@ function monthlySeries(bills, months = 6, monthLabels = MONTHS) {
 
 /** Smooth cubic path through the points (flat baseline when max is 0). */
 function buildPath(values, max) {
-  const step = W / (values.length - 1);
+  const step = CHART_W / (values.length - 1);
   const pts = values.map((v, i) => ({
     x: i * step,
     y: max > 0 ? H - PAD_Y - (v / max) * (H - PAD_Y * 2) : H - PAD_Y,
@@ -46,37 +55,88 @@ function buildPath(values, max) {
 }
 
 function TrendChart({ series }) {
-  const { Colors } = useTheme();
+  const { Colors, Fonts } = useTheme();
   const max = Math.max(...series.map((s) => s.income), ...series.map((s) => s.expense));
 
+  // Build Y-axis ticks (top → bottom)
+  const ticks = [];
+  for (let i = 0; i <= Y_TICKS; i++) {
+    const val = max > 0 ? (max / Y_TICKS) * i : 0;
+    ticks.push({
+      value: val,
+      y: max > 0 ? H - PAD_Y - (val / max) * (H - PAD_Y * 2) : H - PAD_Y,
+    });
+  }
+  ticks.reverse();
+
   return (
-    <Svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" fill="none">
-      <Path
-        d={buildPath(series.map((s) => s.income), max)}
-        stroke={Colors.green}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-      <Path
-        d={buildPath(series.map((s) => s.expense), max)}
-        stroke={Colors.rose}
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-    </Svg>
+    <View style={{ flexDirection: 'row', height: H }}>
+      {/* Y-axis labels */}
+      <View style={{ width: AXIS_W, height: H }}>
+        {ticks.map((tick, i) => (
+          <Text
+            key={i}
+            style={[
+              styles.axisLabel,
+              {
+                color: Colors.textSecondary,
+                fontFamily: Fonts.bold,
+                top: tick.y - 6,
+              },
+            ]}
+          >
+            {formatAxisValue(tick.value)}
+          </Text>
+        ))}
+      </View>
+
+      {/* Chart area */}
+      <View style={{ flex: 1 }}>
+        <Svg width="100%" height={H} viewBox={`0 0 ${CHART_W} ${H}`} fill="none">
+          {/* Horizontal grid lines */}
+          {ticks.map((tick, i) => (
+            <Path
+              key={`grid-${i}`}
+              d={`M 0 ${tick.y} L ${CHART_W} ${tick.y}`}
+              stroke={Colors.iconBg}
+              strokeWidth="1"
+              strokeDasharray="3 3"
+            />
+          ))}
+          {/* Income curve */}
+          <Path
+            d={buildPath(series.map((s) => s.income), max)}
+            stroke={Colors.green}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+          {/* Expense curve */}
+          <Path
+            d={buildPath(series.map((s) => s.expense), max)}
+            stroke={Colors.rose}
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+        </Svg>
+      </View>
+    </View>
   );
 }
 
 export default function TrendsCard({ bills = [] }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
-  const monthLabels = t('calendar.monthsShort', { returnObjects: true });
+  // Strip "月" from Chinese month labels to match English (numbers only)
+  const monthLabels = (t('calendar.monthsShort', { returnObjects: true }) || []).map((l) => l.replace('月', ''));
   const series = monthlySeries(bills, 6, monthLabels);
 
   return (
     <View style={styles.section}>
       <Text style={[styles.sectionTitle, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
         {t('home.financialTrends')}
+      </Text>
+      <Text style={[styles.sectionHint, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+        {t('home.financialTrendsHint')}
       </Text>
 
       <View
@@ -107,8 +167,8 @@ export default function TrendsCard({ bills = [] }) {
           <TrendChart series={series} />
         </View>
 
-        {/* Month labels */}
-        <View style={styles.monthsRow}>
+        {/* Month labels — aligned with chart area */}
+        <View style={[styles.monthsRow, { paddingLeft: AXIS_W }]}>
           {series.map((s) => (
             <Text key={s.key} style={[styles.month, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
               {s.label}
@@ -122,11 +182,16 @@ export default function TrendsCard({ bills = [] }) {
 
 const styles = StyleSheet.create({
   section: {
-    gap: 12,
+    gap: 8,
   },
   sectionTitle: {
     fontSize: 18,
     lineHeight: 24,
+  },
+  sectionHint: {
+    fontSize: 11,
+    lineHeight: 16,
+    marginTop: -4,
   },
   card: {
     padding: 16,
@@ -153,6 +218,14 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     letterSpacing: 0.6,
   },
+  axisLabel: {
+    position: 'absolute',
+    right: 4,
+    fontSize: 9,
+    lineHeight: 12,
+    letterSpacing: 0.3,
+    textAlign: 'right',
+  },
   chartWrap: {
     height: H,
     justifyContent: 'center',
@@ -160,12 +233,12 @@ const styles = StyleSheet.create({
   monthsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 4,
+    paddingRight: 4,
   },
   month: {
     fontSize: 12,
     lineHeight: 16,
     letterSpacing: 0.6,
-    textTransform: 'uppercase',
+    textAlign: 'center',
   },
 });

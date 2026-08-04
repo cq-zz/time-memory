@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, ScrollView, StyleSheet, Text, TouchableOpacity, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,6 +10,7 @@ import { listBills, billSummary } from '../../src/services/bill';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import ModuleStatsCard from '../../src/components/common/ModuleStatsCard';
 import DayRangePicker from '../../src/components/common/DayRangePicker';
+import CategoryFilterModal from '../../src/components/common/CategoryFilterModal';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import BillsList from '../../src/components/bill/BillsList';
 
@@ -35,7 +36,7 @@ const today = () => {
 };
 
 export default function BillsScreen() {
-  const { Colors, Shadows } = useTheme();
+  const { Colors, Radius, Fonts, Shadows } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const currency = useSettingsStore((s) => s.settings.currency);
@@ -48,6 +49,8 @@ export default function BillsScreen() {
   const [endDate, setEndDate] = useState(td);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [categoryOpen, setCategoryOpen] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -67,12 +70,13 @@ export default function BillsScreen() {
     const query = search.trim().toLowerCase();
     const filteredBills = items.filter((b) => {
       if (dimension === 'day' && !inDayRange(b.consumption_date, startDate, endDate)) return false;
+      if (selectedCategories.length > 0 && !selectedCategories.includes(b.category)) return false;
       if (filter !== 'all' && b.bill_type !== filter) return false;
       if (query && !(b.name || '').toLowerCase().includes(query)) return false;
       return true;
     });
     return billSummary(filteredBills);
-  }, [items, search, filter, dimension, startDate, endDate]);
+  }, [items, search, filter, dimension, startDate, endDate, selectedCategories]);
 
   const handleDimensionChange = useCallback((dim) => {
     setDimension(dim);
@@ -106,6 +110,40 @@ export default function BillsScreen() {
           onFilterChange={setFilter}
           filters={BILL_FILTERS}
           placeholder={t('bills.searchPlaceholder')}
+          beforeSearch={
+            <Pressable
+              style={({ pressed }) => [
+                styles.categoryChip,
+                {
+                  backgroundColor: selectedCategories.length > 0 ? Colors.purpleTint : Colors.card,
+                  borderColor: selectedCategories.length > 0 ? Colors.purple : Colors.cardBorder,
+                  borderRadius: Radius.pill,
+                },
+                pressed && { opacity: 0.8 },
+              ]}
+              onPress={() => setCategoryOpen(true)}
+            >
+              <Ionicons
+                name="pricetag-outline"
+                size={14}
+                color={selectedCategories.length > 0 ? Colors.purple : Colors.textSecondary}
+              />
+              <Text
+                style={[
+                  styles.categoryChipText,
+                  {
+                    color: selectedCategories.length > 0 ? Colors.purple : Colors.textSecondary,
+                    fontFamily: Fonts.semiBold,
+                  },
+                ]}
+                numberOfLines={1}
+              >
+                {selectedCategories.length > 0
+                  ? `${t('common.category')} (${selectedCategories.length})`
+                  : t('common.category')}
+              </Text>
+            </Pressable>
+          }
         />
       </View>
 
@@ -139,6 +177,7 @@ export default function BillsScreen() {
             dimension={dimension}
             startDate={startDate}
             endDate={endDate}
+            selectedCategories={selectedCategories}
             search={search}
             filter={filter}
             loading={loading}
@@ -153,6 +192,14 @@ export default function BillsScreen() {
       >
         <Ionicons name="add" size={30} color={Colors.white} />
       </TouchableOpacity>
+
+      <CategoryFilterModal
+        visible={categoryOpen}
+        onClose={() => setCategoryOpen(false)}
+        type="all"
+        selected={selectedCategories}
+        onConfirm={setSelectedCategories}
+      />
     </SafeAreaView>
   );
 }
@@ -175,6 +222,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 16,
     borderBottomWidth: 1,
+  },
+  categoryChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderWidth: 1,
+  },
+  categoryChipText: {
+    fontSize: 11,
+    lineHeight: 16,
   },
   listSection: {
     paddingHorizontal: 16,

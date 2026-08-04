@@ -67,20 +67,20 @@ export default function FilteredSummaryBar({
 
 const styles = StyleSheet.create({
   container: {
-    minHeight: 52,
+    minHeight: 40,
     paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingVertical: 4,
     borderWidth: 1,
     flexDirection: 'row',
     alignItems: 'center',
   },
   iconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 9,
+    marginRight: 8,
   },
   valueBlock: {
     flex: 1,
@@ -92,22 +92,22 @@ const styles = StyleSheet.create({
     letterSpacing: 0.3,
   },
   value: {
-    fontSize: 17,
-    lineHeight: 21,
+    fontSize: 15,
+    lineHeight: 19,
     letterSpacing: -0.3,
   },
   divider: {
     width: 1,
-    height: 28,
+    height: 24,
     marginHorizontal: 10,
   },
   countBlock: {
-    minWidth: 38,
+    minWidth: 34,
     alignItems: 'center',
   },
   count: {
-    fontSize: 14,
-    lineHeight: 17,
+    fontSize: 12,
+    lineHeight: 15,
   },
   countLabel: {
     fontSize: 9,

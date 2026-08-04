@@ -62,6 +62,8 @@ export default {
     selectTime: "选择时间",
     selectPeriod: "选择时间段",
     selectDateRange: "选择日期区间",
+    selectCategory: "选择类别",
+    category: "类别",
     clearFilter: "清除筛选",
     dateRangeFrom: "起",
     dateRangeTo: "至",

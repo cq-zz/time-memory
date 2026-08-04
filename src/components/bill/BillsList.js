@@ -113,12 +113,13 @@ function inDayRange(dateStr, startDate, endDate) {
  * Bill list with day-range + search + type filtering.
  * `filter` is 'all' | 'expense' | 'income'.
  */
-export default function BillsList({ items, dimension, startDate, endDate, search, filter, loading }) {
+export default function BillsList({ items, dimension, startDate, endDate, selectedCategories, search, filter, loading }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
   const filtered = items.filter((item) => {
     if (dimension === 'day' && !inDayRange(item.consumption_date, startDate, endDate)) return false;
+    if (selectedCategories && selectedCategories.length > 0 && !selectedCategories.includes(item.category)) return false;
     if (filter !== 'all' && item.bill_type !== filter) return false;
     if (search && !(item.name || '').toLowerCase().includes(search.toLowerCase())) return false;
     return true;

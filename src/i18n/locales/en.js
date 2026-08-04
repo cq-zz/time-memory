@@ -53,6 +53,8 @@ export default {
     selectTime: "Select Time",
     selectPeriod: "Select Period",
     selectDateRange: "Select Date Range",
+    selectCategory: "Select Category",
+    category: "Category",
     clearFilter: "Clear Filter",
     dateRangeFrom: "From",
     dateRangeTo: "Until",

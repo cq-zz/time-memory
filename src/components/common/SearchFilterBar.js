@@ -6,37 +6,41 @@ import { useTheme } from '../../utils/theme';
 /**
  * Reusable search box + filter-chip row for list screens.
  * `filters` is [{ key, labelKey }] — labelKey is translated via i18n.
+ * `beforeSearch` — optional React node rendered to the left of the search input, on the same row.
  */
-export default function SearchFilterBar({ search, onSearchChange, filter, onFilterChange, filters, placeholder }) {
+export default function SearchFilterBar({ search, onSearchChange, filter, onFilterChange, filters, placeholder, beforeSearch }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
 
   return (
     <View style={styles.container}>
-      {/* Search input */}
-      <View
-        style={[
-          styles.searchBox,
-          {
-            backgroundColor: Colors.card,
-            borderColor: Colors.cardBorder,
-            borderRadius: Radius.pill,
-          },
-        ]}
-      >
-        <Ionicons name="search" size={20} color={Colors.textSecondary} />
-        <TextInput
-          style={[styles.searchInput, { color: Colors.textPrimary, fontFamily: Fonts.regular }]}
-          placeholder={placeholder}
-          placeholderTextColor={Colors.textSecondary}
-          value={search}
-          onChangeText={onSearchChange}
-        />
-        {search.length > 0 && (
-          <TouchableOpacity activeOpacity={0.7} onPress={() => onSearchChange('')}>
-            <Ionicons name="close-circle" size={18} color={Colors.textSecondary} />
-          </TouchableOpacity>
-        )}
+      {/* Search row: optional beforeSearch + input */}
+      <View style={styles.searchRow}>
+        {beforeSearch}
+        <View
+          style={[
+            styles.searchBox,
+            {
+              backgroundColor: Colors.card,
+              borderColor: Colors.cardBorder,
+              borderRadius: Radius.pill,
+            },
+          ]}
+        >
+          <Ionicons name="search" size={18} color={Colors.textSecondary} />
+          <TextInput
+            style={[styles.searchInput, { color: Colors.textPrimary, fontFamily: Fonts.regular }]}
+            placeholder={placeholder}
+            placeholderTextColor={Colors.textSecondary}
+            value={search}
+            onChangeText={onSearchChange}
+          />
+          {search.length > 0 && (
+            <TouchableOpacity activeOpacity={0.7} onPress={() => onSearchChange('')}>
+              <Ionicons name="close-circle" size={16} color={Colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       {/* Filter chips */}
@@ -78,19 +82,25 @@ export default function SearchFilterBar({ search, onSearchChange, filter, onFilt
 
 const styles = StyleSheet.create({
   container: {},
-  searchBox: {
+  searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    height: 56,
-    paddingHorizontal: 20,
+    gap: 8,
+    marginBottom: 10,
+  },
+  searchBox: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    height: 34,
+    paddingHorizontal: 14,
     borderWidth: 1,
-    marginBottom: 12,
   },
   searchInput: {
     flex: 1,
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 18,
     padding: 0,
   },
   chipsRow: {

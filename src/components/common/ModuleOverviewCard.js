@@ -53,50 +53,50 @@ export default function ModuleOverviewCard({
 
 const styles = StyleSheet.create({
   card: {
-    minHeight: 76,
+    minHeight: 60,
     borderRadius: 28,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
     flexDirection: 'row',
     alignItems: 'center',
   },
   valueBlock: {
     flex: 1,
     minWidth: 0,
-    gap: 1,
+    gap: 0,
   },
   label: {
     fontSize: 10,
-    lineHeight: 14,
+    lineHeight: 13,
     letterSpacing: 0.5,
     opacity: 0.68,
     textTransform: 'uppercase',
   },
   value: {
-    fontSize: 22,
-    lineHeight: 30,
+    fontSize: 19,
+    lineHeight: 25,
     letterSpacing: -0.44,
   },
   divider: {
     width: 1,
-    height: 42,
-    marginHorizontal: 14,
+    height: 34,
+    marginHorizontal: 12,
   },
   counts: {
     flexDirection: 'row',
-    gap: 14,
+    gap: 12,
   },
   countMetric: {
-    minWidth: 38,
+    minWidth: 32,
     alignItems: 'center',
   },
   countValue: {
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 20,
   },
   countLabel: {
     fontSize: 9,
-    lineHeight: 13,
+    lineHeight: 12,
     letterSpacing: 0.3,
   },
 });

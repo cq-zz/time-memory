@@ -114,12 +114,13 @@ function inDayRange(dateStr, startDate, endDate) {
   return true;
 }
 
-export default function ItemsList({ items, dimension, startDate, endDate, search, filter, currency, loading }) {
+export default function ItemsList({ items, dimension, startDate, endDate, selectedCategories, search, filter, currency, loading }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
   const filtered = items.filter((item) => {
     if (dimension === 'day' && !inDayRange(item.purchase_date, startDate, endDate)) return false;
+    if (selectedCategories && selectedCategories.length > 0 && !selectedCategories.includes(item.category)) return false;
     if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
     if (search && !(item.name || '').toLowerCase().includes(search.toLowerCase())) return false;
     return true;

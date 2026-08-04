@@ -199,9 +199,8 @@ export default function DayRangePicker({
   // Display text for the pill
   const displayText = useMemo(() => {
     if (!startDate && !endDate) return t('common.selectDateRange');
-    const s = startDate || '--';
-    const e = endDate || '--';
-    return `${s}~${e}`;
+    const fmt = (d) => d ? d.replace(/-/g, '/') : '--';
+    return `${fmt(startDate)}~${fmt(endDate)}`;
   }, [startDate, endDate, t]);
 
   return (
@@ -367,7 +366,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 3,
+    paddingVertical: 6,
   },
   triggerText: {
     fontSize: 12,

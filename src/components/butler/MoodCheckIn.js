@@ -89,11 +89,11 @@ export default function MoodCheckIn() {
 
 const styles = StyleSheet.create({
   card: {
-    paddingVertical: 16,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     borderWidth: 1,
     borderRadius: 32,
-    gap: 12,
+    gap: 8,
   },
   headRow: {
     flexDirection: 'row',
@@ -117,7 +117,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 4,
-    paddingVertical: 12,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     minWidth: 80,
   },

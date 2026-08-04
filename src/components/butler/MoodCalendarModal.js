@@ -6,6 +6,7 @@ import { useTheme, hexToRgba } from '../../utils/theme';
 import { MOODS, moodMeta } from '../../utils/constant';
 import { useMoodStore, todayStr } from '../../store/mood';
 import { showToast } from '../common/Toast';
+import MoodEmoji from '../common/MoodEmoji';
 
 const pad = (n) => String(n).padStart(2, '0');
 const dateStr = (y, m, d) => `${y}-${pad(m)}-${pad(d)}`;
@@ -165,7 +166,7 @@ export default function MoodCalendarModal({ visible, onClose }) {
                     {day}
                   </Text>
                   {mood ? (
-                    <Text style={styles.dayEmoji}>{mood.emoji}</Text>
+                    <MoodEmoji moodKey={mood.key} size={18} />
                   ) : (
                     !isFuture && (
                       <View style={[styles.addBadge, { backgroundColor: hexToRgba(Colors.purple, 0.15) }]}>
@@ -215,7 +216,7 @@ export default function MoodCalendarModal({ visible, onClose }) {
                   ]}
                   onPress={() => handlePickMood(m)}
                 >
-                  <Text style={styles.moodEmoji}>{m.emoji}</Text>
+                  <MoodEmoji moodKey={m.key} size={22} />
                   <Text
                     style={[styles.moodLabel, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
                     numberOfLines={1}
@@ -295,11 +296,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
-  dayEmoji: {
-    fontSize: 18,
-    lineHeight: 20,
-    marginTop: 1,
-  },
   addBadge: {
     width: 14,
     height: 14,
@@ -347,10 +343,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     borderWidth: 1,
     gap: 2,
-  },
-  moodEmoji: {
-    fontSize: 22,
-    lineHeight: 26,
   },
   moodLabel: {
     fontSize: 11,

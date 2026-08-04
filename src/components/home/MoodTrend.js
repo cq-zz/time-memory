@@ -4,11 +4,12 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useMoodStore } from '../../store/mood';
 import { moodMeta } from '../../utils/constant';
+import MoodEmoji from '../common/MoodEmoji';
 
 const MAX_BAR = 72;
 const SCORE_COLORS = { 5: '#4AA868', 4: '#6BAA90', 3: '#E8B830', 2: '#F28B50', 1: '#D94452' };
 
-/** Last 7 days (oldest → today) as { label, mood, score, emoji }. */
+/** Last 7 days (oldest → today) as { label, mood, score }. */
 function last7Days(records) {
   const byDate = new Map((records || []).map((r) => [r.check_date, r.mood]));
   const days = [];
@@ -22,7 +23,6 @@ function last7Days(records) {
       label: `${d.getMonth() + 1}/${d.getDate()}`,
       mood,
       score: meta ? meta.score : null,
-      emoji: meta ? meta.emoji : '',
     });
   }
   return days;
@@ -86,9 +86,16 @@ export default function MoodTrend() {
                 <Text style={[styles.axisDate, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
                   {d.label}
                 </Text>
-                <Text style={[styles.axisMood, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
-                  {d.score != null ? `${d.emoji} ${d.score}` : '–'}
-                </Text>
+                {d.score != null ? (
+                  <View style={styles.axisMood}>
+                    <MoodEmoji moodKey={d.mood} size={16} />
+                    <Text style={[styles.axisScore, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
+                      {d.score}
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={[styles.axisMood, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>–</Text>
+                )}
               </View>
             ))}
           </View>
@@ -187,6 +194,11 @@ const styles = StyleSheet.create({
     lineHeight: 14,
   },
   axisMood: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 2,
+  },
+  axisScore: {
     fontSize: 12,
     lineHeight: 16,
   },

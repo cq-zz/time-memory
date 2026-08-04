@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -16,6 +16,7 @@ import { listDiaries } from '../../services/diary';
 import { getBudgetByYear } from '../../services/budget';
 import { showToast } from '../common/Toast';
 import MoodCalendarModal from './MoodCalendarModal';
+import MoodEmoji from '../common/MoodEmoji';
 
 /**
  * Function modules grid — compact cards: icon + name on the first row,
@@ -64,6 +65,8 @@ function FeatureCard({ title, icon, color, stat, statLines, onPress }) {
               </Text>
             ))}
           </View>
+        ) : React.isValidElement(stat) ? (
+          stat
         ) : (
           <Text style={[styles.stat, { color: Colors.textSecondary, fontFamily: Fonts.regular }]} numberOfLines={1}>
             {stat}
@@ -137,7 +140,14 @@ export default function FeatureGrid() {
       diary: '--',
       budget: null,
     }),
-    mood: mood ? `${mood.emoji} ${t(`checkIn.mood.${todayMood}`)}` : t('home.featureNotCheckedIn'),
+    mood: mood ? (
+        <View style={styles.moodStatRow}>
+          <MoodEmoji moodKey={mood.key} size={16} />
+          <Text style={[styles.moodStatText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]} numberOfLines={1}>
+            {t(`checkIn.mood.${todayMood}`)}
+          </Text>
+        </View>
+      ) : t('home.featureNotCheckedIn'),
   };
 
   const handlePress = (id) => {
@@ -226,5 +236,15 @@ const styles = StyleSheet.create({
   statMini: {
     fontSize: 9,
     lineHeight: 12,
+  },
+  moodStatRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  moodStatText: {
+    fontSize: 11,
+    lineHeight: 15,
+    flexShrink: 1,
   },
 });

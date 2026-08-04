@@ -4,6 +4,7 @@ import { useTheme } from '../../utils/theme';
 import { MOODS } from '../../utils/constant';
 import { useMoodStore } from '../../store/mood';
 import { showToast } from '../common/Toast';
+import MoodEmoji from '../common/MoodEmoji';
 
 /**
  * Daily mood check-in. Moods come from utils/constant.js (each carries a
@@ -64,7 +65,7 @@ export default function MoodCheckIn() {
               activeOpacity={0.7}
               onPress={() => handleSelect(mood)}
             >
-              <Text style={[styles.emoji, isActive && styles.emojiActive]}>{mood.emoji}</Text>
+              <MoodEmoji moodKey={mood.key} size={isActive ? 40 : 32} />
               <Text
                 style={[
                   styles.label,
@@ -119,15 +120,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
     minWidth: 80,
-  },
-  emoji: {
-    fontSize: 32,
-    lineHeight: 38,
-    textAlign: 'center',
-  },
-  emojiActive: {
-    fontSize: 40,
-    lineHeight: 46,
   },
   label: {
     fontSize: 10,

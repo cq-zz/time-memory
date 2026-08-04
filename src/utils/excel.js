@@ -723,8 +723,7 @@ export const EXPORT_MODULES = [
         (m) =>
           m.key === lower ||
           m.label.toLowerCase() === lower ||
-          localizedEnumText(m.label, 'zh-CN').toLowerCase() === lower ||
-          raw.includes(m.emoji),
+          localizedEnumText(m.label, 'zh-CN').toLowerCase() === lower,
       );
       if (!mood) return { error: `Unknown mood "${raw}"` };
       return {

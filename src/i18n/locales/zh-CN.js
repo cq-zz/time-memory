@@ -378,6 +378,7 @@ export default {
     noBudgetSet: "暂未设置预算",
     financialTrends: "收支趋势",
     financialTrendsHint: "显示最近6个月的收入与支出变化趋势",
+    dayDimension: "日",
     monthDimension: "月",
     yearDimension: "年",
     income: "收入",

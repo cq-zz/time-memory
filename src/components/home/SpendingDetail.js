@@ -12,7 +12,11 @@ const PALETTE = ['#A05C82', '#F28B50', '#4AA868', '#E86B6B', '#4A90D9', '#8B7AE8
 const pad = (n) => String(n).padStart(2, '0');
 
 /* ── Helpers ── */
-function filterBillsByPeriod(bills, year, month) {
+function filterBillsByPeriod(bills, year, month, day) {
+  if (day != null) {
+    const key = `${year}-${pad(month)}-${pad(day)}`;
+    return (bills || []).filter((b) => (b.consumption_date || '').slice(0, 10) === key);
+  }
   if (month != null) {
     const key = `${year}-${pad(month)}`;
     return (bills || []).filter((b) => (b.consumption_date || '').slice(0, 7) === key);
@@ -32,14 +36,18 @@ function categoryTotals(bills, billType) {
 }
 
 /* ── Wheel-based Period Picker ── */
-function PeriodPicker({ dimension, year, month, onChange }) {
+function PeriodPicker({ dimension, year, month, day, onChange }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
   const yearStart = useSettingsStore((s) => s.settings.yearStart);
   const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
   const [open, setOpen] = useState(false);
 
-  const displayText = dimension === 'year' ? String(year) : `${year}/${pad(month)}`;
+  const displayText = useMemo(() => {
+    if (dimension === 'year') return String(year);
+    if (dimension === 'day') return `${year}/${pad(month)}/${pad(day)}`;
+    return `${year}/${pad(month)}`;
+  }, [dimension, year, month, day]);
 
   const yearItems = useMemo(() => {
     const items = [];
@@ -54,21 +62,43 @@ function PeriodPicker({ dimension, year, month, onChange }) {
 
   const [draftYear, setDraftYear] = useState(year);
   const [draftMonth, setDraftMonth] = useState(month || 1);
+  const [draftDay, setDraftDay] = useState(day || 1);
 
   const handleOpen = useCallback(() => {
     setDraftYear(year);
     setDraftMonth(month || 1);
+    setDraftDay(day || 1);
     setOpen(true);
-  }, [year, month]);
+  }, [year, month, day]);
 
   const handleConfirm = useCallback(() => {
     if (dimension === 'year') {
-      onChange(draftYear, null);
+      onChange(draftYear, null, null);
+    } else if (dimension === 'day') {
+      onChange(draftYear, draftMonth, draftDay);
     } else {
-      onChange(draftYear, draftMonth);
+      onChange(draftYear, draftMonth, null);
     }
     setOpen(false);
-  }, [dimension, draftYear, draftMonth, onChange]);
+  }, [dimension, draftYear, draftMonth, draftDay, onChange]);
+
+  // Day items: 1..daysInMonth based on draft year/month
+  const dayItems = useMemo(() => {
+    const days = new Date(draftYear, draftMonth, 0).getDate();
+    return Array.from({ length: days }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
+  }, [draftYear, draftMonth]);
+
+  // When month wraps, adjust day to valid range
+  const safeDraftDay = useMemo(() => {
+    const maxDay = new Date(draftYear, draftMonth, 0).getDate();
+    return Math.min(draftDay, maxDay);
+  }, [draftYear, draftMonth, draftDay]);
+
+  const panelTitle = dimension === 'year'
+    ? t('common.selectYear')
+    : dimension === 'day'
+      ? t('common.selectDate')
+      : t('common.selectYearMonth');
 
   return (
     <View>
@@ -98,7 +128,7 @@ function PeriodPicker({ dimension, year, month, onChange }) {
                   </Text>
                 </Pressable>
                 <Text style={[styles.panelTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-                  {dimension === 'year' ? t('common.selectYear') : t('common.selectYearMonth')}
+                  {panelTitle}
                 </Text>
                 <Pressable onPress={handleConfirm}>
                   <Text style={[styles.headerBtnConfirm, { color: Colors.purple, fontFamily: Fonts.bold }]}>
@@ -112,14 +142,22 @@ function PeriodPicker({ dimension, year, month, onChange }) {
                     items={yearItems}
                     selected={draftYear}
                     onChange={setDraftYear}
-                    width={dimension === 'year' ? 120 : 80}
+                    width={dimension === 'year' ? 120 : dimension === 'day' ? 70 : 80}
                   />
-                  {dimension === 'month' && (
+                  {(dimension === 'month' || dimension === 'day') && (
                     <WheelColumn
                       items={monthItems}
                       selected={draftMonth}
                       onChange={setDraftMonth}
-                      width={80}
+                      width={dimension === 'day' ? 70 : 80}
+                    />
+                  )}
+                  {dimension === 'day' && (
+                    <WheelColumn
+                      items={dayItems}
+                      selected={safeDraftDay}
+                      onChange={setDraftDay}
+                      width={70}
                     />
                   )}
                 </View>
@@ -142,16 +180,19 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
   const now = new Date();
   const curYear = now.getFullYear();
   const curMonth = now.getMonth() + 1;
+  const curDay = now.getDate();
 
   const hasExternal = extYear != null;
 
   const [internalDimension, setInternalDimension] = useState('month');
   const [internalYear, setInternalYear] = useState(curYear);
   const [internalMonth, setInternalMonth] = useState(curMonth);
+  const [internalDay, setInternalDay] = useState(curDay);
 
   const dimension = hasExternal ? extDimension : internalDimension;
   const year = hasExternal ? extYear : internalYear;
   const month = hasExternal ? extMonth : internalMonth;
+  const day = internalDay;
 
   const allCategories = useMemo(() => {
     const map = new Map();
@@ -174,42 +215,58 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
     if (dim === 'year') {
       setInternalYear(curYear);
       setInternalMonth(null);
+      setInternalDay(null);
+    } else if (dim === 'day') {
+      setInternalYear(curYear);
+      setInternalMonth(curMonth);
+      setInternalDay(curDay);
     } else {
       setInternalYear(curYear);
       setInternalMonth(curMonth);
+      setInternalDay(null);
     }
-  }, [curYear, curMonth]);
+  }, [curYear, curMonth, curDay]);
 
-  const handlePeriodChange = useCallback((y, m) => {
+  const handlePeriodChange = useCallback((y, m, d) => {
     setInternalYear(y);
     setInternalMonth(m);
+    setInternalDay(d);
   }, []);
 
   // Current period data
   const currentTotals = useMemo(
-    () => categoryTotals(filterBillsByPeriod(bills, year, month), billType),
-    [bills, year, month, billType]
+    () => categoryTotals(filterBillsByPeriod(bills, year, month, day), billType),
+    [bills, year, month, day, billType]
   );
 
-  // YoY (year-over-year) reference period: same month last year
+  // YoY (year-over-year) reference period
   const yoyTotals = useMemo(() => {
     if (dimension === 'year') {
-      return categoryTotals(filterBillsByPeriod(bills, year - 1, null), billType);
+      return categoryTotals(filterBillsByPeriod(bills, year - 1, null, null), billType);
     }
-    return categoryTotals(filterBillsByPeriod(bills, year - 1, month), billType);
-  }, [bills, dimension, year, month, billType]);
+    if (dimension === 'day') {
+      return categoryTotals(filterBillsByPeriod(bills, year - 1, month, day), billType);
+    }
+    return categoryTotals(filterBillsByPeriod(bills, year - 1, month, null), billType);
+  }, [bills, dimension, year, month, day, billType]);
 
   // MoM (month-over-month) / previous period reference
   const momTotals = useMemo(() => {
     if (dimension === 'year') {
-      return categoryTotals(filterBillsByPeriod(bills, year - 1, null), billType);
+      return categoryTotals(filterBillsByPeriod(bills, year - 1, null, null), billType);
+    }
+    if (dimension === 'day') {
+      // Previous day
+      const prev = new Date(year, month - 1, day);
+      prev.setDate(prev.getDate() - 1);
+      return categoryTotals(filterBillsByPeriod(bills, prev.getFullYear(), prev.getMonth() + 1, prev.getDate()), billType);
     }
     const refMonth = month - 1;
     if (refMonth < 1) {
-      return categoryTotals(filterBillsByPeriod(bills, year - 1, 12), billType);
+      return categoryTotals(filterBillsByPeriod(bills, year - 1, 12, null), billType);
     }
-    return categoryTotals(filterBillsByPeriod(bills, year, refMonth), billType);
-  }, [bills, dimension, year, month, billType]);
+    return categoryTotals(filterBillsByPeriod(bills, year, refMonth, null), billType);
+  }, [bills, dimension, year, month, day, billType]);
 
   // Build table rows
   const rows = useMemo(() => {
@@ -277,7 +334,7 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
       {!hideControls && (
         <View style={styles.controls}>
           <View style={[styles.segmented, { backgroundColor: Colors.iconBg, borderRadius: Radius.pill }]}>
-            {['year', 'month'].map((dim) => {
+            {['day', 'month', 'year'].map((dim) => {
               const active = dimension === dim;
               return (
                 <Pressable
@@ -286,13 +343,13 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
                   onPress={() => handleDimensionChange(dim)}
                 >
                   <Text style={[styles.segBtnText, { color: active ? Colors.white : Colors.textSecondary, fontFamily: Fonts.bold }]}>
-                    {dim === 'month' ? t('home.monthDimension') : t('home.yearDimension')}
+                    {dim === 'day' ? t('home.dayDimension') : dim === 'month' ? t('home.monthDimension') : t('home.yearDimension')}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
-          <PeriodPicker dimension={dimension} year={year} month={month} onChange={handlePeriodChange} />
+          <PeriodPicker dimension={dimension} year={year} month={month} day={day} onChange={handlePeriodChange} />
         </View>
       )}
 

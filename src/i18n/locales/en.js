@@ -385,6 +385,7 @@ export default {
     noBudgetSet: "No plan set",
     financialTrends: "Income & Expense Trends",
     financialTrendsHint: "Income & expense trends over the past 6 months",
+    dayDimension: "Day",
     monthDimension: "Month",
     yearDimension: "Year",
     income: "Income",

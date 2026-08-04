@@ -2,6 +2,7 @@
   "expo": {
     "name": "Timemory",
     "slug": "time-memory",
+    "description": "Timemory — Track every moment of your life. An all-in-one personal life manager for bookkeeping, assets, schedules, diaries, and mood check-ins.\nTimemory — 时光记忆，记录生活的每一笔。集记账、资产、计划、日记、心情签到于一体的个人生活管理助手。",
     "scheme": "time-memory",
     "version": "1.0.0",
     "orientation": "portrait",

@@ -1,7 +1,7 @@
 {
   "name": "time-memory",
   "version": "1.0.0",
-  "description": "Timemory — 拾光记账，记录生活的每一笔。集记账、资产、计划、日记、心情签到于一体的个人生活管理助手。",
+  "description": "Timemory — Track every moment of your life. An all-in-one personal life manager for bookkeeping, assets, schedules, diaries, and mood check-ins.",
   "keywords": ["记账", "资产管理", "日记", "心情记录", "个人财务", "finance", "budget", "diary", "mood", "expo"],
   "main": "expo-router/entry",
   "dependencies": {

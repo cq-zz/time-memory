@@ -8,24 +8,38 @@ import { useTheme } from '../../src/utils/theme';
 import { listDiaries } from '../../src/services/diary';
 import { hasPassword } from '../../src/utils/password';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
-import MonthRangePicker from '../../src/components/common/MonthRangePicker';
+import DayRangePicker from '../../src/components/common/DayRangePicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import DiaryList from '../../src/components/diary/DiaryList';
 import DiaryStats from '../../src/components/diary/DiaryStats';
 import PasswordModal from '../../src/components/common/PasswordModal';
+
+const pad = (n) => String(n).padStart(2, '0');
+
+function inDayRange(dateStr, startDate, endDate) {
+  if (!startDate && !endDate) return true;
+  const d = (dateStr || '').slice(0, 10);
+  if (startDate && d < startDate) return false;
+  if (endDate && d > endDate) return false;
+  return true;
+}
+
+const today = () => {
+  const n = new Date();
+  return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}`;
+};
 
 export default function DiaryScreen() {
   const { Colors, Shadows } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
 
-  const now = new Date();
+  const td = today();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [startYear, setStartYear] = useState(now.getFullYear());
-  const [startMonth, setStartMonth] = useState(1);
-  const [endYear, setEndYear] = useState(now.getFullYear());
-  const [endMonth, setEndMonth] = useState(now.getMonth() + 1);
+  const [dimension, setDimension] = useState('day');
+  const [startDate, setStartDate] = useState(td);
+  const [endDate, setEndDate] = useState(td);
   const [search, setSearch] = useState('');
   const [hasPwd, setHasPwd] = useState(false);
   const [pwdOpen, setPwdOpen] = useState(false);
@@ -50,6 +64,7 @@ export default function DiaryScreen() {
   const stats = useMemo(() => {
     const query = search.trim().toLowerCase();
     const filtered = items.filter((item) => {
+      if (dimension === 'day' && !inDayRange(item?.date, startDate, endDate)) return false;
       if (
         query &&
         !String(item?.title || '').toLowerCase().includes(query) &&
@@ -65,7 +80,20 @@ export default function DiaryScreen() {
       currentYearCount: filtered.filter((item) => String(item?.date || '').startsWith(currentYear)).length,
       privateCount: filtered.filter((item) => Number(item?.is_private) === 1).length,
     };
-  }, [items, search]);
+  }, [items, search, dimension, startDate, endDate]);
+
+  const handleDimensionChange = useCallback((dim) => {
+    setDimension(dim);
+    if (dim === 'day' && !startDate && !endDate) {
+      setStartDate(td);
+      setEndDate(td);
+    }
+  }, [startDate, endDate]);
+
+  const handleRangeChange = useCallback(({ startDate: s, endDate: e }) => {
+    setStartDate(s);
+    setEndDate(e);
+  }, []);
 
   const handlePressItem = (item) => {
     if (Number(item.is_private) === 1 && hasPwd) {
@@ -81,18 +109,12 @@ export default function DiaryScreen() {
       <ModuleHeader title={t('nav.diary')} />
 
       <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
-        <MonthRangePicker
-          startYear={startYear}
-          startMonth={startMonth}
-          endYear={endYear}
-          endMonth={endMonth}
-          style={styles.dateFilter}
-          onChange={({ startYear: sy, startMonth: sm, endYear: ey, endMonth: em }) => {
-            setStartYear(sy);
-            setStartMonth(sm);
-            setEndYear(ey);
-            setEndMonth(em);
-          }}
+        <DayRangePicker
+          dimension={dimension}
+          startDate={startDate}
+          endDate={endDate}
+          onDimensionChange={handleDimensionChange}
+          onRangeChange={handleRangeChange}
         />
         <SearchFilterBar
           search={search}
@@ -116,10 +138,9 @@ export default function DiaryScreen() {
         <View style={styles.listSection}>
           <DiaryList
             items={items}
-            startYear={startYear}
-            startMonth={startMonth}
-            endYear={endYear}
-            endMonth={endMonth}
+            dimension={dimension}
+            startDate={startDate}
+            endDate={endDate}
             search={search}
             loading={loading}
             onPressItem={handlePressItem}
@@ -163,9 +184,6 @@ const styles = StyleSheet.create({
   statsSection: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-  },
-  dateFilter: {
-    marginBottom: 12,
   },
   stickyBar: {
     paddingHorizontal: 16,

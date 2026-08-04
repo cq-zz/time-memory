@@ -101,31 +101,25 @@ function BillCard({ item, isLast }) {
   );
 }
 
-const pad = (n) => String(n).padStart(2, '0');
-
-function inMonthRange(dateStr, startYear, startMonth, endYear, endMonth) {
-  if (startYear == null && endYear == null) return true;
-  const prefix = (dateStr || '').slice(0, 7);
-  if (startYear != null && startMonth != null) {
-    if (prefix < `${startYear}-${pad(startMonth)}`) return false;
-  }
-  if (endYear != null && endMonth != null) {
-    if (prefix > `${endYear}-${pad(endMonth)}`) return false;
-  }
+function inDayRange(dateStr, startDate, endDate) {
+  if (!startDate && !endDate) return true;
+  const d = (dateStr || '').slice(0, 10);
+  if (startDate && d < startDate) return false;
+  if (endDate && d > endDate) return false;
   return true;
 }
 
 /**
- * Bill list with month-range + search + type filtering.
+ * Bill list with day-range + search + type filtering.
  * `filter` is 'all' | 'expense' | 'income'.
  */
-export default function BillsList({ items, startYear, startMonth, endYear, endMonth, search, filter, loading }) {
+export default function BillsList({ items, dimension, startDate, endDate, search, filter, loading }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
   const filtered = items.filter((item) => {
+    if (dimension === 'day' && !inDayRange(item.consumption_date, startDate, endDate)) return false;
     if (filter !== 'all' && item.bill_type !== filter) return false;
-    if (!inMonthRange(item.consumption_date, startYear, startMonth, endYear, endMonth)) return false;
     if (search && !(item.name || '').toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });

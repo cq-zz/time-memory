@@ -82,33 +82,22 @@ function ScheduleCard({ item, isLast, onChanged }) {
   );
 }
 
-const pad = (n) => String(n).padStart(2, '0');
-
-function inScheduleRange(item, startYear, startMonth, endYear, endMonth) {
-  if (startYear == null && endYear == null) return true;
+function inScheduleDayRange(item, startDate, endDate) {
+  if (!startDate && !endDate) return true;
   const sStart = datePart(item.start_date || item.end_date);
   const sEnd = datePart(item.end_date || item.start_date);
-
-  if (startYear != null && startMonth != null) {
-    const periodStart = `${startYear}-${pad(startMonth)}-01`;
-    if (sEnd && sEnd < periodStart) return false;
-  }
-  if (endYear != null && endMonth != null) {
-    const periodEndExclusive = endMonth === 12
-      ? `${endYear + 1}-01-01`
-      : `${endYear}-${pad(endMonth + 1)}-01`;
-    if (sStart && sStart >= periodEndExclusive) return false;
-  }
+  if (startDate && sEnd < startDate) return false;
+  if (endDate && sStart > endDate) return false;
   return true;
 }
 
-export default function SchedulesList({ items, startYear, startMonth, endYear, endMonth, search, filter, loading, onChanged }) {
+export default function SchedulesList({ items, dimension, startDate, endDate, search, filter, loading, onChanged }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
   const filtered = items.filter((item) => {
+    if (dimension === 'day' && !inScheduleDayRange(item, startDate, endDate)) return false;
     if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
-    if (!inScheduleRange(item, startYear, startMonth, endYear, endMonth)) return false;
     if (search && !(item.title || '').toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });

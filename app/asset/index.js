@@ -10,23 +10,24 @@ import { displayValue, effectiveStatus, listAssets } from '../../src/services/as
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import ModuleOverviewCard from '../../src/components/common/ModuleOverviewCard';
 import AssetsStats from '../../src/components/assets/AssetsStats';
-import MonthRangePicker from '../../src/components/common/MonthRangePicker';
+import DayRangePicker from '../../src/components/common/DayRangePicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import AssetsList from '../../src/components/assets/AssetsList';
 
-const pad = (n) => String(n).padStart(2, '0');
-
-function inMonthRange(dateStr, startYear, startMonth, endYear, endMonth) {
-  if (startYear == null && endYear == null) return true;
-  const prefix = (dateStr || '').slice(0, 7);
-  if (startYear != null && startMonth != null) {
-    if (prefix < `${startYear}-${pad(startMonth)}`) return false;
-  }
-  if (endYear != null && endMonth != null) {
-    if (prefix > `${endYear}-${pad(endMonth)}`) return false;
-  }
+function inDayRange(dateStr, startDate, endDate) {
+  if (!startDate && !endDate) return true;
+  const d = (dateStr || '').slice(0, 10);
+  if (startDate && d < startDate) return false;
+  if (endDate && d > endDate) return false;
   return true;
 }
+
+const pad = (n) => String(n).padStart(2, '0');
+
+const today = () => {
+  const n = new Date();
+  return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}`;
+};
 
 const ASSET_FILTERS = [
   { key: 'all', labelKey: 'common.all' },
@@ -41,10 +42,9 @@ export default function AssetsScreen() {
   const currency = useSettingsStore((s) => s.settings.currency);
 
   const [items, setItems] = useState([]);
-  const [startYear, setStartYear] = useState(null);
-  const [startMonth, setStartMonth] = useState(null);
-  const [endYear, setEndYear] = useState(null);
-  const [endMonth, setEndMonth] = useState(null);
+  const [dimension, setDimension] = useState('all');
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -57,7 +57,6 @@ export default function AssetsScreen() {
     }
   }, [currency]);
 
-  // Reload every time the screen gains focus (after add/edit/delete).
   useFocusEffect(
     useCallback(() => {
       load();
@@ -67,7 +66,7 @@ export default function AssetsScreen() {
   const stats = useMemo(() => {
     const query = search.trim().toLowerCase();
     const filtered = items.filter((item) => {
-      if (!inMonthRange(item.purchase_date, startYear, startMonth, endYear, endMonth)) return false;
+      if (dimension === 'day' && !inDayRange(item.purchase_date, startDate, endDate)) return false;
       if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
       if (query && !(item.name || '').toLowerCase().includes(query)) return false;
       return true;
@@ -78,7 +77,7 @@ export default function AssetsScreen() {
       activeCount: active.length,
       totalCount: filtered.length,
     };
-  }, [items, search, filter, startYear, startMonth, endYear, endMonth]);
+  }, [items, search, filter, dimension, startDate, endDate]);
 
   const allStats = useMemo(() => {
     const activeCount = items.filter((item) => effectiveStatus(item) === 'active').length;
@@ -91,6 +90,20 @@ export default function AssetsScreen() {
       archivedCount: items.length - activeCount,
     };
   }, [items]);
+
+  const handleDimensionChange = useCallback((dim) => {
+    setDimension(dim);
+    if (dim === 'day' && !startDate && !endDate) {
+      const td = today();
+      setStartDate(td);
+      setEndDate(td);
+    }
+  }, [startDate, endDate]);
+
+  const handleRangeChange = useCallback(({ startDate: s, endDate: e }) => {
+    setStartDate(s);
+    setEndDate(e);
+  }, []);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
@@ -108,18 +121,12 @@ export default function AssetsScreen() {
       </View>
 
       <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
-        <MonthRangePicker
-          startYear={startYear}
-          startMonth={startMonth}
-          endYear={endYear}
-          endMonth={endMonth}
-          style={styles.dateFilter}
-          onChange={({ startYear: sy, startMonth: sm, endYear: ey, endMonth: em }) => {
-            setStartYear(sy);
-            setStartMonth(sm);
-            setEndYear(ey);
-            setEndMonth(em);
-          }}
+        <DayRangePicker
+          dimension={dimension}
+          startDate={startDate}
+          endDate={endDate}
+          onDimensionChange={handleDimensionChange}
+          onRangeChange={handleRangeChange}
         />
         <SearchFilterBar
           search={search}
@@ -143,10 +150,9 @@ export default function AssetsScreen() {
         <View style={styles.listSection}>
           <AssetsList
             items={items}
-            startYear={startYear}
-            startMonth={startMonth}
-            endYear={endYear}
-            endMonth={endMonth}
+            dimension={dimension}
+            startDate={startDate}
+            endDate={endDate}
             search={search}
             filter={filter}
             currency={currency}
@@ -155,7 +161,6 @@ export default function AssetsScreen() {
         </View>
       </ScrollView>
 
-      {/* Floating action button */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: Colors.inkDeep }, Shadows.dark]}
         activeOpacity={0.8}
@@ -184,9 +189,6 @@ const styles = StyleSheet.create({
   statsSection: {
     paddingHorizontal: 16,
     paddingVertical: 6,
-  },
-  dateFilter: {
-    marginBottom: 12,
   },
   stickyBar: {
     paddingHorizontal: 16,

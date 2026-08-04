@@ -9,21 +9,17 @@ import { useSettingsStore, formatMoney } from '../../src/store/settings';
 import { listBills, billSummary } from '../../src/services/bill';
 import ModuleHeader from '../../src/components/common/ModuleHeader';
 import ModuleStatsCard from '../../src/components/common/ModuleStatsCard';
-import MonthRangePicker from '../../src/components/common/MonthRangePicker';
+import DayRangePicker from '../../src/components/common/DayRangePicker';
 import SearchFilterBar from '../../src/components/common/SearchFilterBar';
 import BillsList from '../../src/components/bill/BillsList';
 
 const pad = (n) => String(n).padStart(2, '0');
 
-function inMonthRange(dateStr, startYear, startMonth, endYear, endMonth) {
-  if (startYear == null && endYear == null) return true;
-  const prefix = (dateStr || '').slice(0, 7);
-  if (startYear != null && startMonth != null) {
-    if (prefix < `${startYear}-${pad(startMonth)}`) return false;
-  }
-  if (endYear != null && endMonth != null) {
-    if (prefix > `${endYear}-${pad(endMonth)}`) return false;
-  }
+function inDayRange(dateStr, startDate, endDate) {
+  if (!startDate && !endDate) return true;
+  const d = (dateStr || '').slice(0, 10);
+  if (startDate && d < startDate) return false;
+  if (endDate && d > endDate) return false;
   return true;
 }
 
@@ -33,19 +29,23 @@ const BILL_FILTERS = [
   { key: 'income', labelKey: 'bills.income' },
 ];
 
+const today = () => {
+  const n = new Date();
+  return `${n.getFullYear()}-${pad(n.getMonth() + 1)}-${pad(n.getDate())}`;
+};
+
 export default function BillsScreen() {
   const { Colors, Shadows } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const currency = useSettingsStore((s) => s.settings.currency);
 
-  const now = new Date();
+  const td = today();
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [startYear, setStartYear] = useState(now.getFullYear());
-  const [startMonth, setStartMonth] = useState(1);
-  const [endYear, setEndYear] = useState(now.getFullYear());
-  const [endMonth, setEndMonth] = useState(now.getMonth() + 1);
+  const [dimension, setDimension] = useState('day');
+  const [startDate, setStartDate] = useState(td);
+  const [endDate, setEndDate] = useState(td);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState('all');
 
@@ -66,31 +66,38 @@ export default function BillsScreen() {
   const summary = useMemo(() => {
     const query = search.trim().toLowerCase();
     const filteredBills = items.filter((b) => {
-      if (!inMonthRange(b.consumption_date, startYear, startMonth, endYear, endMonth)) return false;
+      if (dimension === 'day' && !inDayRange(b.consumption_date, startDate, endDate)) return false;
       if (filter !== 'all' && b.bill_type !== filter) return false;
       if (query && !(b.name || '').toLowerCase().includes(query)) return false;
       return true;
     });
     return billSummary(filteredBills);
-  }, [items, search, filter, startYear, startMonth, endYear, endMonth]);
+  }, [items, search, filter, dimension, startDate, endDate]);
+
+  const handleDimensionChange = useCallback((dim) => {
+    setDimension(dim);
+    if (dim === 'day' && !startDate && !endDate) {
+      setStartDate(td);
+      setEndDate(td);
+    }
+  }, [startDate, endDate]);
+
+  const handleRangeChange = useCallback(({ startDate: s, endDate: e }) => {
+    setStartDate(s);
+    setEndDate(e);
+  }, []);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: Colors.bg }]} edges={['top', 'bottom']}>
       <ModuleHeader title={t('nav.bills')} />
 
       <View style={[styles.stickyBar, { backgroundColor: Colors.bg, borderBottomColor: Colors.cardBorder }]}>
-        <MonthRangePicker
-          startYear={startYear}
-          startMonth={startMonth}
-          endYear={endYear}
-          endMonth={endMonth}
-          style={styles.dateFilter}
-          onChange={({ startYear: sy, startMonth: sm, endYear: ey, endMonth: em }) => {
-            setStartYear(sy);
-            setStartMonth(sm);
-            setEndYear(ey);
-            setEndMonth(em);
-          }}
+        <DayRangePicker
+          dimension={dimension}
+          startDate={startDate}
+          endDate={endDate}
+          onDimensionChange={handleDimensionChange}
+          onRangeChange={handleRangeChange}
         />
         <SearchFilterBar
           search={search}
@@ -129,10 +136,9 @@ export default function BillsScreen() {
         <View style={styles.listSection}>
           <BillsList
             items={items}
-            startYear={startYear}
-            startMonth={startMonth}
-            endYear={endYear}
-            endMonth={endMonth}
+            dimension={dimension}
+            startDate={startDate}
+            endDate={endDate}
             search={search}
             filter={filter}
             loading={loading}
@@ -140,7 +146,6 @@ export default function BillsScreen() {
         </View>
       </ScrollView>
 
-      {/* Floating action button */}
       <TouchableOpacity
         style={[styles.fab, { backgroundColor: Colors.inkDeep }, Shadows.dark]}
         activeOpacity={0.8}
@@ -165,9 +170,6 @@ const styles = StyleSheet.create({
   statsSection: {
     paddingHorizontal: 16,
     paddingVertical: 10,
-  },
-  dateFilter: {
-    marginBottom: 12,
   },
   stickyBar: {
     paddingHorizontal: 16,

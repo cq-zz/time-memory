@@ -101,27 +101,21 @@ function AssetCard({ item, currency, isLast }) {
   );
 }
 
-const pad = (n) => String(n).padStart(2, '0');
-
-function inMonthRange(dateStr, startYear, startMonth, endYear, endMonth) {
-  if (startYear == null && endYear == null) return true;
-  const prefix = (dateStr || '').slice(0, 7);
-  if (startYear != null && startMonth != null) {
-    if (prefix < `${startYear}-${pad(startMonth)}`) return false;
-  }
-  if (endYear != null && endMonth != null) {
-    if (prefix > `${endYear}-${pad(endMonth)}`) return false;
-  }
+function inDayRange(dateStr, startDate, endDate) {
+  if (!startDate && !endDate) return true;
+  const d = (dateStr || '').slice(0, 10);
+  if (startDate && d < startDate) return false;
+  if (endDate && d > endDate) return false;
   return true;
 }
 
-export default function AssetsList({ items, startYear, startMonth, endYear, endMonth, search, filter, currency, loading }) {
+export default function AssetsList({ items, dimension, startDate, endDate, search, filter, currency, loading }) {
   const { Colors, Fonts } = useTheme();
   const { t } = useTranslation();
 
   const filtered = items.filter((item) => {
+    if (dimension === 'day' && !inDayRange(item.purchase_date, startDate, endDate)) return false;
     if (filter !== 'all' && effectiveStatus(item) !== filter) return false;
-    if (!inMonthRange(item.purchase_date, startYear, startMonth, endYear, endMonth)) return false;
     if (search && !item.name.toLowerCase().includes(search.toLowerCase())) return false;
     return true;
   });

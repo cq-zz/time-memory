@@ -427,7 +427,7 @@ export default function SpendingAnalysis({ bills = [] }) {
       {filtered.length === 0 && (
         <View style={[styles.empty, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.lg }]}>
           <Text style={[styles.emptyText, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-            {t('butler.noSpendingData', { range: '' })}
+            {t('spendingDetail.noData')}
           </Text>
         </View>
       )}

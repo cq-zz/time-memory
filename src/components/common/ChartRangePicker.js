@@ -34,7 +34,9 @@ export default function ChartRangePicker({
 
   const displayText = useMemo(() => {
     if (yearOnly) return `${startYear} - ${endYear}`;
-    return `${fmtYm(startYear, startMonth)} ~ ${fmtYm(endYear, endMonth)}`;
+    const s = `${startYear}/${String(startMonth).padStart(2, '0')}`;
+    const e = `${endYear}/${String(endMonth).padStart(2, '0')}`;
+    return `${s}~${e}`;
   }, [startYear, startMonth, endYear, endMonth, yearOnly]);
 
   const handleOpen = useCallback(() => {

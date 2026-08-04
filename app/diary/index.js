@@ -143,6 +143,8 @@ export default function DiaryScreen() {
           setPwdOpen(false);
           if (pendingItem) router.push(`/diary/${pendingItem.id}`);
         }}
+        title={t('diary.privateDiary')}
+        description={t('diary.privateDiaryHint')}
       />
     </SafeAreaView>
   );

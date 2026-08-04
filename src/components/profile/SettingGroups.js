@@ -166,7 +166,7 @@ export default function SettingGroups() {
         onConfirm={handleReset}
         title={t('settings.resetPasswordConfirmTitle')}
         description={t('settings.resetPasswordConfirmDesc')}
-        confirmText={t('settings.resetPassword')}
+        confirmText={t('common.confirm')}
         icon="key-outline"
       />
     </View>

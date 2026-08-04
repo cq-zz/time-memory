@@ -7,15 +7,18 @@ import { useTheme, hexToRgba } from '../../utils/theme';
 import { verifyPassword } from '../../utils/password';
 
 /**
- * Reusable password-verification modal (private diary entries, security
- * settings, etc.). Verifies against the stored SHA-256 hash.
+ * Reusable password-verification modal (private diary entries, data
+ * import/export/reset/migration, etc.). Verifies against the stored
+ * SHA-256 hash.
  *
  * Props:
  * - visible: boolean
  * - onClose: () => void
  * - onSuccess: () => void — called after the password verifies
+ * - title: string (optional) — modal title; defaults to generic "私密密码"
+ * - description: string (optional) — modal description; defaults to "请输入私密密码以继续"
  */
-export default function PasswordModal({ visible, onClose, onSuccess }) {
+export default function PasswordModal({ visible, onClose, onSuccess, title, description }) {
   const { Colors, Radius, Shadows, Fonts } = useTheme();
   const { t } = useTranslation();
   const [pwd, setPwd] = useState('');
@@ -67,10 +70,10 @@ export default function PasswordModal({ visible, onClose, onSuccess }) {
             </View>
 
             <Text style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-              {t('diary.privateDiary')}
+              {title || t('settings.passwordVerificationTitle')}
             </Text>
             <Text style={[styles.desc, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-              {t('diary.privateDiaryHint')}
+              {description || t('settings.passwordVerificationDesc')}
             </Text>
 
             <TextInput

@@ -4,9 +4,9 @@ import { useTheme } from '../../utils/theme';
 import ChartRangePicker from './ChartRangePicker';
 
 /**
- * Dimension toggle (年/月) + date range picker.
- * When dimension is 'year', ChartRangePicker opens in yearOnly mode.
- * When dimension is 'month', it opens in year-month mode.
+ * Dimension toggle (全部/年/月) + date range picker.
+ * Capsule buttons use flexWrap: when the row is too wide, they
+ * automatically wrap to the next line so nothing overflows.
  */
 export default function DimensionRangePicker({
   dimension = 'month',
@@ -22,7 +22,7 @@ export default function DimensionRangePicker({
 
   return (
     <View style={styles.wrap}>
-      {/* Dimension toggle */}
+      {/* Dimension toggle capsules */}
       <View style={[styles.segmented, { backgroundColor: Colors.iconBg, borderRadius: Radius.pill }]}>
         {['all', 'year', 'month'].map((dim) => {
           const active = dimension === dim;
@@ -69,6 +69,7 @@ export default function DimensionRangePicker({
 const styles = StyleSheet.create({
   wrap: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     alignItems: 'center',
     gap: 8,
   },

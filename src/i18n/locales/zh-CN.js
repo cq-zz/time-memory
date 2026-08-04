@@ -1143,8 +1143,10 @@ export default {
     amount: "金额",
     yoy: "同比",
     mom: "环比",
+    change: "变化",
     total: "合计",
     noData: "暂无数据",
+    hint: "同比 · 与去年同周期对比  |  环比 · 与上一周期对比  |  新 · 参照周期无数据  |  ↑ 上升  ↓ 下降",
   },
   importantDate: {
     name: "名称",

@@ -1158,8 +1158,10 @@ export default {
     amount: "Amount",
     yoy: "YoY",
     mom: "MoM",
+    change: "Change",
     total: "Total",
     noData: "No Data",
+    hint: "YoY · vs same period last year  |  MoM · vs previous period  |  NEW · no data in reference  |  ↑ increase  ↓ decrease",
   },
   importantDate: {
     name: "Name",

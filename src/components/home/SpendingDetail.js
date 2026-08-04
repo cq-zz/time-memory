@@ -36,7 +36,7 @@ function categoryTotals(bills, billType) {
 }
 
 /* ── Wheel-based Period Picker ── */
-function PeriodPicker({ dimension, year, month, day, onChange }) {
+export function PeriodPicker({ dimension, year, month, day, onChange }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
   const yearStart = useSettingsStore((s) => s.settings.yearStart);
@@ -171,7 +171,7 @@ function PeriodPicker({ dimension, year, month, day, onChange }) {
 }
 
 /* ── Main Component ── */
-export default function SpendingDetail({ bills = [], billType = 'expense', year: extYear, month: extMonth, dimension: extDimension, hideControls = false, hideTitle = false }) {
+export default function SpendingDetail({ bills = [], billType = 'expense', year: extYear, month: extMonth, day: extDay, dimension: extDimension, hideControls = false, hideTitle = false }) {
   const { Colors, Fonts, Radius, Shadows } = useTheme();
   const { t } = useTranslation();
   const currency = useSettingsStore((s) => s.settings.currency);
@@ -192,7 +192,7 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
   const dimension = hasExternal ? extDimension : internalDimension;
   const year = hasExternal ? extYear : internalYear;
   const month = hasExternal ? extMonth : internalMonth;
-  const day = internalDay;
+  const day = hasExternal ? extDay : internalDay;
 
   const allCategories = useMemo(() => {
     const map = new Map();
@@ -364,11 +364,8 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
             <Text style={[styles.thAmount, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
               {t('spendingDetail.amount')}
             </Text>
-            <Text style={[styles.thDiff, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-              {t('spendingDetail.yoy')}
-            </Text>
-            <Text style={[styles.thDiff, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
-              {t('spendingDetail.mom')}
+            <Text style={[styles.thChange, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+              {t('spendingDetail.change')}
             </Text>
           </View>
 
@@ -385,12 +382,14 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
                 <Text style={[styles.tdAmount, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
                   {formatMoney(row.amount, currency)}
                 </Text>
-                <Text style={[styles.tdDiff, { color: diffColor(row.yoyPct, row.yoyIsNew), fontFamily: Fonts.bold }]}>
-                  {diffText(row.yoyPct, row.yoyIsNew)}
-                </Text>
-                <Text style={[styles.tdDiff, { color: diffColor(row.momPct, row.momIsNew), fontFamily: Fonts.bold }]}>
-                  {diffText(row.momPct, row.momIsNew)}
-                </Text>
+                <View style={styles.tdChange}>
+                  <Text style={[styles.diffLine, { color: diffColor(row.yoyPct, row.yoyIsNew), fontFamily: Fonts.bold }]}>
+                    {t('spendingDetail.yoy')} {diffText(row.yoyPct, row.yoyIsNew)}
+                  </Text>
+                  <Text style={[styles.diffLine, { color: diffColor(row.momPct, row.momIsNew), fontFamily: Fonts.bold }]}>
+                    {t('spendingDetail.mom')} {diffText(row.momPct, row.momIsNew)}
+                  </Text>
+                </View>
               </View>
             ))}
           </ScrollView>
@@ -403,12 +402,14 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
             <Text style={[styles.tdAmount, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
               {formatMoney(summary.totalAmount, currency)}
             </Text>
-            <Text style={[styles.tdDiff, { color: diffColor(summary.totalYoyPct, false), fontFamily: Fonts.bold }]}>
-              {summary.hasYoy ? diffText(summary.totalYoyPct, false) : '--'}
-            </Text>
-            <Text style={[styles.tdDiff, { color: diffColor(summary.totalMomPct, false), fontFamily: Fonts.bold }]}>
-              {summary.hasMom ? diffText(summary.totalMomPct, false) : '--'}
-            </Text>
+            <View style={styles.tdChange}>
+              <Text style={[styles.diffLine, { color: diffColor(summary.totalYoyPct, false), fontFamily: Fonts.bold }]}>
+                {t('spendingDetail.yoy')} {summary.hasYoy ? diffText(summary.totalYoyPct, false) : '--'}
+              </Text>
+              <Text style={[styles.diffLine, { color: diffColor(summary.totalMomPct, false), fontFamily: Fonts.bold }]}>
+                {t('spendingDetail.mom')} {summary.hasMom ? diffText(summary.totalMomPct, false) : '--'}
+              </Text>
+            </View>
           </View>
         </View>
       ) : (
@@ -518,20 +519,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   thCategory: {
-    flex: 2,
+    flex: 2.2,
     fontSize: 11,
     lineHeight: 15,
     letterSpacing: 0.3,
   },
   thAmount: {
-    flex: 1.4,
+    flex: 1.2,
     fontSize: 11,
     lineHeight: 15,
     textAlign: 'right',
     letterSpacing: 0.3,
   },
-  thDiff: {
-    flex: 1.2,
+  thChange: {
+    flex: 1.8,
     fontSize: 11,
     lineHeight: 15,
     textAlign: 'right',
@@ -547,7 +548,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   tdCategory: {
-    flex: 2,
+    flex: 2.2,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
@@ -563,16 +564,19 @@ const styles = StyleSheet.create({
     lineHeight: 17,
   },
   tdAmount: {
-    flex: 1.4,
+    flex: 1.2,
     fontSize: 12,
     lineHeight: 17,
     textAlign: 'right',
   },
-  tdDiff: {
-    flex: 1.2,
-    fontSize: 11,
-    lineHeight: 15,
-    textAlign: 'right',
+  tdChange: {
+    flex: 1.8,
+    alignItems: 'flex-end',
+    gap: 2,
+  },
+  diffLine: {
+    fontSize: 10,
+    lineHeight: 14,
   },
   summaryRow: {
     flexDirection: 'row',

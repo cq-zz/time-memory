@@ -1,6 +1,7 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore, formatMoney } from '../../store/settings';
@@ -306,6 +307,15 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
 
   const hasData = rows.length > 0;
 
+  // ── Overflow / gradient state ──
+  const [bodyContentH, setBodyContentH] = useState(0);
+  const [bodyContainerH, setBodyContainerH] = useState(0);
+  const scrollY = useRef(0);
+  const isOverflow = bodyContentH > bodyContainerH + 4;
+  const isNearBottom = scrollY.current + bodyContainerH >= bodyContentH - 4;
+  const showGradient = isOverflow && !isNearBottom;
+  const [, forceRender] = useState(0); // tiny re-render trigger for scroll-based gradient
+
   function diffText(pct, isNew) {
     if (isNew) return t('home.momNew');
     if (pct == null) return '--';
@@ -370,29 +380,51 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
           </View>
 
           {/* Rows */}
-          <ScrollView style={styles.tableBody} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-            {rows.map((row, i) => (
-              <View key={row.cat} style={[styles.tableRow, i < rows.length - 1 && { borderBottomColor: Colors.cardBorder, borderBottomWidth: 1 }]}>
-                <View style={styles.tdCategory}>
-                  <View style={[styles.dot, { backgroundColor: PALETTE[i % PALETTE.length] }]} />
-                  <Text numberOfLines={1} style={[styles.tdCategoryText, { color: Colors.textPrimary, fontFamily: Fonts.regular }]}>
-                    {row.label}
+          <View style={styles.tableBodyWrapper}>
+            <ScrollView
+              style={styles.tableBody}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator={false}
+              onContentSizeChange={(w, h) => setBodyContentH(h)}
+              onLayout={(e) => setBodyContainerH(e.nativeEvent.layout.height)}
+              onScroll={(e) => {
+                const prevNear = scrollY.current + bodyContainerH >= bodyContentH - 4;
+                scrollY.current = e.nativeEvent.contentOffset.y;
+                const nextNear = scrollY.current + bodyContainerH >= bodyContentH - 4;
+                if (prevNear !== nextNear) forceRender((n) => n + 1);
+              }}
+              scrollEventThrottle={16}
+            >
+              {rows.map((row, i) => (
+                <View key={row.cat} style={[styles.tableRow, i < rows.length - 1 && { borderBottomColor: Colors.cardBorder, borderBottomWidth: 1 }]}>
+                  <View style={styles.tdCategory}>
+                    <View style={[styles.dot, { backgroundColor: PALETTE[i % PALETTE.length] }]} />
+                    <Text numberOfLines={1} style={[styles.tdCategoryText, { color: Colors.textPrimary, fontFamily: Fonts.regular }]}>
+                      {row.label}
+                    </Text>
+                  </View>
+                  <Text style={[styles.tdAmount, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
+                    {formatMoney(row.amount, currency)}
                   </Text>
+                  <View style={styles.tdChange}>
+                    <Text style={[styles.diffLine, { color: diffColor(row.yoyPct, row.yoyIsNew), fontFamily: Fonts.bold }]}>
+                      {t('spendingDetail.yoy')} {diffText(row.yoyPct, row.yoyIsNew)}
+                    </Text>
+                    <Text style={[styles.diffLine, { color: diffColor(row.momPct, row.momIsNew), fontFamily: Fonts.bold }]}>
+                      {t('spendingDetail.mom')} {diffText(row.momPct, row.momIsNew)}
+                    </Text>
+                  </View>
                 </View>
-                <Text style={[styles.tdAmount, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-                  {formatMoney(row.amount, currency)}
-                </Text>
-                <View style={styles.tdChange}>
-                  <Text style={[styles.diffLine, { color: diffColor(row.yoyPct, row.yoyIsNew), fontFamily: Fonts.bold }]}>
-                    {t('spendingDetail.yoy')} {diffText(row.yoyPct, row.yoyIsNew)}
-                  </Text>
-                  <Text style={[styles.diffLine, { color: diffColor(row.momPct, row.momIsNew), fontFamily: Fonts.bold }]}>
-                    {t('spendingDetail.mom')} {diffText(row.momPct, row.momIsNew)}
-                  </Text>
-                </View>
-              </View>
-            ))}
-          </ScrollView>
+              ))}
+            </ScrollView>
+            {showGradient && (
+              <LinearGradient
+                colors={[Colors.card + '00', Colors.card]}
+                style={styles.gradientOverlay}
+                pointerEvents="none"
+              />
+            )}
+          </View>
 
           {/* Summary */}
           <View style={[styles.summaryRow, { borderTopColor: Colors.cardBorder, backgroundColor: Colors.iconBg }]}>
@@ -540,6 +572,16 @@ const styles = StyleSheet.create({
   },
   tableBody: {
     maxHeight: 320,
+  },
+  tableBodyWrapper: {
+    position: 'relative',
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 36,
   },
   tableRow: {
     flexDirection: 'row',

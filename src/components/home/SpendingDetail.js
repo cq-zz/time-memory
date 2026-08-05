@@ -488,6 +488,7 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 5,
+    flexShrink: 0,
   },
   triggerText: {
     fontSize: 14,

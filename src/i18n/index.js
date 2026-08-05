@@ -11,14 +11,12 @@ import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import en from './locales/en';
 import zhCN from './locales/zh-CN';
-import ja from './locales/ja';
 
 export const DEFAULT_LANGUAGE = 'en';
 
 const resources = {
   en: { translation: en },
   'zh-CN': { translation: zhCN },
-  ja: { translation: ja },
 };
 
 i18n.use(initReactI18next).init({
@@ -41,7 +39,6 @@ export function detectSystemLanguage() {
       const tag = locale.languageTag || '';
       const code = locale.languageCode || '';
       if (code === 'zh' || tag.toLowerCase().startsWith('zh')) return 'zh-CN';
-      if (code === 'ja' || tag.toLowerCase().startsWith('ja')) return 'ja';
       if (resources[code]) return code;
     }
   } catch (e) {

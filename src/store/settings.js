@@ -31,7 +31,6 @@ export const DEFAULT_SETTINGS = {
 export const LANGUAGES = [
   { code: 'en', label: 'English' },
   { code: 'zh-CN', label: '简体中文' },
-  { code: 'ja', label: '日本語' },
 ];
 
 export const currencyMeta = (code) =>
@@ -81,7 +80,7 @@ export const useSettingsStore = create((set) => ({
         await saveSettingRow('language', JSON.stringify(settings.language));
       }
       if (!hasCurrencyRow) {
-        settings.currency = settings.language === 'zh-CN' ? 'CNY' : settings.language === 'ja' ? 'JPY' : DEFAULT_CURRENCY;
+        settings.currency = settings.language === 'zh-CN' ? 'CNY' : DEFAULT_CURRENCY;
         await saveSettingRow('currency', JSON.stringify(settings.currency));
       }
       applyLanguage(settings.language);

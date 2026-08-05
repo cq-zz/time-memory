@@ -1411,5 +1411,6 @@ export default {
   language: {
     zhCN: "简体中文",
     en: "English",
+    ja: "日本語",
   },
 };

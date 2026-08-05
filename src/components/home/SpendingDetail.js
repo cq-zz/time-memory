@@ -46,8 +46,8 @@ export function PeriodPicker({ dimension, year, month, day, onChange }) {
 
   const displayText = useMemo(() => {
     if (dimension === 'year') return String(year);
-    if (dimension === 'day') return `${year}/${pad(month)}/${pad(day)}`;
-    return `${year}/${pad(month)}`;
+    if (dimension === 'day') return `${year}/\u2060${pad(month)}/\u2060${pad(day)}`;
+    return `${year}/\u2060${pad(month)}`;
   }, [dimension, year, month, day]);
 
   const yearItems = useMemo(() => {
@@ -466,6 +466,7 @@ const styles = StyleSheet.create({
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexWrap: 'wrap',
     gap: 8,
   },
   segmented: {
@@ -488,13 +489,11 @@ const styles = StyleSheet.create({
     gap: 8,
     paddingHorizontal: 16,
     paddingVertical: 5,
-    flexShrink: 0,
   },
   triggerText: {
     fontSize: 14,
     lineHeight: 20,
     letterSpacing: 0.3,
-    flexShrink: 0,
   },
   /* Modal */
   modalRoot: {

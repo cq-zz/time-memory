@@ -17,7 +17,7 @@ export default function SpendingDetails({ bills = [] }) {
   const [dimension, setDimension] = useState('month');
   const [year, setYear] = useState(curYear);
   const [month, setMonth] = useState(curMonth);
-  const [day, setDay] = useState(curDay);
+  const [day, setDay] = useState(null);
 
   const handleDimensionChange = useCallback((dim) => {
     setDimension(dim);

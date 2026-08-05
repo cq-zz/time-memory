@@ -8,7 +8,7 @@ import { useSettingsStore, formatMoney } from '../../store/settings';
 import { useCategoryStore, getMergedCategories, BUILTIN_NS } from '../../store/categories';
 import WheelColumn from '../common/WheelColumn';
 
-const PALETTE = ['#A05C82', '#F28B50', '#4AA868', '#E86B6B', '#4A90D9', '#8B7AE8', '#E8B830', '#6BAA90', '#D94452', '#4A90D9'];
+const PALETTE = ['#A05C82', '#F28B50', '#4AA868', '#E86B6B', '#4A90D9', '#8B7AE8', '#E8B830', '#6BAA90', '#D94452', '#E87A4A'];
 
 const pad = (n) => String(n).padStart(2, '0');
 
@@ -30,7 +30,7 @@ function categoryTotals(bills, billType) {
   bills.forEach((b) => {
     if (b.bill_type !== billType) return;
     const amt = Number(b.amount) || 0;
-    const cat = b.category || 'other';
+    const cat = b.category || '__other__';
     totals.set(cat, (totals.get(cat) || 0) + amt);
   });
   return totals;
@@ -112,7 +112,7 @@ export function PeriodPicker({ dimension, year, month, day, onChange }) {
         onPress={handleOpen}
       >
         <Ionicons name="calendar-outline" size={16} color={Colors.purple} />
-        <Text style={[styles.triggerText, { color: Colors.purple, fontFamily: Fonts.bold }]} numberOfLines={1}>
+        <Text style={[styles.triggerText, { color: Colors.purple, fontFamily: Fonts.bold }]}>
           {displayText}
         </Text>
       </Pressable>
@@ -188,7 +188,7 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
   const [internalDimension, setInternalDimension] = useState('month');
   const [internalYear, setInternalYear] = useState(curYear);
   const [internalMonth, setInternalMonth] = useState(curMonth);
-  const [internalDay, setInternalDay] = useState(curDay);
+  const [internalDay, setInternalDay] = useState(null);
 
   const dimension = hasExternal ? extDimension : internalDimension;
   const year = hasExternal ? extYear : internalYear;
@@ -321,7 +321,7 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
     if (pct == null) return '--';
     if (pct > 0) return `↑ +${pct.toFixed(2)}%`;
     if (pct < 0) return `↓ ${Math.abs(pct).toFixed(2)}%`;
-    return '--';
+    return '0.00%';
   }
 
   function diffColor(pct, isNew) {
@@ -470,12 +470,12 @@ const styles = StyleSheet.create({
   },
   segmented: {
     flexDirection: 'row',
-    padding: 0,
+    padding: 2,
     gap: 2,
   },
   segBtn: {
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 4,
   },
   segBtnText: {
     fontSize: 12,
@@ -493,6 +493,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     letterSpacing: 0.3,
+    flexShrink: 0,
   },
   /* Modal */
   modalRoot: {

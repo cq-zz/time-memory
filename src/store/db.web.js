@@ -91,8 +91,43 @@ export async function deleteCheckIn(checkDate) {
 
 // ── Generic row access (import / export / reset) ──
 
+let _budgetCleanupDone = false;
+
+/**
+ * Clean up duplicate budget rows: keep the one with the latest updated_at
+ * (or created_at as fallback) for each (year, currency) pair.
+ * Runs once per session, on first access to the budgets table.
+ */
+async function cleanupDuplicateBudgets() {
+  if (_budgetCleanupDone) return;
+  _budgetCleanupDone = true;
+  try {
+    const rows = await readTable('budgets');
+    const map = new Map();
+    for (const row of rows) {
+      const key = `${row.year || ''}|${(row.currency || '').toLowerCase()}`;
+      const existing = map.get(key);
+      if (!existing) {
+        map.set(key, row);
+      } else {
+        const existingTime = existing.updated_at || existing.created_at || '';
+        const rowTime = row.updated_at || row.created_at || '';
+        if (rowTime > existingTime) {
+          map.set(key, row);
+        }
+      }
+    }
+    if (map.size < rows.length) {
+      await writeTable('budgets', Array.from(map.values()));
+    }
+  } catch (e) {
+    console.warn('[db.web] budget cleanup failed:', e);
+  }
+}
+
 /** All rows of a module table. `table` must be one of DATA_TABLES. */
 export async function getAllRows(table) {
+  if (table === 'budgets') await cleanupDuplicateBudgets();
   return readTable(table);
 }
 

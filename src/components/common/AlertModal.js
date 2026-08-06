@@ -140,6 +140,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     textAlign: 'center',
+    width: '100%',
+    flexShrink: 1,
   },
   actions: {
     flexDirection: 'row',

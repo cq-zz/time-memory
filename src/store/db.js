@@ -178,6 +178,44 @@ async function ensureColumns(db) {
 }
 
 /**
+ * Indexes added after the original schema. CREATE INDEX IF NOT EXISTS is
+ * safe and idempotent. Before creating the budgets unique index, duplicate
+ * rows are cleaned up so the index creation won't fail.
+ */
+async function ensureIndexes(db) {
+  // Clean up duplicate budget rows: keep the one with the latest updated_at
+  // (or created_at as fallback) for each (year, currency) pair.
+  const dupes = await db.getAllAsync(
+    `SELECT year, currency, COUNT(*) AS cnt
+     FROM budgets
+     GROUP BY year, currency
+     HAVING cnt > 1`,
+  );
+  for (const { year, currency } of dupes) {
+    const rows = await db.getAllAsync(
+      `SELECT id, updated_at, created_at FROM budgets
+       WHERE year = ? AND currency = ?
+       ORDER BY updated_at DESC, created_at DESC`,
+      [year, currency],
+    );
+    // Keep the first row (latest updated_at), delete the rest
+    const toDelete = rows.slice(1).map((r) => r.id);
+    if (toDelete.length > 0) {
+      const placeholders = toDelete.map(() => '?').join(', ');
+      await db.runAsync(
+        `DELETE FROM budgets WHERE id IN (${placeholders})`,
+        toDelete,
+      );
+    }
+  }
+
+  // Unique index: one budget per year per currency
+  await db.execAsync(
+    `CREATE UNIQUE INDEX IF NOT EXISTS idx_budgets_year_currency ON budgets(year, currency)`,
+  );
+}
+
+/**
  * Returns a promise of the singleton database instance.
  * Opens the DB on first call and ensures the schema exists.
  */
@@ -186,6 +224,7 @@ export async function getDb() {
     dbPromise = SQLite.openDatabaseAsync(DB_NAME).then(async (db) => {
       await db.execAsync(SCHEMA_SQL);
       await ensureColumns(db);
+      await ensureIndexes(db);
       return db;
     });
   }

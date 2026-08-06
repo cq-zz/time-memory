@@ -75,6 +75,10 @@ function duplicateKey(moduleId, row) {
     const currency = String(row.currency ?? '').trim().toLowerCase();
     return `${name}|${date}|${amount}|${currency}`;
   }
+  if (moduleId === 'budget') {
+    const currency = String(row.currency ?? '').trim().toLowerCase();
+    return `${currency}|${date}`;
+  }
   return `${name}|${date}`;
 }
 
@@ -396,7 +400,6 @@ function MigrationModal({ visible, onClose, onDataChanged }) {
       if (!canShare) throw new Error('butler.sharingUnavailable');
       await Sharing.shareAsync(cacheFile.uri, { mimeType: DB_MIME, dialogTitle: 'Timemory Database' });
       showToast(t('butler.exportDbSuccess'));
-      onClose();
     } catch (e) {
       alert(t('butler.exportFailedTitle'), e?.message || t('butler.exportFailedDesc'));
     } finally {
@@ -419,7 +422,6 @@ function MigrationModal({ visible, onClose, onDataChanged }) {
       ]);
       showToast(t('butler.importDbSuccess'));
       onDataChanged?.();
-      onClose();
     } catch (e) {
       alert(
         t('butler.importDbFailed'),
@@ -542,7 +544,6 @@ function ExportModal({ visible, onClose }) {
       const fileName = `${t('home.brand')}-${moduleName}-${fileDate()}.xlsx`;
       await deliverWorkbook(buildWorkbook(mod, rows), fileName);
       showToast(t('butler.exportedRows', { count: rows.length, module: moduleName.toLowerCase() }));
-      onClose();
     } catch (e) {
       alert(
         t('butler.exportFailedTitle'),
@@ -744,14 +745,12 @@ function ImportModal({ visible, onClose, onDataChanged }) {
       } else if (ok === 0 && skipped > 0) {
         showToast(t('butler.importSkippedDuplicates', { count: skipped }));
         onDataChanged?.();
-        onClose();
       } else if (ok === 0) {
         alert(t('butler.nothingImportedTitle'), t('butler.nothingImportedDesc'));
       } else {
         showToast(t('butler.importedRows', { count: ok, module: moduleName }) +
           (skipped ? `，${t('butler.importSkippedDuplicates', { count: skipped })}` : ''));
         onDataChanged?.();
-        onClose();
       }
     } catch (e) {
       alert(t('butler.importFailedTitle'), e?.message || t('butler.importFailedDesc'));

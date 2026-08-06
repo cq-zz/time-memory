@@ -132,20 +132,20 @@ export default {
     title: "Privacy Policy",
     effectiveDate: "Effective Date: August 4, 2026",
     lastUpdated: "Last Updated: August 4, 2026",
-    intro: "This Privacy Policy explains how Timemory (\"we\" or \"the App\") handles your personal information.",
+    intro: "This Privacy Policy explains how Timemory (\"the App\") handles your personal information.",
     coreCommitment:
-      "Timemory is a fully offline, local-only app. We do not collect, upload, or share any of your personal data. All your data stays on your device, under your complete control.",
+      "Timemory is a fully offline, local-only app. The App does not collect, upload, or share any of your personal data. All your data stays on your device, under your complete control.",
     localOnlyTitle: "Fully Local",
     noCollectionTitle: "No Data Collection",
     storageTitle: "Stored on Your Device",
     controlTitle: "You Stay in Control",
     section1Title: "1. Data Collection & Storage",
     section1:
-      "This app collects no personal data. All content you create (bills, items, assets, schedules, diaries, important dates, mood records, etc.) and configuration data (language, currency, reminders, password hash, categories, etc.) is stored locally in SQLite and AsyncStorage on your device. Image attachments are stored in the app's file system cache. All data resides within the app sandbox, inaccessible to other apps, and is deleted when you uninstall. Passwords are stored as SHA-256 hashes, never in plain text.",
+      "The App does not collect any personal data. All content you create (bills, items, assets, schedules, diaries, important dates, mood records, etc.) and configuration data (language, currency, reminders, password hash, categories, etc.) is stored locally in SQLite and AsyncStorage on your device. Image attachments are stored in the App's sandboxed file storage. All data resides within the App sandbox, inaccessible to other apps, and is deleted when you uninstall. Passwords are stored as SHA-256 hashes, never in plain text.",
     section1_1: null,
     section2Title: "2. Data Types We Do NOT Collect",
     section2:
-      "To align with Apple App Store Privacy Nutrition Labels and Google Play Data Safety, this app does NOT collect any of the following data types:",
+      "To align with Apple's App Store Privacy Nutrition Labels and Google Play's Data Safety requirements, the App does NOT collect any of the following data types:",
     section2_1Title: null,
     section2_1: null,
     section2_2Title: null,
@@ -168,7 +168,7 @@ export default {
     ],
     section3Title: "3. Data Usage & Sharing",
     section3:
-      "Your data is used only for in-app features: displaying records, calculating statistics, local reminder notifications, private diary password verification, and exporting Excel files. All processing is local — no remote or cloud computation.",
+      "Your data is used solely for in-app features: displaying records, calculating statistics, local reminder notifications, private diary password verification, and exporting Excel files. All processing is performed locally on your device — no cloud-based processing is involved.",
     section3_1: null,
     section3_2: null,
     section3_3: null,
@@ -178,7 +178,7 @@ export default {
     section4_2: null,
     section5Title: null,
     section5:
-      "We do not share your data with any third party — because we cannot access it. When you use the system share sheet (e.g., to share an exported Excel file), this is handled by the OS; the app does not participate in the transmission. This app integrates no third-party analytics, advertising, statistics, or tracking SDKs, and does not use your data for tracking purposes (as defined by Apple ATT and Google Play).",
+      "The App does not share your data with any third party — because it cannot access your data. When you use the system share sheet (e.g., to share an exported Excel file), the sharing is handled entirely by the operating system; the App does not participate in the transmission. The App integrates no third-party analytics, advertising, statistics, or tracking SDKs, and does not use your data for tracking purposes (as defined by Apple's App Tracking Transparency and Google Play's Data Safety policies).",
     section5_1: null,
     section5_2Title: null,
     section5_2: null,
@@ -187,41 +187,41 @@ export default {
     section6Title: "4. App Permissions",
     section6: null,
     section6_1Title: null,
-    section6_1: "Camera: Capture photo attachments; stored locally only.",
+    section6_1: "Camera: Used to capture photo attachments. Photos are stored locally only.",
     section6_2Title: null,
-    section6_2: "Photo Library: Select existing photos; stored locally only.",
+    section6_2: "Photo Library: Used to select existing photos. Photos are stored locally only.",
     section6_3Title: null,
-    section6_3: "Notifications: Locally scheduled reminders; no remote push service.",
+    section6_3: "Notifications: Used for locally scheduled reminders. No remote push notification service is involved.",
     section6_4Title: null,
-    section6_4: "File System: Store images and export files; app sandbox only.",
+    section6_4: "File System: Used to store images and export files within the App sandbox only.",
     section7Title: "5. Data Security & Deletion",
     section7:
-      "Private passwords are stored as SHA-256 hashes, never in plain text. All data is in the app sandbox, protected by the OS. This app makes no network requests — no risk of data interception.",
+      "Private passwords are stored as SHA-256 hashes, never in plain text. All data resides within the App sandbox and is protected by the operating system. The App makes no network requests, eliminating any risk of data interception.",
     section7_1: null,
     section7_2: null,
     section8Title: null,
     section8:
-      "Data retention is under your control. You can delete individual records, or use Settings > Data Management > Reset Data to clear everything. Uninstalling removes all data automatically. No account system — no account deletion needed.",
+      "You control how long your data is retained. You can delete individual records at any time, or use Settings > Data Management > Reset Data to clear all data at once. Uninstalling the App removes all data automatically. There is no account system, so no account deletion is required.",
     section8_1: null,
     section8_2: null,
     section9Title: "6. Your Rights",
     section9:
-      "You can exercise these rights directly within the app: view, edit, delete, and export (Excel) all your data; revoke permissions via system settings.",
+      "You can exercise the following rights directly within the App: view, edit, delete, and export (Excel) all your data; and revoke permissions via your device's system settings.",
     section9_1: null,
     section9_2: null,
     section10Title: "7. Children's Privacy",
     section10:
-      "This app collects no data from anyone, including children. We recommend children under 13 use the app with guardian supervision. This app contains no third-party advertising, analytics, or tracking.",
+      "The App does not collect any data from anyone, including children. We recommend that children under 13 use the App with guardian supervision. The App contains no third-party advertising, analytics, or tracking.",
     section10_1: null,
     section11Title: null,
     section11: null,
     section12Title: "8. Policy Updates",
     section12:
-      "We may update this policy from time to time. Updates will be published in the app with the revision date. Significant changes will be prompted via an in-app dialog.",
+      "This Privacy Policy may be updated from time to time. Updates will be published within the App along with the revision date. Significant changes will be communicated via an in-app dialog.",
     section12_1: null,
     section13Title: "9. Contact Us",
     section13:
-      "If you have questions, please reach us via the developer contact email on the app store page (App Store / Google Play). We will respond as soon as possible.",
+      "If you have any questions, please contact us via the developer contact email listed on the App Store or Google Play page. We will respond as soon as possible.",
     section13_1: null,
     section14Title: null,
     section14:
@@ -232,10 +232,10 @@ export default {
     effectiveDate: "Effective Date: August 6, 2026",
     section1Title: "1. Software License",
     section1:
-      "This App grants you a limited, non-exclusive, non-transferable license for personal use. You may install and use the App on your own devices, but you may not transfer this license to others. This license does not grant you any rights to the App's source code.",
-    section2Title: "2. User Rules",
+      "The App grants you a limited, non-exclusive, non-transferable license for personal use. You may install and use the App on your own devices, but you may not transfer this license to others. This license does not grant you any rights to the App's source code.",
+    section2Title: "2. Acceptable Use",
     section2:
-      "You agree not to reverse engineer, decompile, disassemble, or attempt to extract the source code of the App. You shall not use the App for any illegal activities or interfere with the normal operation of the App. You must comply with all applicable laws and regulations when using the App.",
+      "You agree not to reverse engineer, decompile, disassemble, or attempt to extract the source code of the App. You agree not to use the App for any illegal activities or to interfere with the normal operation of the App. You must comply with all applicable laws and regulations when using the App.",
     section3Title: "3. Intellectual Property",
     section3:
       "All intellectual property rights in the App and its content (including but not limited to code, design, icons, names, and trademarks) are owned by the developer. You may not copy, modify, distribute, or create derivative works of the App without the developer's express written permission.",
@@ -244,13 +244,13 @@ export default {
       "The App is provided \"as is\" without any express or implied warranties. The developer does not guarantee that the App will be error-free or uninterrupted, nor that it will meet your specific needs. You use the App at your own risk.",
     section5Title: "5. Limitation of Liability",
     section5:
-      "To the fullest extent permitted by law, the developer shall not be liable for any indirect, incidental, special, or consequential damages arising from the use of or inability to use the App, including but not limited to data loss, device damage, or loss of profits.",
+      "To the fullest extent permitted by applicable law, the developer shall not be liable for any indirect, incidental, special, or consequential damages arising from your use of, or inability to use, the App, including but not limited to data loss, device damage, or loss of profits.",
     section6Title: "6. Refund & Purchase Terms",
     section6:
-      "This App offers purchases through the Apple App Store and Google Play. All payments, refunds, and cancellation requests are subject to the respective platform's refund policies. The developer cannot directly process platform payment refunds. If you need a refund, please submit your request through the app store where you made the purchase.",
+      "The App offers purchases through the Apple App Store and Google Play. All payments, refunds, and cancellation requests are subject to the respective platform's refund policies. The developer is unable to process refunds directly for platform-based payments.",
     section7Title: "7. Contact",
     section7:
-      "If you have any questions about this Agreement, please contact us via the developer contact email provided on the app store page (App Store / Google Play).",
+      "If you have any questions about these Terms, please contact us via the developer contact email listed on the App Store or Google Play page.",
   },
   nav: {
     bills: "Bills",

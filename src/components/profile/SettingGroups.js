@@ -153,6 +153,7 @@ export default function SettingGroups() {
         </Text>
         <View style={styles.rows}>
           <SettingRow icon="shield-checkmark-outline" label={t('profile.privacyPolicy')} onPress={() => router.push('/settings/privacy')} />
+          <SettingRow icon="document-text-outline" label={t('profile.termsOfService')} onPress={() => router.push('/settings/terms')} />
           <SettingRow icon="information-circle-outline" label={t('profile.about')} value="v2.4.0" />
         </View>
       </View>

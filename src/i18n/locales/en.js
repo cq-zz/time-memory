@@ -123,6 +123,7 @@ export default {
     other: "More",
     otherDesc: "Privacy & version info",
     privacyPolicy: "Privacy Policy",
+    termsOfService: "Terms of Service",
     hello: "Hello, {{name}}!",
     about: "About Timemory",
     noAvatarHint: "No avatar set",
@@ -225,6 +226,31 @@ export default {
     section14Title: null,
     section14:
       "This Privacy Policy complies with applicable privacy laws, regulations, and platform policies.",
+  },
+  termsOfService: {
+    title: "Terms of Service",
+    effectiveDate: "Effective Date: August 6, 2026",
+    section1Title: "1. Software License",
+    section1:
+      "This App grants you a limited, non-exclusive, non-transferable license for personal use. You may install and use the App on your own devices, but you may not transfer this license to others. This license does not grant you any rights to the App's source code.",
+    section2Title: "2. User Rules",
+    section2:
+      "You agree not to reverse engineer, decompile, disassemble, or attempt to extract the source code of the App. You shall not use the App for any illegal activities or interfere with the normal operation of the App. You must comply with all applicable laws and regulations when using the App.",
+    section3Title: "3. Intellectual Property",
+    section3:
+      "All intellectual property rights in the App and its content (including but not limited to code, design, icons, names, and trademarks) are owned by the developer. You may not copy, modify, distribute, or create derivative works of the App without the developer's express written permission.",
+    section4Title: "4. Disclaimer",
+    section4:
+      "The App is provided \"as is\" without any express or implied warranties. The developer does not guarantee that the App will be error-free or uninterrupted, nor that it will meet your specific needs. You use the App at your own risk.",
+    section5Title: "5. Limitation of Liability",
+    section5:
+      "To the fullest extent permitted by law, the developer shall not be liable for any indirect, incidental, special, or consequential damages arising from the use of or inability to use the App, including but not limited to data loss, device damage, or loss of profits.",
+    section6Title: "6. Refund & Purchase Terms",
+    section6:
+      "This App offers purchases through the Apple App Store and Google Play. All payments, refunds, and cancellation requests are subject to the respective platform's refund policies. The developer cannot directly process platform payment refunds. If you need a refund, please submit your request through the app store where you made the purchase.",
+    section7Title: "7. Contact",
+    section7:
+      "If you have any questions about this Agreement, please contact us via the developer contact email provided on the app store page (App Store / Google Play).",
   },
   nav: {
     bills: "Bills",

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -309,15 +309,15 @@ function SheetShell({ visible, title, onClose, children }) {
         <Pressable style={[styles.overlay, { backgroundColor: Colors.overlay }]} onPress={onClose} />
         <View style={[styles.panel, { backgroundColor: Colors.card }]}>
           <View style={[styles.panelHeader, { borderBottomColor: Colors.cardBorder }]}>
+            <View style={styles.headerSpacer} />
+            <Text style={[styles.panelTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
+              {title}
+            </Text>
             <Pressable onPress={onClose}>
               <Text style={[styles.headerBtnCancel, { color: Colors.textTertiary, fontFamily: Fonts.regular }]}>
                 {t('common.cancel')}
               </Text>
             </Pressable>
-            <Text style={[styles.panelTitle, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
-              {title}
-            </Text>
-            <View style={styles.headerSpacer} />
           </View>
           {children}
         </View>
@@ -632,6 +632,8 @@ function ImportModal({ visible, onClose, onDataChanged }) {
   const [moduleId, setModuleId] = useState('durable');
   const [file, setFile] = useState(null); // { name, bytes }
   const [busy, setBusy] = useState(false);
+  const [billGenOpen, setBillGenOpen] = useState(false);
+  const pendingImportRef = useRef(null); // stores the file data for deferred import after confirmation
 
   useEffect(() => {
     if (visible) {
@@ -664,12 +666,14 @@ function ImportModal({ visible, onClose, onDataChanged }) {
     }
   };
 
-  const handleImport = async () => {
+  // Actual import logic; shouldGenBills controls whether durable/asset auto-creates bills
+  const doImport = async (shouldGenBills) => {
     const mod = moduleById(moduleId);
-    if (!mod || !file || busy) return;
+    const currentFile = pendingImportRef.current || file;
+    if (!mod || !currentFile || busy) return;
     setBusy(true);
     try {
-      const sheetRows = readSheetRows(file.bytes);
+      const sheetRows = readSheetRows(currentFile.bytes);
       const [headerRow, ...dataRows] = sheetRows;
       if (!headerRow || dataRows.length === 0) {
         alert(t('butler.emptyFileTitle'), t('butler.emptyFileDesc'));
@@ -689,6 +693,7 @@ function ImportModal({ visible, onClose, onDataChanged }) {
       const existingRows = await getAllRows(mod.table);
       const seen = new Set(existingRows.map((row) => duplicateKey(mod.id, row)));
       let ok = 0;
+      let billCount = 0;
       let skipped = 0;
       const errors = [];
       const CATEGORY_MODULES = ['durable', 'asset', 'bills', 'important-date'];
@@ -721,11 +726,18 @@ function ImportModal({ visible, onClose, onDataChanged }) {
             ? result.data
             : { id: genId(), ...result.data };
           await insertRow(mod.table, rowToInsert);
-          // Auto-create or update the linked bill for durable/asset imports
-          try {
-            if (mod.id === 'durable') await syncBillForDurable(rowToInsert);
-            else if (mod.id === 'asset') await syncBillForAsset(rowToInsert);
-          } catch { /* non-critical — bill sync failure shouldn't block the import */ }
+          // Auto-create bill for durable/asset only when user confirmed
+          if (shouldGenBills) {
+            try {
+              if (mod.id === 'durable') {
+                await syncBillForDurable(rowToInsert);
+                billCount += 1;
+              } else if (mod.id === 'asset') {
+                await syncBillForAsset(rowToInsert);
+                billCount += 1;
+              }
+            } catch { /* non-critical — bill sync failure shouldn't block the import */ }
+          }
           seen.add(key);
           ok += 1;
         } catch (e) {
@@ -738,10 +750,14 @@ function ImportModal({ visible, onClose, onDataChanged }) {
       }
 
       const moduleName = t(MODULE_LABEL_KEYS[mod.id], { defaultValue: mod.label }).toLowerCase();
+      const successMsg = billCount > 0
+        ? t('butler.importedWithBills', { count: ok, module: moduleName, billCount })
+        : t('butler.importedRows', { count: ok, module: moduleName });
+      const skipMsg = skipped ? `，${t('butler.importSkippedDuplicates', { count: skipped })}` : '';
+
       if (errors.length > 0) {
         if (ok > 0) {
-          showToast(t('butler.importedRows', { count: ok, module: moduleName }) +
-            (skipped ? `，${t('butler.importSkippedDuplicates', { count: skipped })}` : ''));
+          showToast(successMsg + skipMsg);
           onDataChanged?.();
         }
         const shown = errors.slice(0, 5).join('\n');
@@ -756,15 +772,28 @@ function ImportModal({ visible, onClose, onDataChanged }) {
       } else if (ok === 0) {
         alert(t('butler.nothingImportedTitle'), t('butler.nothingImportedDesc'));
       } else {
-        showToast(t('butler.importedRows', { count: ok, module: moduleName }) +
-          (skipped ? `，${t('butler.importSkippedDuplicates', { count: skipped })}` : ''));
+        showToast(successMsg + skipMsg);
         onDataChanged?.();
       }
     } catch (e) {
       alert(t('butler.importFailedTitle'), e?.message || t('butler.importFailedDesc'));
     } finally {
       setBusy(false);
+      pendingImportRef.current = null;
     }
+  };
+
+  const handleImport = async () => {
+    const mod = moduleById(moduleId);
+    if (!mod || !file || busy) return;
+    // For durable/asset, ask user whether to auto-generate bills
+    if (mod.id === 'durable' || mod.id === 'asset') {
+      pendingImportRef.current = file;
+      setBillGenOpen(true);
+      return;
+    }
+    // Other modules: import directly without bill generation
+    await doImport(false);
   };
 
   return (
@@ -810,6 +839,26 @@ function ImportModal({ visible, onClose, onDataChanged }) {
       <View style={styles.footer}>
         <PrimaryButton label={t('butler.importBtn')} onPress={handleImport} busy={busy} disabled={!file} />
       </View>
+
+      <ConfirmModal
+        visible={billGenOpen}
+        onClose={() => setBillGenOpen(false)}
+        onCancel={() => {
+          setBillGenOpen(false);
+          doImport(false);
+        }}
+        onConfirm={async () => {
+          setBillGenOpen(false);
+          await doImport(true);
+        }}
+        icon="help-circle-outline"
+        title={t('butler.importBillGenTitle')}
+        description={t('butler.importBillGenDesc', {
+          module: t(MODULE_LABEL_KEYS[moduleId], { defaultValue: moduleId }),
+        })}
+        cancelText={t('butler.importBillGenSkip')}
+        confirmText={t('butler.importBillGenConfirm')}
+      />
     </SheetShell>
   );
 }

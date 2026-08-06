@@ -11,6 +11,7 @@ import { useTheme, hexToRgba } from '../../utils/theme';
 export default function ConfirmModal({
   visible,
   onClose,
+  onCancel,
   onConfirm,
   title,
   description,
@@ -59,7 +60,7 @@ export default function ConfirmModal({
                 { backgroundColor: Colors.card, borderColor: Colors.cardBorder },
                 pressed && { opacity: 0.7 },
               ]}
-              onPress={onClose}
+              onPress={onCancel || onClose}
             >
               <Text style={[styles.cancelText, { color: Colors.textSecondary, fontFamily: Fonts.semiBold }]}>
                 {cancelText || t('common.cancel')}

@@ -691,6 +691,8 @@ function ImportModal({ visible, onClose, onDataChanged }) {
       let ok = 0;
       let skipped = 0;
       const errors = [];
+      const CATEGORY_MODULES = ['durable', 'asset', 'bills', 'important-date'];
+      const RELATION_MODULES = ['durable', 'bills'];
       for (let i = 0; i < dataRows.length; i += 1) {
         const row = dataRows[i];
         if (!row || row.every((c) => c === '' || c === null || c === undefined)) continue;
@@ -705,9 +707,15 @@ function ImportModal({ visible, onClose, onDataChanged }) {
             skipped += 1;
             continue;
           }
-          result.data.category = await resolveImportedCategory(mod.id, result.data.category, t);
-          if (!(await resolveImportedRelation(mod.id, result.data, alert, t))) {
-            return;
+          // Category resolution: only for modules that have a category field
+          if (CATEGORY_MODULES.includes(mod.id)) {
+            result.data.category = await resolveImportedCategory(mod.id, result.data.category, t);
+          }
+          // Relation resolution: only for modules that have relation logic
+          if (RELATION_MODULES.includes(mod.id)) {
+            if (!(await resolveImportedRelation(mod.id, result.data, alert, t))) {
+              return;
+            }
           }
           const rowToInsert = mod.id === 'mood'
             ? result.data

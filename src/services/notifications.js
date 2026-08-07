@@ -98,19 +98,21 @@ function zhTitle(item) {
 function enBody(item) {
   const name = item.title || '';
   const d = item.daysLeft;
+  const ad = Math.abs(d);
+  const s = ad === 1 ? '' : 's';
   switch (item.module) {
     case 'schedule':
-      if (item.phase === 'upcoming') return `${name} starts in ${d} day(s)`;
-      if (item.expired) return `${name} is ${-d} day(s) overdue`;
-      return d === 0 ? `${name} ends today` : `${name} ends in ${d} day(s)`;
+      if (item.phase === 'upcoming') return `${name} starts in ${d} day${s}`;
+      if (item.expired) return `${name} is ${ad} day${s} overdue`;
+      return d === 0 ? `${name} ends today` : `${name} ends in ${d} day${s}`;
     case 'durable':
-      if (item.expired) return `${name} expired ${-d} day(s) ago`;
-      return d === 0 ? `${name} expires today` : `${name} expires in ${d} day(s)`;
+      if (item.expired) return `${name} expired ${ad} day${s} ago`;
+      return d === 0 ? `${name} expires today` : `${name} expires in ${d} day${s}`;
     case 'asset':
-      if (item.expired) return `${name} expired ${-d} day(s) ago`;
-      return d === 0 ? `${name} expires today` : `${name} expires in ${d} day(s)`;
+      if (item.expired) return `${name} expired ${ad} day${s} ago`;
+      return d === 0 ? `${name} expires today` : `${name} expires in ${d} day${s}`;
     case 'important-date':
-      return d === 0 ? `${name} is today` : `${name} is in ${d} day(s)`;
+      return d === 0 ? `${name} is today` : `${name} is in ${d} day${s}`;
     default:
       return '';
   }
@@ -123,13 +125,13 @@ function zhBody(item) {
     case 'schedule':
       if (item.phase === 'upcoming') return `「${name}」将在${d}天后开始`;
       if (item.expired) return `「${name}」已逾期${-d}天`;
-      return d === 0 ? `「${name}」今天到期` : `「${name}」还剩${d}天`;
+      return d === 0 ? `「${name}」今天到期` : `「${name}」${d}天后结束`;
     case 'durable':
       if (item.expired) return `「${name}」已过期${-d}天`;
-      return d === 0 ? `「${name}」今天到期` : `「${name}」将在${d}天后过期`;
+      return d === 0 ? `「${name}」今天过期` : `「${name}」${d}天后过期`;
     case 'asset':
       if (item.expired) return `「${name}」已失效${-d}天`;
-      return d === 0 ? `「${name}」今天失效` : `「${name}」将在${d}天后失效`;
+      return d === 0 ? `「${name}」今天失效` : `「${name}」${d}天后失效`;
     case 'important-date':
       return d === 0 ? `「${name}」就是今天` : `距离「${name}」还有${d}天`;
     default:

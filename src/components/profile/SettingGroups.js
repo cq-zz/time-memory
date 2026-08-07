@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import Constants from 'expo-constants';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore, languageMeta } from '../../store/settings';
 import { useProfileStore } from '../../store/profile';
@@ -154,7 +155,7 @@ export default function SettingGroups() {
         <View style={styles.rows}>
           <SettingRow icon="shield-checkmark-outline" label={t('profile.privacyPolicy')} onPress={() => router.push('/settings/privacy')} />
           <SettingRow icon="document-text-outline" label={t('profile.termsOfService')} onPress={() => router.push('/settings/terms')} />
-          <SettingRow icon="information-circle-outline" label={t('profile.about')} value="v2.4.0" />
+          <SettingRow icon="information-circle-outline" label={t('profile.about')} value={`v${Constants.expoConfig?.version || '1.0.0'}`} onPress={() => router.push('/settings/about')} />
         </View>
       </View>
 

@@ -1089,7 +1089,6 @@ export default {
     telecom: "Phone/Internet",
     utility: "Utilities",
     shopping: "Shopping",
-    beauty: "Beauty",
     entertainment: "Entertainment",
     sports: "Sports & Fitness",
     education: "Education",

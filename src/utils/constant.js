@@ -119,7 +119,6 @@ const BILL_CATEGORIES = [
   { key: 'telecom', label: 'Telecom', icon: 'wifi-outline' },
   { key: 'utility', label: 'Utilities', icon: 'flash-outline' },
   { key: 'shopping', label: 'Shopping', icon: 'card-outline' },
-  { key: 'beauty', label: 'Beauty', icon: 'color-palette-outline' },
   { key: 'entertainment', label: 'Entertainment', icon: 'game-controller-outline' },
   { key: 'sports', label: 'Sports & Fitness', icon: 'fitness-outline' },
   { key: 'education', label: 'Education', icon: 'book-outline' },

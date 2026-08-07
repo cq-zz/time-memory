@@ -44,12 +44,12 @@ function FeatureCard({ title, icon, color, stat, statLines, onPress }) {
       onPress={onPress}
     >
       <View style={[styles.iconBox, { backgroundColor: `${color}1A` }]}>
-        <Ionicons name={icon} size={16} color={color} />
+        <Ionicons name={icon} size={18} color={color} />
       </View>
       <View style={styles.cardRight}>
         <Text
           style={[styles.title, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}
-          numberOfLines={1}
+          numberOfLines={2}
         >
           {title}
         </Text>
@@ -207,13 +207,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    padding: 12,
+    padding: 14,
     borderWidth: 1,
   },
   iconBox: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -223,12 +223,12 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   title: {
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 20,
   },
   stat: {
-    fontSize: 11,
-    lineHeight: 15,
+    fontSize: 12,
+    lineHeight: 16,
   },
   statLines: {
     gap: 1,

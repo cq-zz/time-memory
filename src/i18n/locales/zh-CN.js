@@ -1079,7 +1079,6 @@ export default {
     telecom: "通讯网络",
     utility: "生活缴费",
     shopping: "购物",
-    beauty: "美妆",
     entertainment: "娱乐",
     sports: "运动健身",
     education: "教育",

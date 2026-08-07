@@ -38,6 +38,7 @@ import { hasPassword } from '../../utils/password';
 import { syncBillForDurable } from '../../services/durable';
 import { syncBillForAsset } from '../../services/asset';
 import { sourceLink, isDurableSource, isAssetSource, sourceBase } from '../../utils/excel';
+import { debouncedReschedule } from '../../services/notifications';
 
 const XLSX_MIME = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
 const RESET_PRESERVED_SETTING_KEYS = ['profile.avatar', 'profile.nickname', 'darkMode', 'language'];
@@ -422,6 +423,7 @@ function MigrationModal({ visible, onClose, onDataChanged }) {
       ]);
       showToast(t('butler.importDbSuccess'));
       onDataChanged?.();
+      debouncedReschedule();
     } catch (e) {
       alert(
         t('butler.importDbFailed'),
@@ -759,6 +761,7 @@ function ImportModal({ visible, onClose, onDataChanged }) {
         if (ok > 0) {
           showToast(successMsg + skipMsg);
           onDataChanged?.();
+          debouncedReschedule();
         }
         const shown = errors.slice(0, 5).join('\n');
         const more = errors.length > 5 ? `\n${t('butler.moreErrors', { count: errors.length - 5 })}` : '';
@@ -769,11 +772,13 @@ function ImportModal({ visible, onClose, onDataChanged }) {
       } else if (ok === 0 && skipped > 0) {
         showToast(t('butler.importSkippedDuplicates', { count: skipped }));
         onDataChanged?.();
+        debouncedReschedule();
       } else if (ok === 0) {
         alert(t('butler.nothingImportedTitle'), t('butler.nothingImportedDesc'));
       } else {
         showToast(successMsg + skipMsg);
         onDataChanged?.();
+        debouncedReschedule();
       }
     } catch (e) {
       alert(t('butler.importFailedTitle'), e?.message || t('butler.importFailedDesc'));
@@ -900,6 +905,7 @@ export default function DataManagement({ onDataChanged }) {
       ]);
       showToast(t('butler.allDataCleared'));
       onDataChanged?.();
+      debouncedReschedule();
     } catch (e) {
       showToast(t('butler.resetFailedDesc'));
     }

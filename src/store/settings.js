@@ -26,6 +26,7 @@ export const DEFAULT_SETTINGS = {
   yearEnd: MAX_YEAR_DEFAULT,
   durableRemindDays: 2, // item expiry reminder lead (0–7)
   assetRemindDays: 30, // asset expiry reminder lead (0–365)
+  notificationsEnabled: true, // system notification toggle
 };
 
 export const LANGUAGES = [

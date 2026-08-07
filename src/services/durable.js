@@ -136,6 +136,7 @@ export async function saveDurable(values, id) {
   }
   // Sync linked bill — fire-and-forget (don't block the save)
   syncBillForDurable({ id: savedId, ...values }).catch(() => {});
+  import('./notifications').then((m) => m.debouncedReschedule());
   return savedId;
 }
 
@@ -151,7 +152,9 @@ export async function removeDurable(id) {
       await updateRow('bills', b.id, { source: null, source_id: null, updated_at: new Date().toISOString() });
     }
   } catch { /* non-critical */ }
-  return deleteRow(TABLE, id);
+  const result = await deleteRow(TABLE, id);
+  import('./notifications').then((m) => m.debouncedReschedule());
+  return result;
 }
 
 /**

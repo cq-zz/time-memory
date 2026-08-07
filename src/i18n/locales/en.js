@@ -636,6 +636,7 @@ export default {
     selectLanguage: "Language",
     reminderSettings: "Reminders",
     reminderSettingsDesc: "Set reminder days for plans & items",
+    notificationsEnabled: "Notifications",
     scheduleRemind: "Plan Reminder",
     scheduleRemindDesc: "{{days}}d before start",
     daysShort: "{{days}}d",

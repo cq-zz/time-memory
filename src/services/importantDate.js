@@ -92,22 +92,30 @@ export async function saveImportantDate(values, id) {
     throw new Error('reminderDaysInvalid');
   }
   fields.reminder_days_before = fields.reminder_enabled ? reminderDays : 0;
+  let savedId;
   if (id) {
     await updateRow(TABLE, id, { ...fields, updated_at: now });
-    return id;
+    savedId = id;
+  } else {
+    const newId = genId();
+    await insertRow(TABLE, { id: newId, ...fields, created_at: now, updated_at: now });
+    savedId = newId;
   }
-  const newId = genId();
-  await insertRow(TABLE, { id: newId, ...fields, created_at: now, updated_at: now });
-  return newId;
+  import('./notifications').then((m) => m.debouncedReschedule());
+  return savedId;
 }
 
 /** Partial update (e.g. reminder toggle). Adds updated_at. */
 export async function patchImportantDate(id, patch) {
   const fields = { ...patch };
   if (fields.reminder_enabled !== undefined) fields.reminder_enabled = fields.reminder_enabled ? 1 : 0;
-  return updateRow(TABLE, id, { ...fields, updated_at: new Date().toISOString() });
+  const result = await updateRow(TABLE, id, { ...fields, updated_at: new Date().toISOString() });
+  import('./notifications').then((m) => m.debouncedReschedule());
+  return result;
 }
 
 export async function removeImportantDate(id) {
-  return deleteRow(TABLE, id);
+  const result = await deleteRow(TABLE, id);
+  import('./notifications').then((m) => m.debouncedReschedule());
+  return result;
 }

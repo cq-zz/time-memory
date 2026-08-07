@@ -28,6 +28,7 @@
       "@react-native-community/datetimepicker",
       "expo-sharing",
       "expo-localization",
+      "expo-notifications",
       [
         "expo-splash-screen",
         {

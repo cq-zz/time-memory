@@ -634,6 +634,7 @@ export default {
     selectLanguage: "选择语言",
     reminderSettings: "提醒设置",
     reminderSettingsDesc: "自定义计划与物品提醒的提前天数",
+    notificationsEnabled: "系统通知",
     scheduleRemind: "计划开始提醒",
     scheduleRemindDesc: "提前 {{days}} 天提醒",
     daysShort: "{{days}}天",

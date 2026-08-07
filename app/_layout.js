@@ -10,6 +10,7 @@ import { useProfileStore } from '../src/store/profile';
 import { useTheme } from '../src/utils/theme';
 import ToastProvider from '../src/components/common/Toast';
 import { AlertProvider } from '../src/hooks/useAlert';
+import { initNotifications, setupNotificationResponseListener, removeNotificationResponseListener } from '../src/services/notifications';
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -30,6 +31,19 @@ export default function RootLayout() {
     useCategoryStore.getState().loadCategories();
     useProfileStore.getState().loadProfile();
   }, []);
+
+  // Notification init — runs after settings are loaded
+  useEffect(() => {
+    if (!settingsLoaded) return;
+    const init = async () => {
+      await initNotifications();
+      setupNotificationResponseListener();
+    };
+    init();
+    return () => {
+      removeNotificationResponseListener();
+    };
+  }, [settingsLoaded]);
 
   if (!fontsLoaded || !settingsLoaded) {
     return null;

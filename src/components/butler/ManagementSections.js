@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -8,6 +8,7 @@ import { useSettingsStore, currencyMeta } from '../../store/settings';
 import CurrencyModal from './CurrencyModal';
 import YearRangeModal from './YearRangeModal';
 import DataManagement from './DataManagement';
+import { scheduleAllNotifications, cancelAllNotifications, requestPermissions } from '../../services/notifications';
 
 const CATEGORY_ROW_ICONS = {
   item: 'pricetag-outline',
@@ -62,7 +63,11 @@ function StepperRow({ label, value, min, max, onChange, showBorder }) {
 
   const step = (delta) => {
     const next = Math.min(max, Math.max(min, value + delta));
-    if (next !== value) onChange(next);
+    if (next !== value) {
+      onChange(next);
+      // Reschedule notifications when reminder days change
+      import('../../services/notifications').then((m) => m.debouncedReschedule());
+    }
   };
 
   const btnStyle = (disabled) => [
@@ -110,6 +115,18 @@ export default function ManagementSections({ onDataChanged }) {
 
   const [currencyOpen, setCurrencyOpen] = useState(false);
   const [yearRangeOpen, setYearRangeOpen] = useState(false);
+
+  const handleNotificationToggle = async (enabled) => {
+    await updateSetting('notificationsEnabled', enabled);
+    if (enabled) {
+      const granted = await requestPermissions();
+      if (granted) {
+        await scheduleAllNotifications();
+      }
+    } else {
+      await cancelAllNotifications();
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -167,6 +184,20 @@ export default function ManagementSections({ onDataChanged }) {
 
         {/* Remind settings card */}
         <View style={[styles.card, { backgroundColor: Colors.card, borderColor: Colors.grayDot }]}>
+          <View style={[styles.switchRow, { borderBottomColor: Colors.cardBorder, borderBottomWidth: 1 }]}>
+            <View style={styles.rowLeft}>
+              <Ionicons name="notifications-outline" size={18} color={Colors.textPrimary} />
+              <Text style={[styles.rowLabel, { color: Colors.textDark, fontFamily: Fonts.semiBold }]}>
+                {t('settings.notificationsEnabled')}
+              </Text>
+            </View>
+            <Switch
+              value={settings.notificationsEnabled !== false}
+              onValueChange={handleNotificationToggle}
+              trackColor={{ false: Colors.grayDot, true: Colors.purple }}
+              thumbColor="#fff"
+            />
+          </View>
           <StepperRow
             label={t('settings.durableRemind')}
             value={settings.durableRemindDays}
@@ -227,6 +258,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   remindRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  switchRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',

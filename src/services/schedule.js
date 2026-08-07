@@ -64,13 +64,17 @@ export async function saveSchedule(values, id) {
   const fields = { ...values };
   if (Array.isArray(fields.checklist)) fields.checklist = JSON.stringify(fields.checklist);
   fields.reminder_enabled = fields.reminder_enabled ? 1 : 0;
+  let savedId;
   if (id) {
     await updateRow(TABLE, id, { ...fields, updated_at: now });
-    return id;
+    savedId = id;
+  } else {
+    const newId = genId();
+    await insertRow(TABLE, { id: newId, ...fields, created_at: now, updated_at: now });
+    savedId = newId;
   }
-  const newId = genId();
-  await insertRow(TABLE, { id: newId, ...fields, created_at: now, updated_at: now });
-  return newId;
+  import('./notifications').then((m) => m.debouncedReschedule());
+  return savedId;
 }
 
 /** Partial update (quick status / reminder toggles). Adds updated_at. */
@@ -78,9 +82,13 @@ export async function patchSchedule(id, patch) {
   const fields = { ...patch };
   if (Array.isArray(fields.checklist)) fields.checklist = JSON.stringify(fields.checklist);
   if (fields.reminder_enabled !== undefined) fields.reminder_enabled = fields.reminder_enabled ? 1 : 0;
-  return updateRow(TABLE, id, { ...fields, updated_at: new Date().toISOString() });
+  const result = await updateRow(TABLE, id, { ...fields, updated_at: new Date().toISOString() });
+  import('./notifications').then((m) => m.debouncedReschedule());
+  return result;
 }
 
 export async function removeSchedule(id) {
-  return deleteRow(TABLE, id);
+  const result = await deleteRow(TABLE, id);
+  import('./notifications').then((m) => m.debouncedReschedule());
+  return result;
 }

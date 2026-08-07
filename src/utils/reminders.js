@@ -200,13 +200,13 @@ export function reminderStatusText(item, t) {
       return t('reminder.endsIn', { count: item.daysLeft });
     }
     case 'durable': {
-      if (item.expired) return t('reminder.expired');
-      if (item.daysLeft === 0) return t('reminder.dueToday');
+      if (item.expired) return t('reminder.expired', { count: -item.daysLeft });
+      if (item.daysLeft === 0) return t('reminder.todayDurableExpires');
       return t('reminder.expiresIn', { count: item.daysLeft });
     }
     case 'asset': {
-      if (item.expired) return t('reminder.assetExpired');
-      if (item.daysLeft === 0) return t('reminder.dueToday');
+      if (item.expired) return t('reminder.assetExpired', { count: -item.daysLeft });
+      if (item.daysLeft === 0) return t('reminder.todayAssetExpires');
       return t('reminder.assetExpiresIn', { count: item.daysLeft });
     }
     default: { // important-date
@@ -220,19 +220,19 @@ export function reminderStatusText(item, t) {
 export function reminderTimelineText(item, t) {
   switch (item.module) {
     case 'schedule': {
-      if (item.expired) return t('home.overdue');
-      if (item.daysLeft === 0) return t('home.todayDue');
+      if (item.expired) return t('home.overdue', { count: -item.daysLeft });
+      if (item.daysLeft === 0) return t('home.todayScheduleDue');
       if (item.phase === 'upcoming') return t('home.startsIn', { count: item.daysLeft });
       return t('home.endsIn', { count: item.daysLeft });
     }
     case 'durable': {
-      if (item.expired) return t('home.expired');
-      if (item.daysLeft === 0) return t('home.todayDue');
+      if (item.expired) return t('home.expired', { count: -item.daysLeft });
+      if (item.daysLeft === 0) return t('home.todayDurableExpires');
       return t('home.expiresIn', { count: item.daysLeft });
     }
     case 'asset': {
-      if (item.expired) return t('home.assetExpired');
-      if (item.daysLeft === 0) return t('home.todayDue');
+      if (item.expired) return t('home.assetExpired', { count: -item.daysLeft });
+      if (item.daysLeft === 0) return t('home.todayAssetExpires');
       return t('home.assetExpiresIn', { count: item.daysLeft });
     }
     default: { // important-date

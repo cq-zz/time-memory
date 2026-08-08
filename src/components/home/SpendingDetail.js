@@ -12,8 +12,60 @@ const PALETTE = ['#A05C82', '#F28B50', '#4AA868', '#E86B6B', '#4A90D9', '#8B7AE8
 
 const pad = (n) => String(n).padStart(2, '0');
 
+/* ── Week helpers ── */
+
+/**
+ * Get the week number for a given date.
+ * Week 1 is the week containing January 1.
+ */
+export function getWeekNumber(date, weekStartDay = 1) {
+  const year = date.getFullYear();
+  const jan1 = new Date(year, 0, 1);
+  const jan1Day = jan1.getDay();
+  let daysToWeekStart = jan1Day - weekStartDay;
+  if (daysToWeekStart < 0) daysToWeekStart += 7;
+  const week1Start = new Date(year, 0, 1 - daysToWeekStart);
+  const diff = (date.getTime() - week1Start.getTime()) / (1000 * 60 * 60 * 24);
+  return Math.floor(diff / 7) + 1;
+}
+
+/**
+ * Get the date range (start and end) for a given year and week number.
+ * Returns { startDate, endDate } as 'YYYY-MM-DD' strings.
+ */
+export function getWeekDateRange(year, weekNumber, weekStartDay = 1) {
+  const jan1 = new Date(year, 0, 1);
+  const jan1Day = jan1.getDay();
+  let daysToWeekStart = jan1Day - weekStartDay;
+  if (daysToWeekStart < 0) daysToWeekStart += 7;
+  const week1Start = new Date(year, 0, 1 - daysToWeekStart);
+  const weekStart = new Date(week1Start);
+  weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
+  const weekEnd = new Date(weekStart);
+  weekEnd.setDate(weekEnd.getDate() + 6);
+  const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  return { startDate: fmt(weekStart), endDate: fmt(weekEnd) };
+}
+
+/**
+ * Get the total number of weeks in a year.
+ */
+export function getWeeksInYear(year, weekStartDay = 1) {
+  const dec31 = new Date(year, 11, 31);
+  return getWeekNumber(dec31, weekStartDay);
+}
+
 /* ── Helpers ── */
-function filterBillsByPeriod(bills, year, month, day) {
+function filterBillsByPeriod(bills, year, month, day, week) {
+  if (week != null) {
+    // Week filtering: get the week's date range
+    const weekStartDay = useSettingsStore.getState().settings.weekStartDay;
+    const range = getWeekDateRange(year, week, weekStartDay);
+    return (bills || []).filter((b) => {
+      const d = (b.consumption_date || '').slice(0, 10);
+      return d >= range.startDate && d <= range.endDate;
+    });
+  }
   if (day != null) {
     const key = `${year}-${pad(month)}-${pad(day)}`;
     return (bills || []).filter((b) => (b.consumption_date || '').slice(0, 10) === key);
@@ -37,18 +89,23 @@ function categoryTotals(bills, billType) {
 }
 
 /* ── Wheel-based Period Picker ── */
-export function PeriodPicker({ dimension, year, month, day, onChange }) {
+export function PeriodPicker({ dimension, year, month, day, week, onChange }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
   const yearStart = useSettingsStore((s) => s.settings.yearStart);
   const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
+  const weekStartDay = useSettingsStore((s) => s.settings.weekStartDay);
   const [open, setOpen] = useState(false);
 
   const displayText = useMemo(() => {
     if (dimension === 'year') return String(year);
+    if (dimension === 'week' && week != null) {
+      const range = getWeekDateRange(year, week, weekStartDay);
+      return `${year} W${week} (${range.startDate.slice(5)}~${range.endDate.slice(5)})`;
+    }
     if (dimension === 'day') return `${year}/\u2060${pad(month)}/\u2060${pad(day)}`;
     return `${year}/\u2060${pad(month)}`;
-  }, [dimension, year, month, day]);
+  }, [dimension, year, month, day, week, weekStartDay]);
 
   const yearItems = useMemo(() => {
     const items = [];
@@ -64,24 +121,28 @@ export function PeriodPicker({ dimension, year, month, day, onChange }) {
   const [draftYear, setDraftYear] = useState(year);
   const [draftMonth, setDraftMonth] = useState(month || 1);
   const [draftDay, setDraftDay] = useState(day || 1);
+  const [draftWeek, setDraftWeek] = useState(week || 1);
 
   const handleOpen = useCallback(() => {
     setDraftYear(year);
     setDraftMonth(month || 1);
     setDraftDay(day || 1);
+    setDraftWeek(week || 1);
     setOpen(true);
-  }, [year, month, day]);
+  }, [year, month, day, week]);
 
   const handleConfirm = useCallback(() => {
     if (dimension === 'year') {
-      onChange(draftYear, null, null);
+      onChange(draftYear, null, null, null);
+    } else if (dimension === 'week') {
+      onChange(draftYear, null, null, draftWeek);
     } else if (dimension === 'day') {
-      onChange(draftYear, draftMonth, draftDay);
+      onChange(draftYear, draftMonth, draftDay, null);
     } else {
-      onChange(draftYear, draftMonth, null);
+      onChange(draftYear, draftMonth, null, null);
     }
     setOpen(false);
-  }, [dimension, draftYear, draftMonth, draftDay, onChange]);
+  }, [dimension, draftYear, draftMonth, draftDay, draftWeek, onChange]);
 
   // Day items: 1..daysInMonth based on draft year/month
   const dayItems = useMemo(() => {
@@ -89,17 +150,31 @@ export function PeriodPicker({ dimension, year, month, day, onChange }) {
     return Array.from({ length: days }, (_, i) => ({ value: i + 1, label: String(i + 1) }));
   }, [draftYear, draftMonth]);
 
+  // Week items: 1..weeksInYear based on draft year
+  const weekItems = useMemo(() => {
+    const weeks = getWeeksInYear(draftYear, weekStartDay);
+    return Array.from({ length: weeks }, (_, i) => ({ value: i + 1, label: `W${i + 1}` }));
+  }, [draftYear, weekStartDay]);
+
   // When month wraps, adjust day to valid range
   const safeDraftDay = useMemo(() => {
     const maxDay = new Date(draftYear, draftMonth, 0).getDate();
     return Math.min(draftDay, maxDay);
   }, [draftYear, draftMonth, draftDay]);
 
+  // Clamp week to valid range
+  const safeDraftWeek = useMemo(() => {
+    const maxWeek = getWeeksInYear(draftYear, weekStartDay);
+    return Math.min(draftWeek, maxWeek);
+  }, [draftYear, draftWeek, weekStartDay]);
+
   const panelTitle = dimension === 'year'
     ? t('common.selectYear')
-    : dimension === 'day'
-      ? t('common.selectDate')
-      : t('common.selectYearMonth');
+    : dimension === 'week'
+      ? t('common.selectYearWeek')
+      : dimension === 'day'
+        ? t('common.selectDate')
+        : t('common.selectYearMonth');
 
   return (
     <View>
@@ -112,7 +187,7 @@ export function PeriodPicker({ dimension, year, month, day, onChange }) {
         onPress={handleOpen}
       >
         <Ionicons name="calendar-outline" size={16} color={Colors.purple} />
-        <Text style={[styles.triggerText, { color: Colors.purple, fontFamily: Fonts.bold }]}>
+        <Text style={[styles.triggerText, { color: Colors.purple, fontFamily: Fonts.bold }]} numberOfLines={1}>
           {displayText}
         </Text>
       </Pressable>
@@ -143,8 +218,16 @@ export function PeriodPicker({ dimension, year, month, day, onChange }) {
                     items={yearItems}
                     selected={draftYear}
                     onChange={setDraftYear}
-                    width={dimension === 'year' ? 120 : dimension === 'day' ? 70 : 80}
+                    width={dimension === 'year' ? 120 : dimension === 'week' ? 80 : dimension === 'day' ? 70 : 80}
                   />
+                  {dimension === 'week' && (
+                    <WheelColumn
+                      items={weekItems}
+                      selected={safeDraftWeek}
+                      onChange={setDraftWeek}
+                      width={80}
+                    />
+                  )}
                   {(dimension === 'month' || dimension === 'day') && (
                     <WheelColumn
                       items={monthItems}
@@ -172,16 +255,18 @@ export function PeriodPicker({ dimension, year, month, day, onChange }) {
 }
 
 /* ── Main Component ── */
-export default function SpendingDetail({ bills = [], billType = 'expense', year: extYear, month: extMonth, day: extDay, dimension: extDimension, hideControls = false, hideTitle = false }) {
+export default function SpendingDetail({ bills = [], billType = 'expense', year: extYear, month: extMonth, day: extDay, week: extWeek, dimension: extDimension, hideControls = false, hideTitle = false }) {
   const { Colors, Fonts, Radius, Shadows } = useTheme();
   const { t } = useTranslation();
   const currency = useSettingsStore((s) => s.settings.currency);
+  const weekStartDay = useSettingsStore((s) => s.settings.weekStartDay);
   const categoryState = useCategoryStore();
 
   const now = new Date();
   const curYear = now.getFullYear();
   const curMonth = now.getMonth() + 1;
   const curDay = now.getDate();
+  const curWeek = useMemo(() => getWeekNumber(now, weekStartDay), [weekStartDay]);
 
   const hasExternal = extYear != null;
 
@@ -189,11 +274,13 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
   const [internalYear, setInternalYear] = useState(curYear);
   const [internalMonth, setInternalMonth] = useState(curMonth);
   const [internalDay, setInternalDay] = useState(null);
+  const [internalWeek, setInternalWeek] = useState(null);
 
   const dimension = hasExternal ? extDimension : internalDimension;
   const year = hasExternal ? extYear : internalYear;
   const month = hasExternal ? extMonth : internalMonth;
   const day = hasExternal ? extDay : internalDay;
+  const week = hasExternal ? extWeek : internalWeek;
 
   const allCategories = useMemo(() => {
     const map = new Map();
@@ -213,10 +300,16 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
 
   const handleDimensionChange = useCallback((dim) => {
     setInternalDimension(dim);
+    setInternalWeek(null);
     if (dim === 'year') {
       setInternalYear(curYear);
       setInternalMonth(null);
       setInternalDay(null);
+    } else if (dim === 'week') {
+      setInternalYear(curYear);
+      setInternalMonth(null);
+      setInternalDay(null);
+      setInternalWeek(curWeek);
     } else if (dim === 'day') {
       setInternalYear(curYear);
       setInternalMonth(curMonth);
@@ -226,48 +319,68 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
       setInternalMonth(curMonth);
       setInternalDay(null);
     }
-  }, [curYear, curMonth, curDay]);
+  }, [curYear, curMonth, curDay, curWeek]);
 
-  const handlePeriodChange = useCallback((y, m, d) => {
+  const handlePeriodChange = useCallback((y, m, d, w) => {
     setInternalYear(y);
     setInternalMonth(m);
     setInternalDay(d);
+    if (w !== undefined) setInternalWeek(w);
   }, []);
+
+  const dimLabel = (dim) => {
+    if (dim === 'day') return t('home.dayDimension');
+    if (dim === 'week') return t('home.weekDimension');
+    if (dim === 'month') return t('home.monthDimension');
+    return t('home.yearDimension');
+  };
 
   // Current period data
   const currentTotals = useMemo(
-    () => categoryTotals(filterBillsByPeriod(bills, year, month, day), billType),
-    [bills, year, month, day, billType]
+    () => categoryTotals(filterBillsByPeriod(bills, year, month, day, week), billType),
+    [bills, year, month, day, week, billType, weekStartDay]
   );
 
   // YoY (year-over-year) reference period
   const yoyTotals = useMemo(() => {
     if (dimension === 'year') {
-      return categoryTotals(filterBillsByPeriod(bills, year - 1, null, null), billType);
+      return categoryTotals(filterBillsByPeriod(bills, year - 1, null, null, null), billType);
+    }
+    if (dimension === 'week') {
+      return categoryTotals(filterBillsByPeriod(bills, year - 1, null, null, week), billType);
     }
     if (dimension === 'day') {
-      return categoryTotals(filterBillsByPeriod(bills, year - 1, month, day), billType);
+      return categoryTotals(filterBillsByPeriod(bills, year - 1, month, day, null), billType);
     }
-    return categoryTotals(filterBillsByPeriod(bills, year - 1, month, null), billType);
-  }, [bills, dimension, year, month, day, billType]);
+    return categoryTotals(filterBillsByPeriod(bills, year - 1, month, null, null), billType);
+  }, [bills, dimension, year, month, day, week, billType, weekStartDay]);
 
   // MoM (month-over-month) / previous period reference
   const momTotals = useMemo(() => {
     if (dimension === 'year') {
-      return categoryTotals(filterBillsByPeriod(bills, year - 1, null, null), billType);
+      return categoryTotals(filterBillsByPeriod(bills, year - 1, null, null, null), billType);
+    }
+    if (dimension === 'week') {
+      // Previous week
+      const prevWeek = week - 1;
+      if (prevWeek < 1) {
+        const prevYearWeeks = getWeeksInYear(year - 1, weekStartDay);
+        return categoryTotals(filterBillsByPeriod(bills, year - 1, null, null, prevYearWeeks), billType);
+      }
+      return categoryTotals(filterBillsByPeriod(bills, year, null, null, prevWeek), billType);
     }
     if (dimension === 'day') {
       // Previous day
       const prev = new Date(year, month - 1, day);
       prev.setDate(prev.getDate() - 1);
-      return categoryTotals(filterBillsByPeriod(bills, prev.getFullYear(), prev.getMonth() + 1, prev.getDate()), billType);
+      return categoryTotals(filterBillsByPeriod(bills, prev.getFullYear(), prev.getMonth() + 1, prev.getDate(), null), billType);
     }
     const refMonth = month - 1;
     if (refMonth < 1) {
-      return categoryTotals(filterBillsByPeriod(bills, year - 1, 12, null), billType);
+      return categoryTotals(filterBillsByPeriod(bills, year - 1, 12, null, null), billType);
     }
-    return categoryTotals(filterBillsByPeriod(bills, year, refMonth, null), billType);
-  }, [bills, dimension, year, month, day, billType]);
+    return categoryTotals(filterBillsByPeriod(bills, year, refMonth, null, null), billType);
+  }, [bills, dimension, year, month, day, week, billType, weekStartDay]);
 
   // Build table rows
   const rows = useMemo(() => {
@@ -314,7 +427,7 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
   const isOverflow = bodyContentH > bodyContainerH + 4;
   const isNearBottom = scrollY.current + bodyContainerH >= bodyContentH - 4;
   const showGradient = isOverflow && !isNearBottom;
-  const [, forceRender] = useState(0); // tiny re-render trigger for scroll-based gradient
+  const [, forceRender] = useState(0);
 
   function diffText(pct, isNew) {
     if (isNew) return t('home.momNew');
@@ -344,7 +457,7 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
       {!hideControls && (
         <View style={styles.controls}>
           <View style={[styles.segmented, { backgroundColor: Colors.iconBg, borderRadius: Radius.pill }]}>
-            {['day', 'month', 'year'].map((dim) => {
+            {['year', 'month', 'week', 'day'].map((dim) => {
               const active = dimension === dim;
               return (
                 <Pressable
@@ -353,13 +466,13 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
                   onPress={() => handleDimensionChange(dim)}
                 >
                   <Text style={[styles.segBtnText, { color: active ? Colors.white : Colors.textSecondary, fontFamily: Fonts.bold }]}>
-                    {dim === 'day' ? t('home.dayDimension') : dim === 'month' ? t('home.monthDimension') : t('home.yearDimension')}
+                    {dimLabel(dim)}
                   </Text>
                 </Pressable>
               );
             })}
           </View>
-          <PeriodPicker dimension={dimension} year={year} month={month} day={day} onChange={handlePeriodChange} />
+          <PeriodPicker dimension={dimension} year={year} month={month} day={day} week={week} onChange={handlePeriodChange} />
         </View>
       )}
 
@@ -491,9 +604,10 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
   },
   triggerText: {
-    fontSize: 14,
+    fontSize: 12,
     lineHeight: 20,
     letterSpacing: 0.3,
+    maxWidth: 220,
   },
   /* Modal */
   modalRoot: {

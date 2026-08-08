@@ -107,7 +107,7 @@ function StepperRow({ label, value, min, max, onChange, showBorder }) {
 }
 
 export default function ManagementSections({ onDataChanged }) {
-  const { Colors, Fonts } = useTheme();
+  const { Colors, Fonts, Radius } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const settings = useSettingsStore((s) => s.settings);
@@ -150,6 +150,34 @@ export default function ManagementSections({ onDataChanged }) {
             showBorder
             onPress={() => setYearRangeOpen(true)}
           />
+          <View style={[styles.weekStartRow, { borderTopColor: Colors.cardBorder, borderTopWidth: 1 }]}>
+            <View style={styles.rowLeft}>
+              <Ionicons name="today-outline" size={18} color={Colors.textPrimary} />
+              <Text style={[styles.rowLabel, { color: Colors.textDark, fontFamily: Fonts.semiBold }]}>
+                {t('butler.weekStartDay')}
+              </Text>
+            </View>
+            <View style={[styles.weekSegmented, { backgroundColor: Colors.iconBg, borderRadius: Radius.pill }]}>
+              {[
+                { value: 1, label: t('butler.weekStartMonday') },
+                { value: 0, label: t('butler.weekStartSunday') },
+              ].map((opt) => {
+                const active = settings.weekStartDay === opt.value;
+                return (
+                  <TouchableOpacity
+                    key={opt.value}
+                    style={[styles.weekSegBtn, active && { backgroundColor: Colors.purple, borderRadius: Radius.pill }]}
+                    activeOpacity={0.7}
+                    onPress={() => updateSetting('weekStartDay', opt.value)}
+                  >
+                    <Text style={[styles.weekSegBtnText, { color: active ? Colors.white : Colors.textSecondary, fontFamily: Fonts.bold }]}>
+                      {opt.label}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </View>
         </View>
       </View>
 
@@ -307,5 +335,25 @@ const styles = StyleSheet.create({
   rowValue: {
     fontSize: 14,
     lineHeight: 22,
+  },
+  weekStartRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  weekSegmented: {
+    flexDirection: 'row',
+    padding: 2,
+    gap: 2,
+  },
+  weekSegBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+  weekSegBtnText: {
+    fontSize: 12,
+    lineHeight: 18,
   },
 });

@@ -5,13 +5,15 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore } from '../../store/settings';
 import useAlert from '../../hooks/useAlert';
+import WheelColumn from './WheelColumn';
+import { getWeeksInYear, getWeekDateRange } from '../home/SpendingDetail';
 
 const MONTHS = Array.from({ length: 12 }, (_, i) => i + 1);
-const fmtYm = (y, m) => `${y}-${String(m).padStart(2, '0')}`;
 
 /**
  * Start ~ end range picker for charts (bottom sheet).
  * yearOnly=true renders two year columns; otherwise two month columns.
+ * weekOnly=true renders two week columns (year+week).
  * Year range follows the global Year Range setting.
  */
 export default function ChartRangePicker({
@@ -19,35 +21,59 @@ export default function ChartRangePicker({
   startMonth,
   endYear,
   endMonth,
+  startWeek,
+  endWeek,
   yearOnly = false,
+  weekOnly = false,
   onConfirm,
 }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
   const { alert } = useAlert();
+  const weekStartDay = useSettingsStore((s) => s.settings.weekStartDay);
   const [open, setOpen] = useState(false);
 
   const [locStartYear, setLocStartYear] = useState(startYear);
   const [locStartMonth, setLocStartMonth] = useState(startMonth);
   const [locEndYear, setLocEndYear] = useState(endYear);
   const [locEndMonth, setLocEndMonth] = useState(endMonth);
+  const [locStartWeek, setLocStartWeek] = useState(startWeek || 1);
+  const [locEndWeek, setLocEndWeek] = useState(endWeek || 1);
 
   const displayText = useMemo(() => {
+    if (weekOnly && startWeek != null && endWeek != null) {
+      const sRange = getWeekDateRange(startYear, startWeek, weekStartDay);
+      const eRange = getWeekDateRange(endYear, endWeek, weekStartDay);
+      return `${startYear} W${startWeek}~${endYear} W${endWeek}`;
+    }
     if (yearOnly) return `${startYear} - ${endYear}`;
     const s = `${startYear}/${String(startMonth).padStart(2, '0')}`;
     const e = `${endYear}/${String(endMonth).padStart(2, '0')}`;
     return `${s}~${e}`;
-  }, [startYear, startMonth, endYear, endMonth, yearOnly]);
+  }, [startYear, startMonth, endYear, endMonth, startWeek, endWeek, yearOnly, weekOnly, weekStartDay]);
 
   const handleOpen = useCallback(() => {
     setLocStartYear(startYear);
     setLocStartMonth(startMonth);
     setLocEndYear(endYear);
     setLocEndMonth(endMonth);
+    setLocStartWeek(startWeek || 1);
+    setLocEndWeek(endWeek || 1);
     setOpen(true);
-  }, [startYear, startMonth, endYear, endMonth]);
+  }, [startYear, startMonth, endYear, endMonth, startWeek, endWeek]);
 
   const handleConfirm = useCallback(() => {
+    if (weekOnly) {
+      const sy = locStartYear, ey = locEndYear;
+      const sw = locStartWeek, ew = locEndWeek;
+      if (ey < sy || (ey === sy && ew < sw)) {
+        alert(t('common.tip'), t('common.dateRangeInvalid'));
+        return;
+      }
+      onConfirm({ startYear: sy, startMonth: null, endYear: ey, endMonth: null, startWeek: sw, endWeek: ew });
+      setOpen(false);
+      return;
+    }
     const sy = locStartYear, ey = locEndYear;
     const sm = yearOnly ? null : locStartMonth;
     const em = yearOnly ? null : locEndMonth;
@@ -57,7 +83,7 @@ export default function ChartRangePicker({
     }
     onConfirm({ startYear: sy, startMonth: sm, endYear: ey, endMonth: em });
     setOpen(false);
-  }, [locStartYear, locStartMonth, locEndYear, locEndMonth, yearOnly, onConfirm, alert]);
+  }, [locStartYear, locStartMonth, locEndYear, locEndMonth, locStartWeek, locEndWeek, yearOnly, weekOnly, onConfirm, alert]);
 
   return (
     <View style={styles.wrap}>
@@ -96,7 +122,18 @@ export default function ChartRangePicker({
                 </Pressable>
               </View>
 
-              {yearOnly ? (
+              {weekOnly ? (
+                <WeekRangePicker
+                  startYear={locStartYear}
+                  startWeek={locStartWeek}
+                  endYear={locEndYear}
+                  endWeek={locEndWeek}
+                  onStartYearChange={setLocStartYear}
+                  onStartWeekChange={setLocStartWeek}
+                  onEndYearChange={setLocEndYear}
+                  onEndWeekChange={setLocEndWeek}
+                />
+              ) : yearOnly ? (
                 <YearRangePicker
                   startYear={locStartYear}
                   endYear={locEndYear}
@@ -147,6 +184,70 @@ export default function ChartRangePicker({
 }
 
 const YEAR_CHIP_H = 36; // 20 (lineHeight) + 8*2 (paddingVertical) + 4 (marginBottom) / 2
+
+function WeekRangePicker({ startYear, startWeek, endYear, endWeek, onStartYearChange, onStartWeekChange, onEndYearChange, onEndWeekChange }) {
+  const { Colors, Fonts } = useTheme();
+  const { t } = useTranslation();
+  const yearStart = useSettingsStore((s) => s.settings.yearStart);
+  const yearEnd = useSettingsStore((s) => s.settings.yearEnd);
+  const weekStartDay = useSettingsStore((s) => s.settings.weekStartDay);
+
+  const yearItems = useMemo(() => {
+    const items = [];
+    for (let y = yearStart; y <= yearEnd; y++) items.push({ value: y, label: String(y) });
+    return items;
+  }, [yearStart, yearEnd]);
+
+  const startWeekItems = useMemo(() => {
+    const weeks = getWeeksInYear(startYear, weekStartDay);
+    return Array.from({ length: weeks }, (_, i) => ({ value: i + 1, label: `W${i + 1}` }));
+  }, [startYear, weekStartDay]);
+
+  const endWeekItems = useMemo(() => {
+    const weeks = getWeeksInYear(endYear, weekStartDay);
+    return Array.from({ length: weeks }, (_, i) => ({ value: i + 1, label: `W${i + 1}` }));
+  }, [endYear, weekStartDay]);
+
+  const safeStartWeek = useMemo(() => {
+    const max = getWeeksInYear(startYear, weekStartDay);
+    return Math.min(startWeek, max);
+  }, [startYear, startWeek, weekStartDay]);
+
+  const safeEndWeek = useMemo(() => {
+    const max = getWeeksInYear(endYear, weekStartDay);
+    return Math.min(endWeek, max);
+  }, [endYear, endWeek, weekStartDay]);
+
+  return (
+    <View style={styles.body}>
+      <View style={styles.dualCol}>
+        <View style={styles.colHalf}>
+          <Text style={[styles.colHalfLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+            {t('common.startDate')}
+          </Text>
+          <View style={styles.pickerBody}>
+            <View style={styles.colsRow}>
+              <WheelColumn items={yearItems} selected={startYear} onChange={onStartYearChange} width={80} />
+              <WheelColumn items={startWeekItems} selected={safeStartWeek} onChange={onStartWeekChange} width={80} />
+            </View>
+          </View>
+        </View>
+        <View style={[styles.colDivider, { backgroundColor: Colors.cardBorder }]} />
+        <View style={styles.colHalf}>
+          <Text style={[styles.colHalfLabel, { color: Colors.textSecondary, fontFamily: Fonts.bold }]}>
+            {t('common.endDate')}
+          </Text>
+          <View style={styles.pickerBody}>
+            <View style={styles.colsRow}>
+              <WheelColumn items={yearItems} selected={endYear} onChange={onEndYearChange} width={80} />
+              <WheelColumn items={endWeekItems} selected={safeEndWeek} onChange={onEndWeekChange} width={80} />
+            </View>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
 
 function YearRangePicker({ startYear, endYear, onStartChange, onEndChange }) {
   const { Colors, Radius, Fonts } = useTheme();
@@ -467,6 +568,15 @@ const styles = StyleSheet.create({
   },
   colHalf: {
     flex: 1,
+  },
+  pickerBody: {
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  colsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 2,
   },
   colDivider: {
     width: 1,

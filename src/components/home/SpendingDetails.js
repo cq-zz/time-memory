@@ -1,46 +1,67 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
-import SpendingDetail, { PeriodPicker } from './SpendingDetail';
+import { useSettingsStore } from '../../store/settings';
+import SpendingDetail, { PeriodPicker, getWeekNumber } from './SpendingDetail';
+
+const DIMENSIONS = ['year', 'month', 'week', 'day'];
 
 /* ── Combined spending details (expense + income) with shared controls ── */
 export default function SpendingDetails({ bills = [] }) {
   const { Colors, Fonts, Radius } = useTheme();
   const { t } = useTranslation();
+  const weekStartDay = useSettingsStore((s) => s.settings.weekStartDay);
 
   const now = new Date();
   const curYear = now.getFullYear();
   const curMonth = now.getMonth() + 1;
   const curDay = now.getDate();
+  const curWeek = useMemo(() => getWeekNumber(now, weekStartDay), [weekStartDay]);
 
   const [dimension, setDimension] = useState('month');
   const [year, setYear] = useState(curYear);
   const [month, setMonth] = useState(curMonth);
   const [day, setDay] = useState(null);
+  const [week, setWeek] = useState(null);
 
   const handleDimensionChange = useCallback((dim) => {
     setDimension(dim);
+    setWeek(null);
     if (dim === 'year') {
       setYear(curYear);
       setMonth(null);
       setDay(null);
+    } else if (dim === 'week') {
+      setYear(curYear);
+      setMonth(null);
+      setDay(null);
+      setWeek(curWeek);
     } else if (dim === 'day') {
       setYear(curYear);
       setMonth(curMonth);
       setDay(curDay);
     } else {
+      // month
       setYear(curYear);
       setMonth(curMonth);
       setDay(null);
     }
-  }, [curYear, curMonth, curDay]);
+  }, [curYear, curMonth, curDay, curWeek]);
 
-  const handlePeriodChange = useCallback((y, m, d) => {
+  const handlePeriodChange = useCallback((y, m, d, w) => {
     setYear(y);
     setMonth(m);
     setDay(d);
+    if (w !== undefined) setWeek(w);
   }, []);
+
+  const dimLabel = (dim) => {
+    if (dim === 'day') return t('home.dayDimension');
+    if (dim === 'week') return t('home.weekDimension');
+    if (dim === 'month') return t('home.monthDimension');
+    return t('home.yearDimension');
+  };
 
   return (
     <View style={styles.wrapper}>
@@ -57,7 +78,7 @@ export default function SpendingDetails({ bills = [] }) {
       {/* Shared controls */}
       <View style={styles.controls}>
         <View style={[styles.segmented, { backgroundColor: Colors.iconBg, borderRadius: Radius.pill }]}>
-          {['year', 'month', 'day'].map((dim) => {
+          {DIMENSIONS.map((dim) => {
             const active = dimension === dim;
             return (
               <Pressable
@@ -66,13 +87,20 @@ export default function SpendingDetails({ bills = [] }) {
                 onPress={() => handleDimensionChange(dim)}
               >
                 <Text style={[styles.segBtnText, { color: active ? Colors.white : Colors.textSecondary, fontFamily: Fonts.bold }]}>
-                  {dim === 'day' ? t('home.dayDimension') : dim === 'month' ? t('home.monthDimension') : t('home.yearDimension')}
+                  {dimLabel(dim)}
                 </Text>
               </Pressable>
             );
           })}
         </View>
-        <PeriodPicker dimension={dimension} year={year} month={month} day={day} onChange={handlePeriodChange} />
+        <PeriodPicker
+          dimension={dimension}
+          year={year}
+          month={month}
+          day={day}
+          week={week}
+          onChange={handlePeriodChange}
+        />
       </View>
 
       {/* Expense sub-section */}
@@ -80,7 +108,7 @@ export default function SpendingDetails({ bills = [] }) {
         <Text style={[styles.subTitle, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
           {t('spendingDetail.expenseTitle')}
         </Text>
-        <SpendingDetail bills={bills} billType="expense" year={year} month={month} day={day} dimension={dimension} hideControls hideTitle />
+        <SpendingDetail bills={bills} billType="expense" year={year} month={month} day={day} week={week} dimension={dimension} hideControls hideTitle />
       </View>
 
       {/* Income sub-section */}
@@ -88,7 +116,7 @@ export default function SpendingDetails({ bills = [] }) {
         <Text style={[styles.subTitle, { color: Colors.textPrimary, fontFamily: Fonts.semiBold }]}>
           {t('spendingDetail.incomeTitle')}
         </Text>
-        <SpendingDetail bills={bills} billType="income" year={year} month={month} day={day} dimension={dimension} hideControls hideTitle />
+        <SpendingDetail bills={bills} billType="income" year={year} month={month} day={day} week={week} dimension={dimension} hideControls hideTitle />
       </View>
     </View>
   );

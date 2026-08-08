@@ -27,6 +27,7 @@ export const DEFAULT_SETTINGS = {
   durableRemindDays: 2, // item expiry reminder lead (0–7)
   assetRemindDays: 30, // asset expiry reminder lead (0–365)
   notificationsEnabled: true, // system notification toggle
+  weekStartDay: 0, // 0 = Sunday, 1 = Monday
 };
 
 export const LANGUAGES = [

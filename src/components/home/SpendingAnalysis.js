@@ -6,6 +6,7 @@ import { useSettingsStore, formatMoney } from '../../store/settings';
 import { useCategoryStore, getMergedCategories, BUILTIN_NS } from '../../store/categories';
 import Svg, { Circle, Path } from 'react-native-svg';
 import DimensionRangePicker from '../common/DimensionRangePicker';
+import { getWeekNumber, getWeekDateRange, getWeeksInYear } from './SpendingDetail';
 
 /* ── Chart constants ── */
 const CHART_W = 264;
@@ -29,17 +30,48 @@ function formatAxisValue(val) {
   return Math.round(val).toString();
 }
 
-function filterBills(bills, dim, start, end) {
+function filterBills(bills, dim, start, end, startWeek, endWeek, weekStartDay) {
   if (dim === 'all') return bills || [];
+  if (dim === 'week' && startWeek != null && endWeek != null) {
+    // Convert week ranges to date ranges
+    const sRange = getWeekDateRange(parseInt(start, 10), startWeek, weekStartDay);
+    const eRange = getWeekDateRange(parseInt(end, 10), endWeek, weekStartDay);
+    return (bills || []).filter((b) => {
+      const d = (b.consumption_date || '').slice(0, 10);
+      return d >= sRange.startDate && d <= eRange.endDate;
+    });
+  }
   return (bills || []).filter((b) => {
     const d = (b.consumption_date || '').slice(0, dim === 'year' ? 4 : 7);
     return d >= start && d <= end;
   });
 }
 
-function buildTrendSeries(bills, dim, start, end) {
+function buildTrendSeries(bills, dim, start, end, startWeek, endWeek, weekStartDay) {
   const series = [];
-  if (dim === 'year') {
+  if (dim === 'week' && startWeek != null && endWeek != null) {
+    const sy = parseInt(start, 10);
+    const ey = parseInt(end, 10);
+    let y = sy, w = startWeek;
+    while (y < ey || (y === ey && w <= endWeek)) {
+      const key = `${y}-W${w}`;
+      series.push({ key, label: `W${w}`, income: 0, expense: 0 });
+      w++;
+      const maxW = getWeeksInYear(y, weekStartDay);
+      if (w > maxW) { w = 1; y++; }
+    }
+    const idx = new Map(series.map((s) => [s.key, s]));
+    bills.forEach((b) => {
+      const d = new Date(b.consumption_date || '');
+      const wy = d.getFullYear();
+      const wn = getWeekNumber(d, weekStartDay);
+      const s = idx.get(`${wy}-W${wn}`);
+      if (!s) return;
+      const amt = Number(b.amount) || 0;
+      if (b.bill_type === 'income') s.income += amt;
+      else s.expense += amt;
+    });
+  } else if (dim === 'year') {
     const sy = parseInt(start, 10);
     const ey = parseInt(end, 10);
     for (let y = sy; y <= ey; y++) {
@@ -218,6 +250,8 @@ export default function SpendingAnalysis({ bills = [] }) {
   const now = new Date();
   const curYear = now.getFullYear();
   const curMonth = now.getMonth() + 1;
+  const weekStartDay = useSettingsStore((s) => s.settings.weekStartDay);
+  const curWeek = useMemo(() => getWeekNumber(now, weekStartDay), [weekStartDay]);
 
   // Default: last 6 months
   const defaultStart = useMemo(() => {
@@ -232,25 +266,29 @@ export default function SpendingAnalysis({ bills = [] }) {
     startMonth: defaultStart.month,
     endYear: defaultEnd.year,
     endMonth: defaultEnd.month,
+    startWeek: null,
+    endWeek: null,
   });
   const handleDimensionChange = useCallback((dim) => {
     setDimension(dim);
     if (dim === 'all') {
-      setRange({ startYear: null, startMonth: null, endYear: null, endMonth: null });
+      setRange({ startYear: null, startMonth: null, endYear: null, endMonth: null, startWeek: null, endWeek: null });
     } else if (dim === 'year') {
-      setRange({ startYear: curYear, startMonth: null, endYear: curYear, endMonth: null });
+      setRange({ startYear: curYear, startMonth: null, endYear: curYear, endMonth: null, startWeek: null, endWeek: null });
+    } else if (dim === 'week') {
+      setRange({ startYear: curYear, startMonth: null, endYear: curYear, endMonth: null, startWeek: curWeek, endWeek: curWeek });
     } else {
-      setRange({ startYear: defaultStart.year, startMonth: defaultStart.month, endYear: defaultEnd.year, endMonth: defaultEnd.month });
+      setRange({ startYear: defaultStart.year, startMonth: defaultStart.month, endYear: defaultEnd.year, endMonth: defaultEnd.month, startWeek: null, endWeek: null });
     }
-  }, [defaultStart, defaultEnd, curYear]);
+  }, [defaultStart, defaultEnd, curYear, curWeek]);
 
   const handleRangeChange = useCallback((r) => {
     setRange(r);
   }, []);
 
   // Convert range to internal format. For 'all' dimension, compute effective range from data.
-  const rangeStart = dimension === 'all' ? '' : (dimension === 'year' ? String(range.startYear) : monthKey(range.startYear, range.startMonth));
-  const rangeEnd = dimension === 'all' ? '' : (dimension === 'year' ? String(range.endYear) : monthKey(range.endYear, range.endMonth));
+  const rangeStart = dimension === 'all' ? '' : (dimension === 'week' ? String(range.startYear) : (dimension === 'year' ? String(range.startYear) : monthKey(range.startYear, range.startMonth)));
+  const rangeEnd = dimension === 'all' ? '' : (dimension === 'week' ? String(range.endYear) : (dimension === 'year' ? String(range.endYear) : monthKey(range.endYear, range.endMonth)));
 
   const labelOf = useCallback((key) => {
     if (key === '__other__') return t('home.otherSegment');
@@ -259,7 +297,7 @@ export default function SpendingAnalysis({ bills = [] }) {
     return cat.isBuiltin ? t(`${BUILTIN_NS[cat._type]}.${key}`) : cat.name;
   }, [allCategories, t]);
 
-  const filtered = useMemo(() => filterBills(bills, dimension, rangeStart, rangeEnd), [bills, dimension, rangeStart, rangeEnd]);
+  const filtered = useMemo(() => filterBills(bills, dimension, rangeStart, rangeEnd, range.startWeek, range.endWeek, weekStartDay), [bills, dimension, rangeStart, rangeEnd, range.startWeek, range.endWeek, weekStartDay]);
 
   // Compute effective trend dimension & range for 'all' mode (use year dimension)
   const trendDim = dimension === 'all' ? 'year' : dimension;
@@ -279,9 +317,8 @@ export default function SpendingAnalysis({ bills = [] }) {
       if (b.bill_type === 'income') incomeTotal += amt;
       else expenseTotal += amt;
     });
-    let months = 1;
+    let periods = 1;
     if (dimension === 'all') {
-      // Compute total months from actual data range
       if (filtered.length > 0) {
         const dates = filtered.map((b) => b.consumption_date || '').filter((d) => d).sort();
         const first = dates[0]?.slice(0, 7);
@@ -289,19 +326,32 @@ export default function SpendingAnalysis({ bills = [] }) {
         if (first && last) {
           const [fy, fm] = first.split('-').map(Number);
           const [ly, lm] = last.split('-').map(Number);
-          months = (ly - fy) * 12 + (lm - fm) + 1;
+          periods = (ly - fy) * 12 + (lm - fm) + 1;
         }
       }
+    } else if (dimension === 'week') {
+      // Count weeks in range
+      if (range.startWeek != null && range.endWeek != null) {
+        let count = 0;
+        let y = range.startYear, w = range.startWeek;
+        while (y < range.endYear || (y === range.endYear && w <= range.endWeek)) {
+          count++;
+          w++;
+          const maxW = getWeeksInYear(y, weekStartDay);
+          if (w > maxW) { w = 1; y++; }
+        }
+        periods = count;
+      }
     } else if (dimension === 'year') {
-      months = (range.endYear - range.startYear + 1) * 12;
+      periods = (range.endYear - range.startYear + 1) * 12;
     } else {
-      months = (range.endYear - range.startYear) * 12 + (range.endMonth - range.startMonth) + 1;
+      periods = (range.endYear - range.startYear) * 12 + (range.endMonth - range.startMonth) + 1;
     }
     const ratio = incomeTotal > 0 ? parseFloat(((expenseTotal / incomeTotal) * 100).toFixed(1)) : null;
-    return { incomeTotal, expenseTotal, monthlyAvg: months > 0 ? expenseTotal / months : 0, months, ratio };
-  }, [filtered, dimension, range]);
+    return { incomeTotal, expenseTotal, periodAvg: periods > 0 ? expenseTotal / periods : 0, periods, ratio };
+  }, [filtered, dimension, range, weekStartDay]);
 
-  const trendSeries = useMemo(() => buildTrendSeries(filtered, trendDim, trendStart, trendEnd), [filtered, trendDim, trendStart, trendEnd]);
+  const trendSeries = useMemo(() => buildTrendSeries(filtered, trendDim, trendStart, trendEnd, range.startWeek, range.endWeek, weekStartDay), [filtered, trendDim, trendStart, trendEnd, range.startWeek, range.endWeek, weekStartDay]);
   const showIndices = tickIndices(trendSeries.length, trendDim === 'month' ? 4 : 6);
 
   const incomeSegments = useMemo(() => buildSegments(filtered, 'income', labelOf), [filtered, labelOf]);
@@ -319,6 +369,8 @@ export default function SpendingAnalysis({ bills = [] }) {
         startMonth={range.startMonth}
         endYear={range.endYear}
         endMonth={range.endMonth}
+        startWeek={range.startWeek}
+        endWeek={range.endWeek}
         onDimensionChange={handleDimensionChange}
         onRangeChange={handleRangeChange}
       />
@@ -335,8 +387,10 @@ export default function SpendingAnalysis({ bills = [] }) {
             <Text style={[styles.statValue, { color: Colors.rose, fontFamily: Fonts.bold }]}>{formatMoney(summary.expenseTotal, currency)}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.md }, Shadows.card]}>
-            <Text style={[styles.statLabel, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{t('butler.monthlyAvgExpense')}</Text>
-            <Text style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>{formatMoney(summary.monthlyAvg, currency)}</Text>
+            <Text style={[styles.statLabel, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+              {dimension === 'week' ? t('butler.weeklyAvgExpense') : t('butler.monthlyAvgExpense')}
+            </Text>
+            <Text style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>{formatMoney(summary.periodAvg, currency)}</Text>
           </View>
           <View style={[styles.statCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.md }, Shadows.card]}>
             <Text style={[styles.statLabel, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{t('butler.incomeExpenseRatio')}</Text>

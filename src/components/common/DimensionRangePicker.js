@@ -4,7 +4,7 @@ import { useTheme } from '../../utils/theme';
 import ChartRangePicker from './ChartRangePicker';
 
 /**
- * Dimension toggle (全部/年/月) + date range picker.
+ * Dimension toggle (全部/年/月/周) + date range picker.
  * Capsule buttons use flexWrap: when the row is too wide, they
  * automatically wrap to the next line so nothing overflows.
  */
@@ -14,17 +14,28 @@ export default function DimensionRangePicker({
   startMonth,
   endYear,
   endMonth,
+  startWeek,
+  endWeek,
   onDimensionChange,
   onRangeChange,
 }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
 
+  const DIMENSIONS = ['all', 'year', 'month', 'week'];
+
+  const dimLabel = (dim) => {
+    if (dim === 'all') return t('common.all');
+    if (dim === 'week') return t('home.weekDimension');
+    if (dim === 'month') return t('home.monthDimension');
+    return t('home.yearDimension');
+  };
+
   return (
     <View style={styles.wrap}>
       {/* Dimension toggle capsules */}
       <View style={[styles.segmented, { backgroundColor: Colors.iconBg, borderRadius: Radius.pill }]}>
-        {['all', 'year', 'month'].map((dim) => {
+        {DIMENSIONS.map((dim) => {
           const active = dimension === dim;
           return (
             <Pressable
@@ -44,7 +55,7 @@ export default function DimensionRangePicker({
                   },
                 ]}
               >
-                {dim === 'all' ? t('common.all') : dim === 'month' ? t('home.monthDimension') : t('home.yearDimension')}
+                {dimLabel(dim)}
               </Text>
             </Pressable>
           );
@@ -58,7 +69,10 @@ export default function DimensionRangePicker({
           startMonth={startMonth}
           endYear={endYear}
           endMonth={endMonth}
+          startWeek={startWeek}
+          endWeek={endWeek}
           yearOnly={dimension === 'year'}
+          weekOnly={dimension === 'week'}
           onConfirm={onRangeChange}
         />
       )}

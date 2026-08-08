@@ -270,11 +270,11 @@ export default function SpendingDetail({ bills = [], billType = 'expense', year:
 
   const hasExternal = extYear != null;
 
-  const [internalDimension, setInternalDimension] = useState('month');
+  const [internalDimension, setInternalDimension] = useState('week');
   const [internalYear, setInternalYear] = useState(curYear);
   const [internalMonth, setInternalMonth] = useState(curMonth);
   const [internalDay, setInternalDay] = useState(null);
-  const [internalWeek, setInternalWeek] = useState(null);
+  const [internalWeek, setInternalWeek] = useState(curWeek);
 
   const dimension = hasExternal ? extDimension : internalDimension;
   const year = hasExternal ? extYear : internalYear;

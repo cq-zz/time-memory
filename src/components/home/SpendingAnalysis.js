@@ -260,7 +260,7 @@ export default function SpendingAnalysis({ bills = [] }) {
   }, []);
   const defaultEnd = useMemo(() => ({ year: curYear, month: curMonth }), []);
 
-  const [dimension, setDimension] = useState('month');
+  const [dimension, setDimension] = useState('week');
   const [range, setRange] = useState({
     startYear: defaultStart.year,
     startMonth: defaultStart.month,

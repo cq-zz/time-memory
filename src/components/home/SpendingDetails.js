@@ -19,11 +19,11 @@ export default function SpendingDetails({ bills = [] }) {
   const curDay = now.getDate();
   const curWeek = useMemo(() => getWeekNumber(now, weekStartDay), [weekStartDay]);
 
-  const [dimension, setDimension] = useState('month');
+  const [dimension, setDimension] = useState('week');
   const [year, setYear] = useState(curYear);
   const [month, setMonth] = useState(curMonth);
   const [day, setDay] = useState(null);
-  const [week, setWeek] = useState(null);
+  const [week, setWeek] = useState(curWeek);
 
   const handleDimensionChange = useCallback((dim) => {
     setDimension(dim);

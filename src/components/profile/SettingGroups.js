@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import Constants from 'expo-constants';
 import { useTheme } from '../../utils/theme';
 import { useSettingsStore, languageMeta } from '../../store/settings';
-import { useProfileStore } from '../../store/profile';
 import { hasPassword, clearPassword } from '../../utils/password';
 import { logPasswordAction } from '../../utils/passwordHistory';
 import { showToast } from '../common/Toast';
@@ -62,7 +61,6 @@ export default function SettingGroups() {
   const darkMode = useSettingsStore((s) => s.settings.darkMode);
   const language = useSettingsStore((s) => s.settings.language);
   const updateSetting = useSettingsStore((s) => s.updateSetting);
-  const nickname = useProfileStore((s) => s.nickname);
 
   const [pwdSet, setPwdSet] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
@@ -101,7 +99,6 @@ export default function SettingGroups() {
           <SettingRow
             icon="person-outline"
             label={t('settings.profileSettings')}
-            value={nickname || t('common.newUser')}
             onPress={() => setProfileOpen(true)}
           />
           <SettingRow

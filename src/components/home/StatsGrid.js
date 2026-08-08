@@ -50,11 +50,16 @@ export default function StatsGrid({ durables = [], schedules = [], assets = [] }
   }).length;
   const assetCount = assets.filter((r) => assetStatus(r) === 'active').length;
   const done = schedules.filter((r) => scheduleStatus(r) === 'done').length;
-  const completion = schedules.length ? `${Math.round((done / schedules.length) * 100)}%` : '--';
+  let completion = '--';
+  if (schedules.length) {
+    const pct = (done / schedules.length) * 100;
+    const rounded = Math.round(pct * 100) / 100;
+    completion = `${Number.isInteger(rounded) ? rounded : rounded.toFixed(2)}%`;
+  }
 
   const STATS = [
     { value: String(durableCount), label: t('home.statDurables'), icon: 'cube-outline', color: Colors.textPrimary },
-    { value: String(activeSchedules), label: t('home.statSchedules'), icon: 'calendar-outline', color: Colors.purple },
+    { value: String(activeSchedules), label: t('home.statActiveSchedules'), icon: 'calendar-outline', color: Colors.purple },
     { value: String(assetCount), label: t('home.statAssets'), icon: 'wallet-outline', color: Colors.orange },
     { value: completion, label: t('home.statCompletion'), icon: 'checkmark-circle-outline', color: Colors.green },
   ];

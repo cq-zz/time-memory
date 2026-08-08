@@ -427,7 +427,7 @@ export default {
     expenseAnalysis: "支出分析",
     incomeAnalysis: "收入分析",
     statDurables: "物品",
-    statSchedules: "计划",
+    statActiveSchedules: "进行中计划",
     statAssets: "资产",
     statCompletion: "完成率",
     annualBudget: "年度收支计划",

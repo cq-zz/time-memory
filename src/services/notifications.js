@@ -193,7 +193,7 @@ async function buildNotificationItems() {
       daysLeft = endDays;
       triggerDate = row.end_date;
     } else {
-      // Expired
+      // Expired/ends today: trigger on today
       phase = 'expired';
       daysLeft = endDays;
       triggerDate = today;
@@ -222,8 +222,18 @@ async function buildNotificationItems() {
     // Trigger date = expiry_date - lead_days
     const triggerDate = new Date(row.expiry_date);
     triggerDate.setDate(triggerDate.getDate() - lead.durable);
-    const triggerStr = triggerDate.toISOString().split('T')[0];
-    if (triggerStr < today) return;
+    let triggerStr = triggerDate.toISOString().split('T')[0];
+
+    // If the lead-time notification would have fired in the past,
+    // but the item is still relevant (expired or expiring today),
+    // fire on today instead of skipping entirely.
+    if (triggerStr < today) {
+      if (daysLeft <= 0) {
+        triggerStr = today;
+      } else {
+        return;
+      }
+    }
 
     items.push({
       id: `durable:${row.id}`,
@@ -244,8 +254,17 @@ async function buildNotificationItems() {
 
     const triggerDate = new Date(row.expiry_date);
     triggerDate.setDate(triggerDate.getDate() - lead.asset);
-    const triggerStr = triggerDate.toISOString().split('T')[0];
-    if (triggerStr < today) return;
+    let triggerStr = triggerDate.toISOString().split('T')[0];
+
+    // Same fallback: if lead-time notification is in the past but
+    // the asset is still relevant, fire on today.
+    if (triggerStr < today) {
+      if (daysLeft <= 0) {
+        triggerStr = today;
+      } else {
+        return;
+      }
+    }
 
     items.push({
       id: `asset:${row.id}`,
@@ -268,20 +287,34 @@ async function buildNotificationItems() {
       ? Number(row.reminder_days_before)
       : 1;
 
-    const triggerDate = new Date(row.date);
-    triggerDate.setDate(triggerDate.getDate() - before);
-    const triggerStr = triggerDate.toISOString().split('T')[0];
-    if (triggerStr < today) return;
+    // 1) Lead-time notification (N days before the date)
+    const leadTrigger = new Date(row.date);
+    leadTrigger.setDate(leadTrigger.getDate() - before);
+    const leadStr = leadTrigger.toISOString().split('T')[0];
+    if (leadStr >= today) {
+      items.push({
+        id: `important-date:${row.id}`,
+        module: 'important-date',
+        title: row.name || '',
+        triggerDate: leadStr,
+        daysLeft,
+        expired: false,
+        route: `/important-date/${row.id}`,
+      });
+    }
 
-    items.push({
-      id: `important-date:${row.id}`,
-      module: 'important-date',
-      title: row.name || '',
-      triggerDate: triggerStr,
-      daysLeft,
-      expired: false,
-      route: `/important-date/${row.id}`,
-    });
+    // 2) On-the-day notification (when today IS the important date)
+    if (daysLeft === 0) {
+      items.push({
+        id: `important-date:${row.id}:today`,
+        module: 'important-date',
+        title: row.name || '',
+        triggerDate: today,
+        daysLeft: 0,
+        expired: false,
+        route: `/important-date/${row.id}`,
+      });
+    }
   });
 
   return items;
@@ -310,40 +343,69 @@ export async function scheduleAllNotifications() {
 
     const items = await buildNotificationItems();
     const now = new Date();
+    const today = todayStr();
+    let badgeCount = 0;
 
     for (const item of items) {
-      // Use local-time constructor so both Android (timestamp) and iOS
-      // (calendar components) trigger at 9:00 AM in the user's timezone.
-      const [y, m, d] = item.triggerDate.split('-').map(Number);
-      const triggerDate = new Date(y, m - 1, d, 9, 0, 0);
-
-      // Only schedule if in the future
-      if (triggerDate <= now) continue;
-
       const lang = settings.language || 'en';
       const title = lang === 'zh-CN' ? zhTitle(item) : enTitle(item);
       const body = lang === 'zh-CN' ? zhBody(item) : enBody(item);
 
-      await Notifications.scheduleNotificationAsync({
-        identifier: `${PREFIX}${item.id}`,
-        content: {
-          title,
-          body,
-          data: {
-            id: item.id,
-            module: item.module,
-            route: item.route,
+      const [y, m, d] = item.triggerDate.split('-').map(Number);
+      const triggerDate = new Date(y, m - 1, d, 9, 0, 0);
+
+      if (item.triggerDate === today) {
+        // Today's notification: present immediately since the 9:00 AM
+        // trigger time may have already passed. Schedule with a DATE
+        // trigger 1 second from now so the notification fires immediately
+        // while keeping our custom identifier for proper dismissal handling.
+        const immediateTrigger = new Date(Date.now() + 1000);
+        await Notifications.scheduleNotificationAsync({
+          identifier: `${PREFIX}${item.id}`,
+          content: {
+            title,
+            body,
+            data: {
+              id: item.id,
+              module: item.module,
+              route: item.route,
+            },
+            sound: 'default',
           },
-          sound: 'default',
-        },
-        trigger: {
-          type: Notifications.SchedulableTriggerInputTypes.DATE,
-          date: triggerDate,
-        },
-      });
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: immediateTrigger,
+          },
+        });
+        badgeCount++;
+      } else if (triggerDate > now) {
+        // Future notification: schedule at 9:00 AM on the trigger date
+        await Notifications.scheduleNotificationAsync({
+          identifier: `${PREFIX}${item.id}`,
+          content: {
+            title,
+            body,
+            data: {
+              id: item.id,
+              module: item.module,
+              route: item.route,
+            },
+            sound: 'default',
+          },
+          trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: triggerDate,
+          },
+        });
+        badgeCount++;
+      }
+      // Past trigger dates are silently skipped
     }
 
-    await updateBadge();
+    // Set badge directly from the count of scheduled/presented items
+    // instead of relying on getPresentedNotificationsAsync() which has
+    // a timing gap for immediately-presented notifications.
+    await Notifications.setBadgeCountAsync(badgeCount);
   } catch (e) {
     console.warn('[notifications] schedule failed:', e);
   }
@@ -412,10 +474,16 @@ function handleNotificationResponse(response) {
  * Returns the subscription so the caller can clean up.
  */
 export function setupNotificationResponseListener() {
-  // Handle cold start (app opened from notification)
-  const lastResponse = Notifications.getLastNotificationResponse();
-  if (lastResponse) {
-    handleNotificationResponse(lastResponse);
+  // Handle cold start (app opened from notification).
+  // getLastNotificationResponse may not be available in all expo-notifications
+  // versions, so wrap in try-catch to avoid crashing the app.
+  try {
+    const lastResponse = Notifications.getLastNotificationResponse();
+    if (lastResponse) {
+      handleNotificationResponse(lastResponse);
+    }
+  } catch (e) {
+    console.warn('[notifications] getLastNotificationResponse unavailable:', e.message);
   }
 
   // Handle while app is running

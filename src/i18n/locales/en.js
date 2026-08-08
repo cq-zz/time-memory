@@ -429,7 +429,7 @@ export default {
     expenseAnalysis: "Expenses",
     incomeAnalysis: "Income",
     statDurables: "Items",
-    statSchedules: "Plans",
+    statActiveSchedules: "In Progress",
     statAssets: "Assets",
     statCompletion: "Completion",
     annualBudget: "Annual Plan",

@@ -2,6 +2,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '../../utils/theme';
 import ChartRangePicker from './ChartRangePicker';
+import { PeriodPicker } from '../home/SpendingDetail';
 
 /**
  * Dimension toggle (全部/年/月/周) + date range picker.
@@ -14,10 +15,11 @@ export default function DimensionRangePicker({
   startMonth,
   endYear,
   endMonth,
-  startWeek,
-  endWeek,
+  year,
+  week,
   onDimensionChange,
   onRangeChange,
+  onWeekChange,
 }) {
   const { Colors, Radius, Fonts } = useTheme();
   const { t } = useTranslation();
@@ -63,17 +65,25 @@ export default function DimensionRangePicker({
       </View>
 
       {/* Date range picker — hidden when "all" is selected */}
-      {dimension !== 'all' && (
+      {dimension !== 'all' && dimension !== 'week' && (
         <ChartRangePicker
           startYear={startYear}
           startMonth={startMonth}
           endYear={endYear}
           endMonth={endMonth}
-          startWeek={startWeek}
-          endWeek={endWeek}
           yearOnly={dimension === 'year'}
-          weekOnly={dimension === 'week'}
           onConfirm={onRangeChange}
+        />
+      )}
+      {/* Single week picker (same as spending detail) */}
+      {dimension === 'week' && (
+        <PeriodPicker
+          dimension="week"
+          year={year}
+          month={null}
+          day={null}
+          week={week}
+          onChange={(y, m, d, w) => onWeekChange(y, w)}
         />
       )}
     </View>

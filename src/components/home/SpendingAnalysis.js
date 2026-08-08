@@ -266,19 +266,20 @@ export default function SpendingAnalysis({ bills = [] }) {
     startMonth: defaultStart.month,
     endYear: defaultEnd.year,
     endMonth: defaultEnd.month,
-    startWeek: null,
-    endWeek: null,
   });
+  const [weekYear, setWeekYear] = useState(curYear);
+  const [weekNum, setWeekNum] = useState(curWeek);
   const handleDimensionChange = useCallback((dim) => {
     setDimension(dim);
     if (dim === 'all') {
-      setRange({ startYear: null, startMonth: null, endYear: null, endMonth: null, startWeek: null, endWeek: null });
+      setRange({ startYear: null, startMonth: null, endYear: null, endMonth: null });
     } else if (dim === 'year') {
-      setRange({ startYear: curYear, startMonth: null, endYear: curYear, endMonth: null, startWeek: null, endWeek: null });
+      setRange({ startYear: curYear, startMonth: null, endYear: curYear, endMonth: null });
     } else if (dim === 'week') {
-      setRange({ startYear: curYear, startMonth: null, endYear: curYear, endMonth: null, startWeek: curWeek, endWeek: curWeek });
+      setWeekYear(curYear);
+      setWeekNum(curWeek);
     } else {
-      setRange({ startYear: defaultStart.year, startMonth: defaultStart.month, endYear: defaultEnd.year, endMonth: defaultEnd.month, startWeek: null, endWeek: null });
+      setRange({ startYear: defaultStart.year, startMonth: defaultStart.month, endYear: defaultEnd.year, endMonth: defaultEnd.month });
     }
   }, [defaultStart, defaultEnd, curYear, curWeek]);
 
@@ -286,9 +287,14 @@ export default function SpendingAnalysis({ bills = [] }) {
     setRange(r);
   }, []);
 
+  const handleWeekChange = useCallback((y, w) => {
+    setWeekYear(y);
+    setWeekNum(w);
+  }, []);
+
   // Convert range to internal format. For 'all' dimension, compute effective range from data.
-  const rangeStart = dimension === 'all' ? '' : (dimension === 'week' ? String(range.startYear) : (dimension === 'year' ? String(range.startYear) : monthKey(range.startYear, range.startMonth)));
-  const rangeEnd = dimension === 'all' ? '' : (dimension === 'week' ? String(range.endYear) : (dimension === 'year' ? String(range.endYear) : monthKey(range.endYear, range.endMonth)));
+  const rangeStart = dimension === 'all' || dimension === 'week' ? '' : (dimension === 'year' ? String(range.startYear) : monthKey(range.startYear, range.startMonth));
+  const rangeEnd = dimension === 'all' || dimension === 'week' ? '' : (dimension === 'year' ? String(range.endYear) : monthKey(range.endYear, range.endMonth));
 
   const labelOf = useCallback((key) => {
     if (key === '__other__') return t('home.otherSegment');
@@ -297,7 +303,16 @@ export default function SpendingAnalysis({ bills = [] }) {
     return cat.isBuiltin ? t(`${BUILTIN_NS[cat._type]}.${key}`) : cat.name;
   }, [allCategories, t]);
 
-  const filtered = useMemo(() => filterBills(bills, dimension, rangeStart, rangeEnd, range.startWeek, range.endWeek, weekStartDay), [bills, dimension, rangeStart, rangeEnd, range.startWeek, range.endWeek, weekStartDay]);
+  const filtered = useMemo(() => {
+    if (dimension === 'week') {
+      const range = getWeekDateRange(weekYear, weekNum, weekStartDay);
+      return (bills || []).filter((b) => {
+        const d = (b.consumption_date || '').slice(0, 10);
+        return d >= range.startDate && d <= range.endDate;
+      });
+    }
+    return filterBills(bills, dimension, rangeStart, rangeEnd, range.startWeek, range.endWeek, weekStartDay);
+  }, [bills, dimension, rangeStart, rangeEnd, range.startWeek, range.endWeek, weekStartDay, weekYear, weekNum]);
 
   // Compute effective trend dimension & range for 'all' mode (use year dimension)
   const trendDim = dimension === 'all' ? 'year' : dimension;
@@ -330,18 +345,7 @@ export default function SpendingAnalysis({ bills = [] }) {
         }
       }
     } else if (dimension === 'week') {
-      // Count weeks in range
-      if (range.startWeek != null && range.endWeek != null) {
-        let count = 0;
-        let y = range.startYear, w = range.startWeek;
-        while (y < range.endYear || (y === range.endYear && w <= range.endWeek)) {
-          count++;
-          w++;
-          const maxW = getWeeksInYear(y, weekStartDay);
-          if (w > maxW) { w = 1; y++; }
-        }
-        periods = count;
-      }
+      periods = 1;
     } else if (dimension === 'year') {
       periods = (range.endYear - range.startYear + 1) * 12;
     } else {
@@ -351,7 +355,10 @@ export default function SpendingAnalysis({ bills = [] }) {
     return { incomeTotal, expenseTotal, periodAvg: periods > 0 ? expenseTotal / periods : 0, periods, ratio };
   }, [filtered, dimension, range, weekStartDay]);
 
-  const trendSeries = useMemo(() => buildTrendSeries(filtered, trendDim, trendStart, trendEnd, range.startWeek, range.endWeek, weekStartDay), [filtered, trendDim, trendStart, trendEnd, range.startWeek, range.endWeek, weekStartDay]);
+  const trendSeries = useMemo(() => {
+    if (dimension === 'week') return [];
+    return buildTrendSeries(filtered, trendDim, trendStart, trendEnd, range.startWeek, range.endWeek, weekStartDay);
+  }, [filtered, trendDim, trendStart, trendEnd, range.startWeek, range.endWeek, weekStartDay, dimension]);
   const showIndices = tickIndices(trendSeries.length, trendDim === 'month' ? 4 : 6);
 
   const incomeSegments = useMemo(() => buildSegments(filtered, 'income', labelOf), [filtered, labelOf]);
@@ -369,10 +376,11 @@ export default function SpendingAnalysis({ bills = [] }) {
         startMonth={range.startMonth}
         endYear={range.endYear}
         endMonth={range.endMonth}
-        startWeek={range.startWeek}
-        endWeek={range.endWeek}
+        year={weekYear}
+        week={weekNum}
         onDimensionChange={handleDimensionChange}
         onRangeChange={handleRangeChange}
+        onWeekChange={handleWeekChange}
       />
 
       {/* Summary cards 2x2 */}
@@ -386,12 +394,14 @@ export default function SpendingAnalysis({ bills = [] }) {
             <Text style={[styles.statLabel, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{t('butler.totalExpense')}</Text>
             <Text style={[styles.statValue, { color: Colors.rose, fontFamily: Fonts.bold }]}>{formatMoney(summary.expenseTotal, currency)}</Text>
           </View>
-          <View style={[styles.statCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.md }, Shadows.card]}>
-            <Text style={[styles.statLabel, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
-              {dimension === 'week' ? t('butler.weeklyAvgExpense') : t('butler.monthlyAvgExpense')}
-            </Text>
-            <Text style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>{formatMoney(summary.periodAvg, currency)}</Text>
-          </View>
+          {dimension !== 'week' && (
+            <View style={[styles.statCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.md }, Shadows.card]}>
+              <Text style={[styles.statLabel, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>
+                {t('butler.monthlyAvgExpense')}
+              </Text>
+              <Text style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>{formatMoney(summary.periodAvg, currency)}</Text>
+            </View>
+          )}
           <View style={[styles.statCard, { backgroundColor: Colors.card, borderColor: Colors.cardBorder, borderRadius: Radius.md }, Shadows.card]}>
             <Text style={[styles.statLabel, { color: Colors.textSecondary, fontFamily: Fonts.regular }]}>{t('butler.incomeExpenseRatio')}</Text>
             <Text style={[styles.statValue, { color: Colors.textPrimary, fontFamily: Fonts.bold }]}>
